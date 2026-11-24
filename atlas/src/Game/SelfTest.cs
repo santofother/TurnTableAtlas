@@ -102,6 +102,8 @@ namespace Atlas
                           $"3D map ({map.Mode}): {map.Pins.Count} pins, clouds, orbit camera");
                     Check(map.WeatherControls != null && map.WeatherControls.W == root.Weather && root.Weather.Kind == WeatherKind.Rain,
                           $"the map shares the city's weather ({root.Weather.Kind}, cloud {root.Weather.Current.Coverage:0.00})");
+                    Check(map.Table != null && map.Table.CandleCount >= 6 && map.Tod.Room != null,   // FIX(W1)
+                          $"map table: frame, props, {map.Table?.CandleCount} candles, dark room");
                     map.WeatherControls.KindButton(WeatherKind.Fair).EmitSignal(BaseButton.SignalName.Pressed);
                     _mapTarget = map.Rig.Target;
                     map.SetMode(MapMode.KnownWorld);

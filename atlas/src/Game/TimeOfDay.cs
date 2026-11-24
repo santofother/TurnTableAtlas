@@ -20,6 +20,8 @@ namespace Atlas
         public WeatherParams Wx = Weather.Preset(WeatherKind.Clear);
         public float Flash;            // lightning, 0..1
         public float FogScale = 1f;    // the world maps are far bigger than a city: thinner haze per unit
+        // FIX(W1): the world map sits on a table in a dark room: plain dark background and haze, the sky still lights it
+        public Color? Room;
         public DirectionalLight3D SunLight => _sun;
         Vector3 _sunDir = Vector3.Up, _moonDir = Vector3.Down;
         float _sunBase, _moonBase;
@@ -108,6 +110,12 @@ namespace Atlas
             var nightFog = new Color(0.05f, 0.06f, 0.11f);
             var fog = nightFog.Lerp(dayFog, (float)Daylight).Lerp(duskFog, (float)dusk * 0.7f);
             fog = fog.Lerp(new Color(0.55f, 0.57f, 0.60f) * (0.12f + 0.88f * (float)Daylight), (float)Math.Clamp(Wx.Darkness + Wx.Fog * 0.6, 0, 0.85));
+            if (Room is Color room)
+            {
+                env.BackgroundMode = Godot.Environment.BGMode.Color;
+                env.BackgroundColor = room;
+                fog = room.Lerp(fog, 0.12f);
+            }
             env.FogLightColor = fog;
             env.FogDensity = (0.0004f + 0.0006f * (float)Daylight + (float)(Wx.Fog * 0.011 + Wx.Rain * 0.003)) * FogScale;
             env.GlowIntensity = 0.35f + 0.5f * (float)LampLevel;

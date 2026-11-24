@@ -21,7 +21,7 @@ All eleven cards ran on 2026-11-23 in one unattended session.
 
 | Card | Scope | Depends on | Status |
 |---|---|---|---|
-| W1 | CK3-style 3D map table and frame | none | TODO |
+| W1 | CK3-style 3D map table and frame | none | DONE |
 | W2 | Terrain: Oravian Expanse mountains, Dovaran Crown fjords (blend) | none | TODO |
 | W3 | Fix sea colour round Dovaran Crown | W2 | TODO |
 | W4 | Salmara–Calderra shared border, no no-man's-land | W2 | TODO |

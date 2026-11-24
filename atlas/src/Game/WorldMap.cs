@@ -47,6 +47,7 @@ namespace Atlas
         public event Action<MapMode> ModeChanged;
 
         Node3D _geoRoot, _kwRoot;
+        public MapTable Table { get; private set; }
         StaticBody3D _geoBody, _kwBody;
         ShaderMaterial _paperMat, _reliefMat;
         Vector2 _geoCenter;              // blend xy of the painted map's centre
@@ -87,13 +88,16 @@ namespace Atlas
             _geoW = (float)(_kw.Width * _kw.GeoToKw[0][0]);
             _geoD = _geoW * gs.Y / gs.X;
 
-            Tod = new TimeOfDay { Name = "TimeOfDay", FogScale = 0.3f };
+            Tod = new TimeOfDay { Name = "TimeOfDay", FogScale = 0.3f, Room = MapTable.RoomColor };
             AddChild(Tod);
             Tod.Setup(null, new SunDefaults { LatitudeDeg = 38, DefaultDayOfYear = 172, NorthOffsetDeg = 0 });
             Tod.Hour = Args.Has("hour") ? Args.F("hour", 16.5f) : _lastHour;
             Tod.Apply();
 
-            BuildSea();
+            Table = new MapTable();
+            AddChild(Table);
+            Table.Build(new Rect2((float)_kw.BoundsXy[0], -(float)_kw.BoundsXy[3], (float)_kw.Width, (float)_kw.Depth),
+                        new Rect2(_geoCenter.X - _geoW / 2, -_geoCenter.Y - _geoD / 2, _geoW, _geoD));
             _paperMat = new ShaderMaterial { Shader = ResourceLoader.Load<Shader>("res://shaders/paper_map.gdshader") };
             _paperMat.SetShaderParameter("map_tex", _geoTex);
             _reliefMat = new ShaderMaterial { Shader = ResourceLoader.Load<Shader>("res://shaders/relief.gdshader") };
@@ -107,7 +111,7 @@ namespace Atlas
             AddChild(Weather);
             float cx = (float)(_kw.BoundsXy[0] + _kw.Width / 2), cy = (float)(_kw.BoundsXy[1] + _kw.Depth / 2);
             Weather.Setup(root.Weather, Tod,
-                new CloudScale { Base = 9, Top = 21, Center = new Vector2(cx, -cy), Half = new Vector2((float)_kw.Width / 2 + 60, (float)_kw.Depth / 2 + 60),
+                new CloudScale { Base = 9, Top = 21, Center = new Vector2(cx, -cy), Half = new Vector2((float)_kw.Width / 2, (float)_kw.Depth / 2)   /* W1: clouds stay over the map, not the table */,
                                  Cell = 230, Shape = 20, Detail = 5.5f, NearFade = 1.5f, Edge = 45, FlashR = 30 },
                 new[] { _paperMat, _reliefMat }, false, () => Rig.Target,
                 () => Math.Clamp(Math.Abs(Tod.Speed) * 60, 1.0, 20.0));
@@ -126,29 +130,12 @@ namespace Atlas
 
         // ---------------------------------------------------------------- scene
 
-        void BuildSea()
-        {
-            // the blend's SEA_Beyond: deep water to the horizon, just under both maps
-            var sea = new MeshInstance3D
-            {
-                Name = "SeaBeyond", Mesh = new PlaneMesh { Size = new Vector2(20000, 20000) },
-                Position = new Vector3(_geoCenter.X, -0.25f, -_geoCenter.Y), CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
-                MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.02f, 0.08f, 0.147f).LinearToSrgb(), Roughness = 0.32f, MetallicSpecular = 0.3f },
-            };
-            AddChild(sea);
-        }
-
         void BuildGeography()
         {
             _geoRoot = new Node3D { Name = "Geography" };
             AddChild(_geoRoot);
             var at = new Vector3(_geoCenter.X, 0, -_geoCenter.Y);
             var boardSize = new Vector3(_geoW + 2.5f, 0.8f, _geoD + 2.5f);
-            _geoRoot.AddChild(new MeshInstance3D
-            {
-                Name = "Board", Mesh = new BoxMesh { Size = boardSize }, Position = at + new Vector3(0, -0.4f, 0),
-                MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.20f, 0.12f, 0.07f), Roughness = 0.6f },
-            });
             _geoRoot.AddChild(new MeshInstance3D
             {
                 Name = "Paper", Mesh = new PlaneMesh { Size = new Vector2(_geoW, _geoD) }, Position = at + new Vector3(0, 0.02f, 0),
@@ -324,6 +311,7 @@ namespace Atlas
             Mode = LastMode = mode;
             bool kw = mode == MapMode.KnownWorld;
             _geoRoot.Visible = !kw;
+            Table.SetMode(kw);
             _geoBody.CollisionLayer = kw ? 0 : CityLoader.CollisionLayer;
             if (_kwRoot != null)
             {
@@ -394,6 +382,7 @@ namespace Atlas
             Tod.SunLight.DirectionalShadowMaxDistance = Math.Clamp(Rig.Dist * 2.4f, 12f, 1400f);
             _lastHour = Tod.Hour;
             float night = (float)Tod.LampLevel;
+            Table.Tick(dt, night);
             float k = Math.Clamp(Rig.Dist * 0.024f, 0.03f, 16f);
             var mouse = GetViewport().GetMousePosition();
             MapPin3D hover = null;
