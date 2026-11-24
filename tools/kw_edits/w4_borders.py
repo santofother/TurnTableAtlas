@@ -14,10 +14,14 @@ go to the nearer bank. So Salmara owns the west bank, Calderra (and Astera at th
 the border line runs down the river. G is updated only where the change moves it (old G plus the change in the
 distance), so the rest of the map keeps its original values.
 
+Then every other unclaimed strip between two or more realms (land a CLOSE_R closing of the claimed area would fill,
+at least 50 px) goes to the nearest neighbouring realm: Eastern Marches / Varduun, Kervara / Valdora, Kervara /
+Dovaran Crown, Astera / Madravella, Coastal Sultanate / High Dunes and the Astera / Calderra foothill notch.
+Unclaimed land on the realms' outer frontier (the mountains) stays unclaimed.
+
     $BLENDER -b ~/PersonalProjects/FOMSMap/KnownWorld-Map/KnownWorld.blend --python tools/kw_edits/w4_borders.py
     ... -- --dry-run     report only, save nothing
-    ... -- --preview out.png   before | after picture round the river
-    ... -- --report      also list every other realm pair with an unclaimed strip between them (slow)
+    ... -- --preview /tmp/w4   before | after pictures (/tmp/w4_river.png, /tmp/w4_gap<i>.png)
 
 Re-runnable: the first run copies kingdoms_id.png to textures/pre_w4/ and every run starts from that copy.
 """
@@ -30,7 +34,7 @@ import numpy as np
 
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 DRY = "--dry-run" in ARGS
-REPORT = "--report" in ARGS
+PREVIEW = ARGS[ARGS.index("--preview") + 1] if "--preview" in ARGS else None
 RIVER = "RIVER_river_border"
 CLOSE_R = 20          # px: unclaimed land that closing realms with this disk would fill is "between" realms
 MARGIN = 60           # px round the river's box that the edit may touch
@@ -167,12 +171,11 @@ def internal_gaps(rid, land):
     return land & ~claimed & closed
 
 
-def report_pairs(rid, land):
-    """Each realm pair with unclaimed strips between them (whole map; slow brute-force morphology)."""
+def pair_gaps(rid, land, min_px=50):
+    """Unclaimed strips between two or more realms (whole map): [(ys, xs, neighbour ids)], biggest first."""
     gaps = internal_gaps(rid, land)
-    # label 8-connected components with a simple flood
     seen = np.zeros(gaps.shape, bool)
-    rows = []
+    out = []
     ys, xs = np.nonzero(gaps)
     for y, x in zip(ys, xs):
         if seen[y, x]:
@@ -189,7 +192,7 @@ def report_pairs(rid, land):
                     if 0 <= ny < gaps.shape[0] and 0 <= nx < gaps.shape[1] and gaps[ny, nx] and not seen[ny, nx]:
                         seen[ny, nx] = True
                         stack.append((ny, nx))
-        if len(comp) < 50:
+        if len(comp) < min_px:
             continue
         cy, cx = np.array(comp).T
         nb = set()
@@ -199,22 +202,47 @@ def report_pairs(rid, land):
                 xx = np.clip(cx + dx, 0, rid.shape[1] - 1)
                 nb.update(int(k) for k in np.unique(rid[yy, xx]) if k > 0)
         if len(nb) >= 2:
-            rows.append((len(comp), sorted(NAMES.get(k, str(k)) for k in nb), int(cx.min()), int(cx.max()),
-                         int(rid.shape[0] - 1 - cy.max()), int(rid.shape[0] - 1 - cy.min())))
-    for n, nb, a, b, c, d in sorted(rows, reverse=True):
-        log(f"  gap {n:5d} px between {' / '.join(nb)}  (px x {a}-{b}, y {c}-{d} from the top)")
-    return rows
+            out.append((cy, cx, sorted(nb)))
+    return sorted(out, key=lambda c: -len(c[0]))
 
 
-def save_preview(path, before, after, river, land):
-    """Before | after realm ids round the river (debug), 3x."""
-    pal = np.array([[.8, .8, .8], [.86, .59, .24], [.67, .47, .7], [.51, .63, .35]] + [[.5, .5, .5]] * 12)
+def describe(cy, cx, nb, H):
+    return (f"{len(cy):5d} px between {' / '.join(NAMES.get(k, str(k)) for k in nb)} "
+            f"(px x {cx.min()}-{cx.max()}, y {H - 1 - cy.max()}-{H - 1 - cy.min()} from the top)")
+
+
+def apply_window(rid, G, y0, y1, x0, x1, lab):
+    """Write new ids into rid[y0:y1, x0:x1] and move G by the change in border distance the edit causes (the
+    original G is kept elsewhere; it doesn't follow one exact formula, so only the difference is applied)."""
+    H, W = rid.shape
+    pad = 17
+    wy0, wy1, wx0, wx1 = max(y0 - pad, 0), min(y1 + pad, H), max(x0 - pad, 0), min(x1 + pad, W)
+    big_old = rid[wy0:wy1, wx0:wx1].copy()
+    big_new = big_old.copy()
+    big_new[y0 - wy0:y1 - wy0, x0 - wx0:x1 - wx0] = lab
+    d_old = border_dist16(big_old)           # sea is id 0 too, so the coast counts as a border (as in the original)
+    d_new = border_dist16(big_new)
+    g = G[wy0:wy1, wx0:wx1].astype(float)
+    g_new = np.where(big_old != big_new, d_new, np.clip(g + (d_new - d_old), 0, 255))
+    rid[wy0:wy1, wx0:wx1] = big_new
+    G[wy0:wy1, wx0:wx1] = np.round(g_new).astype(np.int32)
+    return int((np.round(g_new) != g).sum())
+
+
+PAL = np.array([[.8, .8, .8], [.86, .59, .24], [.67, .47, .7], [.51, .63, .35], [.78, .43, .43], [.47, .55, .7],
+                [.82, .35, .27], [.24, .47, .78], [.63, .2, .27], [.16, .55, .51], [.55, .24, .47], [.24, .39, .75],
+                [.75, .39, .16], [.47, .35, .75], [.16, .55, .67], [.82, .55, .12]])
+
+
+def save_preview(path, before, after, land, river=None):
+    """Before | after realm ids (debug), 3x; rows bottom-up as Blender stores them."""
     tiles = []
     for ids in (before, after):
-        t = pal[np.clip(ids, 0, 15)]
+        t = PAL[np.clip(ids, 0, 15)]
         t[~land] = [.12, .2, .35]
         t[land & (ids == 0)] = [.95, .95, .9]
-        t[river] = t[river] * 0.4 + np.array([0, 0, .6])
+        if river is not None:
+            t[river] = t[river] * 0.4 + np.array([0, 0, .6])
         tiles.append(t)
     a = np.concatenate([tiles[0], np.ones((tiles[0].shape[0], 4, 3)), tiles[1]], 1).repeat(3, 0).repeat(3, 1)
     h, w = a.shape[:2]
@@ -223,6 +251,7 @@ def save_preview(path, before, after, river, land):
     im.filepath_raw = path
     im.file_format = "PNG"
     im.save()
+    bpy.data.images.remove(im)
     log("preview", path)
 
 
@@ -278,23 +307,9 @@ def main():
         if n:
             log(f"  {NAMES[k]} +{n} px")
 
-    # G: keep the original values, plus the change in the distance the edit causes
-    pad = 17
-    wy0, wy1, wx0, wx1 = max(y0 - pad, 0), min(y1 + pad, H), max(x0 - pad, 0), min(x1 + pad, W)
-    big_old = rid[wy0:wy1, wx0:wx1].copy()
-    big_new = big_old.copy()
-    big_new[y0 - wy0:y1 - wy0, x0 - wx0:x1 - wx0] = lab
-    d_old = border_dist16(big_old)           # sea is id 0 too, so the coast counts as a border (as in the original)
-    d_new = border_dist16(big_new)
-    g = G[wy0:wy1, wx0:wx1].astype(float)
-    changed = big_old != big_new
-    g_new = np.where(changed, d_new, np.clip(g + (d_new - d_old), 0, 255))
-    log(f"G changed on {(np.round(g_new) != g).sum()} px")
-
     rid_new = rid.copy()
-    rid_new[win] = lab
     G_new = G.copy()
-    G_new[wy0:wy1, wx0:wx1] = np.round(g_new).astype(np.int32)
+    log(f"G changed on {apply_window(rid_new, G_new, y0, y1, x0, x1, lab)} px")
 
     # Salmara and Calderra must now touch along the river with nothing unclaimed between them
     r2 = rid_new[win]
@@ -302,13 +317,34 @@ def main():
     log(f"Salmara|Calderra contact px (horizontal) {int(touch.sum())}, before "
         f"{int((((r == 3) & (shift(r, 0, 1, 0) == 1)) | ((r == 1) & (shift(r, 0, 1, 0) == 3))).sum())}")
     log(f"unclaimed strip px left: {int((internal_gaps(r2, ld) & dilate(river, 2)).sum())}")
+    if PREVIEW:
+        save_preview(PREVIEW + "_river.png", r, lab, ld, river)
 
-    if REPORT:
-        log("other realm pairs with an unclaimed strip between them (after W4):")
-        report_pairs(rid_new, land)
+    # every other strip between realms (no river to follow): each pixel goes to the nearest neighbouring realm
+    for i, (cy, cx, nb) in enumerate(pair_gaps(rid_new, land)):
+        log("fill " + describe(cy, cx, nb, H))
+        m = 8
+        a0, a1 = max(int(cy.min()) - m, 0), min(int(cy.max()) + m + 1, H)
+        b0, b1 = max(int(cx.min()) - m, 0), min(int(cx.max()) + m + 1, W)
+        sub = rid_new[a0:a1, b0:b1].copy()
+        comp = np.zeros(sub.shape, bool)
+        comp[cy - a0, cx - b0] = True
+        lab2 = flood(sub, comp, np.zeros_like(comp))
+        for k in nb:
+            n = int((comp & (lab2 == k)).sum())
+            if n:
+                log(f"  {NAMES[k]} +{n} px")
+        if (comp & (lab2 == 0)).any():
+            log(f"  WARNING {int((comp & (lab2 == 0)).sum())} px not reached")
+        if PREVIEW:
+            save_preview(f"{PREVIEW}_gap{i}.png", sub, lab2, land[a0:a1, b0:b1])
+        apply_window(rid_new, G_new, a0, a1, b0, b1, lab2)
 
-    if "--preview" in ARGS:
-        save_preview(ARGS[ARGS.index("--preview") + 1], r, lab, river, ld)
+    left = pair_gaps(rid_new, land)
+    log(f"strips between realms left: {len(left)}")
+    for cy, cx, nb in left:
+        log("  left " + describe(cy, cx, nb, H))
+
     if DRY:
         log("dry run: nothing saved")
         return
