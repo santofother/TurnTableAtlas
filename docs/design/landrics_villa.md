@@ -10,6 +10,8 @@ The [SVG wireframe](landrics_villa_wireframe.svg) is the layout reference. The t
 
 **Suggested first Blender pass:** block out the wall, gate, arrival court, stable, two-storey main ring, open peristyle, gallery wing, kitchen garden, detached bathhouse, vineyard rows and lake edge as separate named masses. Make one dusk three-quarter camera that reads like the aerial image and one orthographic overhead camera for checking the layout. Keep the whole site smaller than Calderra's city plinth; final real-world dimensions and map coordinates wait for site selection.
 
+The [animation and event brief](landrics_villa_motion.md) gives ambient loops, four chapter-based sequences, optional vignettes and proposed route anchors for the Blender/Atlas build.
+
 ![Top-down estate and ground-floor wireframe](landrics_villa_wireframe.svg)
 
 This is a **layout proposal**, not a settled map location or a production building plan. The diagram uses north-up and puts the lake on the right solely to make the route readable; rotate or mirror the entire estate when its site is chosen. Rectangles show relationships, not measured footprints.
