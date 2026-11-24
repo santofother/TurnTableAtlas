@@ -1,0 +1,18 @@
+{
+  "id": "theatre_play", "label": "Theatre Play", "venue_type": "theatre", "schedule_hour": 18.0,
+  "description": "The audience takes its seats, the chorus circles the orchestra, applause at the end.",
+  "steps": [
+    {"at": 0, "do": "status", "text": "The audience takes its seats"},
+    {"at": 0, "do": "focus", "landmark": "theatre"},
+    {"at": 0, "do": "stream_in", "count": 220, "window": 15},
+    {"at": 0, "do": "fill", "to": 0.9, "over": 20},
+    {"at": 21, "do": "play", "duration": 60},
+    {"at": 21, "do": "status", "text": "The play begins"},
+    {"wait": "play_over"},
+    {"at": 0, "do": "cheer", "amount": 0.9, "over": 6},
+    {"at": 0, "do": "status", "text": "Applause!"},
+    {"at": 7, "do": "fill", "to": 0.0, "over": 22},
+    {"at": 7, "do": "stream_out", "count": 220, "window": 15},
+    {"at": 31, "do": "end"}
+  ]
+}

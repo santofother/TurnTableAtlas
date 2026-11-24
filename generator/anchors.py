@@ -430,6 +430,25 @@ def build_moorings(m, cfg):
     return out
 
 
+def build_berths(m, man_ships, n=12, clearance=1.7):
+    """Free water spots a little off the harbour quays (for arriving fleets), nearest the harbour centre first."""
+    P = m.resample(m.HARBOR, 0.5)
+    N = m.polyline_normals(P)
+    occupied = [np.array(s['pos'][:2]) for s in man_ships]
+    out = []
+    for i in range(0, len(P), 3):
+        for d in (2.0, -2.0):
+            q = P[i] + N[i] * d
+            if m.points_in_poly(np.array([q[0]]), np.array([q[1]]), m.COAST_POLY)[0]:
+                continue
+            if all(np.linalg.norm(q - o) > clearance for o in occupied + out):
+                out.append(q)
+            break
+    hc = np.array(m.HARBOR_CENTER)
+    out.sort(key=lambda q: float(np.linalg.norm(q - hc)))
+    return [r3(q, 2) for q in out[:n]]
+
+
 def build_night_lights(m, T, rng):
     L = []
     for (x, y, z) in m.ANCHORS.get('_lighthouses', []):
@@ -582,6 +601,7 @@ def build_manifest(m, cfg, report):
         'spawn_zones': zones,
         'ship_lanes': lanes,
         'moorings': ships['moorings'], 'anchored_ships': ships['anchored'], 'boats': ships['boats'],
+        'berths': build_berths(m, ships['moorings'] + ships['anchored'] + ships['boats']),
         'venues': venues,
         'routes': routes,
         'night_lights': lights,

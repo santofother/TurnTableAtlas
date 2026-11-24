@@ -17,6 +17,8 @@ namespace Atlas
         public List<CityManifest> Cities { get; private set; } = new();
         public string CitiesDir { get; private set; }
         CityView _city;
+        public CityView City => _city;
+        public WorldMap Map => _map;
         AtlasUI _ui;
         WorldMap _map;
         double _t, _benchT; long _benchFrames;
@@ -91,6 +93,7 @@ namespace Atlas
             if (Args.Has("debug-ui") && _t > 2 && _t - delta <= 2 && _ui != null)
                 foreach (var c in _ui.GetChildren()) if (c is Control ctl) GD.Print($"[Atlas] ui {ctl.Name} {ctl.GetType().Name} rect {ctl.GetGlobalRect()} visible {ctl.IsVisibleInTree()} min {ctl.GetCombinedMinimumSize()}");
             if (_shotIdx < _shots.Count && _t >= _shots[_shotIdx]) { SaveShot("t" + _shots[_shotIdx].ToString(System.Globalization.CultureInfo.InvariantCulture)); _shotIdx++; }
+            if (Args.Has("selftest")) SelfTest.Tick(this, _t);
             if (_quitAfter > 0 && _t >= _quitAfter)
             {
                 GD.Print($"[Atlas] quit-after {_quitAfter:0.0}s, avg fps {(_benchT > 0 ? _benchFrames / _benchT : 0):0} (after 2.5 s), now {Engine.GetFramesPerSecond():0}");

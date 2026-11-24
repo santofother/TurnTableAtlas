@@ -1,0 +1,17 @@
+{
+  "id": "chariot_race", "label": "Chariot Race", "venue_type": "circus", "schedule_hour": 16.0,
+  "description": "The hippodrome fills, six teams race five laps, the crowd roars, then everyone goes home.",
+  "steps": [
+    {"at": 0, "do": "status", "text": "The crowd streams into the hippodrome"},
+    {"at": 0, "do": "focus", "landmark": "hippodrome"},
+    {"at": 0, "do": "stream_in", "count": 450, "window": 22},
+    {"at": 0, "do": "fill", "to": 0.96, "over": 30},
+    {"at": 31, "do": "race", "chariots": 6, "laps": 5, "speed": 1.9},
+    {"wait": "race_finished"},
+    {"at": 0, "do": "cheer", "amount": 1.0, "over": 8},
+    {"at": 9, "do": "status", "text": "The race is over; the stands empty"},
+    {"at": 9, "do": "fill", "to": 0.0, "over": 35},
+    {"at": 9, "do": "stream_out", "count": 450, "window": 25},
+    {"at": 46, "do": "end"}
+  ]
+}

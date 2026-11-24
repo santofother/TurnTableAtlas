@@ -1,0 +1,19 @@
+{
+  "id": "gladiator_games", "label": "Start Games", "venue_type": "arena", "schedule_hour": 14.0,
+  "description": "Spectators pour into the colosseum; gladiator pairs fight, then beasts are loosed with their hunters.",
+  "steps": [
+    {"at": 0, "do": "status", "text": "Spectators pour into the colosseum"},
+    {"at": 0, "do": "focus", "landmark": "colosseum"},
+    {"at": 0, "do": "stream_in", "count": 500, "window": 20},
+    {"at": 0, "do": "fill", "to": 0.95, "over": 28},
+    {"at": 29, "do": "games", "pairs": 5, "beasts": 3, "beast_at": 30, "duration": 70},
+    {"at": 29, "do": "cheer", "amount": 0.4, "over": 30},
+    {"at": 59, "do": "status", "text": "The beasts are loosed!"},
+    {"at": 59, "do": "cheer", "amount": 1.0, "over": 10},
+    {"wait": "games_over"},
+    {"at": 0, "do": "status", "text": "The games are over"},
+    {"at": 2, "do": "fill", "to": 0.0, "over": 30},
+    {"at": 2, "do": "stream_out", "count": 500, "window": 22},
+    {"at": 36, "do": "end"}
+  ]
+}

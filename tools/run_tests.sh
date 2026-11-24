@@ -21,13 +21,13 @@ fi
 
 for city in $(ls cities); do
   [ -f "cities/$city/city.json" ] || continue
-  echo "[Test] smoke $city (headless, 5 s, self-test)"
+  echo "[Test] smoke $city (headless self-test)"
   log="$(mktemp)"
   set +e
-  "$GODOT" --headless --path atlas -- --city="$city" --selftest --quit-after=6 >"$log" 2>&1
+  "$GODOT" --headless --path atlas -- --city="$city" --selftest --quit-after=20 >"$log" 2>&1
   rc=$?
   set -e
-  if [ $rc -ne 0 ] || grep -qE "ERROR|Unhandled exception|SELFTEST FAIL" "$log" || ! grep -q "\[Atlas\] quit-after" "$log"; then
+  if [ $rc -ne 0 ] || grep -qE "ERROR|Unhandled exception|SELFTEST FAIL" "$log" || ! grep -q "\[Selftest\] PASS" "$log"; then
     echo "[Test] smoke $city FAILED (exit $rc):"; cat "$log"; rm -f "$log"; exit 1
   fi
   grep -E "^\[(Atlas|Selftest)\]" "$log" || true

@@ -1,0 +1,16 @@
+{
+  "id": "fleet_arrival", "label": "Fleet Arrives", "schedule_hour": 9.0,
+  "description": "A fleet enters between the lighthouses and moors along the quays while crowds gather to watch.",
+  "steps": [
+    {"at": 0, "do": "status", "text": "Sails on the horizon: the fleet is coming in"},
+    {"at": 0, "do": "focus", "landmark": "harbour"},
+    {"at": 0, "do": "fleet", "ships": 5, "lane": "harbour_in", "speed": 1.3},
+    {"at": 0, "do": "gather", "zones": ["harbour_quay", "market"], "to": 1.0, "over": 40},
+    {"at": 0, "do": "stream_to_quay", "count": 400, "window": 35},
+    {"wait": "fleet_moored"},
+    {"at": 0, "do": "status", "text": "The fleet is in"},
+    {"at": 0, "do": "cheer_zones", "zones": ["harbour_quay"], "amount": 1.0, "over": 6},
+    {"at": 25, "do": "gather", "zones": ["harbour_quay", "market"], "to": -1, "over": 30},
+    {"at": 30, "do": "end"}
+  ]
+}

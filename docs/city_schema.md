@@ -18,6 +18,7 @@ Points are `[x, y, z]` unless the field says 2D (`[x, y]`).
 | `spawn_zones[]` | `{id, poly:[[x,y]], density, points:[[x,y,z]]}` | places people idle; `points` are pre-sampled walkable spots |
 | `ship_lanes[]` | `{id, points:[[x,y]], loop, kinds[], speed, every_s, dwell_s, then}` | sea paths; `then` = lane continued after `dwell_s` (arrive, wait, leave) |
 | `moorings[]`, `anchored_ships[]`, `boats[]` | `{object, kind, pos, heading_deg, scale}` | the generator's static ships (they bob) |
+| `berths[]` | `[[x,y]]` | free water spots off the quays for arriving fleets, nearest the harbour centre first |
 | `venues[]` | see below | seats, floors, tracks, entrances |
 | `routes` | `{id: [[x,y,z]]}` | walkable polylines along the graph (`procession`) |
 | `night_lights[]` | `{pos, kind: window/lamp/torch/lighthouse, strength, order?}` | glow points; `window.order` = light-up order (see below) |

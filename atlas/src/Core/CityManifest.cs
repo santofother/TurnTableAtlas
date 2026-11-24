@@ -24,6 +24,7 @@ namespace Atlas.Core
         [JsonPropertyName("moorings")] public List<ShipPlacement> Moorings { get; set; } = new();
         [JsonPropertyName("anchored_ships")] public List<ShipPlacement> AnchoredShips { get; set; } = new();
         [JsonPropertyName("boats")] public List<ShipPlacement> Boats { get; set; } = new();
+        [JsonPropertyName("berths")] public List<double[]> Berths { get; set; } = new();
         [JsonPropertyName("venues")] public List<Venue> Venues { get; set; } = new();
         [JsonPropertyName("routes")] public Dictionary<string, double[][]> Routes { get; set; } = new();
         [JsonPropertyName("night_lights")] public List<NightLight> NightLights { get; set; } = new();

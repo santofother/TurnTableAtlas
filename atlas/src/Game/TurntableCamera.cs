@@ -155,18 +155,9 @@ namespace Atlas
         {
             if (Cam == null) return;
             var want = Target + Geo.Orbit(Yaw, Pitch, Dist);
-            var space = GetWorld3D()?.DirectSpaceState;
-            if (space != null)
-            {
-                var q = PhysicsRayQueryParameters3D.Create(Target + Vector3.Up * 0.2f, want, CityLoader.CollisionLayer);
-                var hit = space.IntersectRay(q);
-                if (hit.Count > 0)
-                {
-                    var p = (Vector3)hit["position"];
-                    want = p + (Target - want).Normalized() * 0.3f;
-                }
-                want.Y = Math.Max(want.Y, GroundAt(want) + 0.3f);
-            }
+            // keep the camera above whatever is under it (terrain, roofs, walls): no clipping into the model.
+            // (A target->camera ray would start inside landmark proxy boxes and yank the camera in.)
+            want.Y = Math.Max(want.Y, GroundAt(want) + 0.35f);
             Cam.GlobalPosition = want;
             var dir = Target - want;
             if (dir.LengthSquared() > 1e-6f) Cam.LookAt(Target, Mathf.Abs(dir.Normalized().Y) > 0.999f ? Vector3.Forward : Vector3.Up);

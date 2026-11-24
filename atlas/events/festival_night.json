@@ -1,0 +1,17 @@
+{
+  "id": "festival_night", "label": "Festival Night",
+  "description": "Night falls, lanterns are strung over the forum and a torch-lit procession winds to it.",
+  "steps": [
+    {"at": 0, "do": "night", "hour": 21.2},
+    {"at": 0, "do": "status", "text": "A torch-lit procession sets out from the north gate"},
+    {"at": 0, "do": "lanterns", "on": true},
+    {"at": 0, "do": "gather", "zones": ["forum"], "to": 1.0, "over": 30},
+    {"at": 1, "do": "procession", "rows": 24, "speed": 0.35},
+    {"wait": "procession_done"},
+    {"at": 0, "do": "status", "text": "The procession reaches the forum"},
+    {"at": 0, "do": "cheer_zones", "zones": ["forum"], "amount": 1.0, "over": 6},
+    {"at": 40, "do": "lanterns", "on": false},
+    {"at": 40, "do": "gather", "zones": ["forum"], "to": -1, "over": 20},
+    {"at": 42, "do": "end"}
+  ]
+}
