@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="760" viewBox="0 0 1100 760" role="img" aria-labelledby="title desc">
+  <title id="title">Landric's villa, initial wireframe</title>
+  <desc id="desc">Proposed top-down estate plan: road and gate to the west, two-storey house around a peristyle, stable and service areas, gallery, kitchen garden, bathhouse, vineyards and nearby lake.</desc>
+  <style>
+    .bg{fill:#f7f3e9}.ink{stroke:#283a3d;stroke-width:3;fill:none}.wall{stroke:#394449;stroke-width:10;fill:none}.room{fill:#eee2c9;stroke:#394449;stroke-width:3}.court{fill:#d5e2ce;stroke:#77906e;stroke-width:2}.service{fill:#e1e7dc;stroke:#536c61;stroke-width:2}.water{fill:#b6d9df;stroke:#6a9ea9;stroke-width:2}.vine{stroke:#75895c;stroke-width:3}.path{stroke:#b58d5b;stroke-width:9;fill:none;stroke-dasharray:10 7}.label{font:600 17px system-ui,sans-serif;fill:#253538;text-anchor:middle}.small{font:13px system-ui,sans-serif;fill:#405153;text-anchor:middle}.head{font:700 28px system-ui,sans-serif;fill:#253538}.note{font:14px system-ui,sans-serif;fill:#526366}.tiny{font:12px system-ui,sans-serif;fill:#526366}
+  </style>
+  <rect class="bg" width="1100" height="760"/>
+  <text class="head" x="44" y="49">Landric's villa · first wireframe</text>
+  <text class="note" x="45" y="77">Top-down relationships only · orientation, distances and lake side are provisional</text>
+  <path class="water" d="M925 121 C995 116 1066 151 1100 210 L1100 660 C1050 677 1005 645 966 617 C914 573 922 495 957 449 C1000 396 951 326 920 267 Z"/>
+  <text class="label" x="1022" y="341">LAKE / LAGOON</text>
+  <text class="small" x="1021" y="365">rideable shore loop</text>
+  <path class="path" d="M779 608 C863 675 952 665 991 607"/>
+  <path class="path" d="M893 167 C934 134 976 127 1000 142"/>
+  <text class="small" x="909" y="702">proposed riding path</text>
+  <g opacity=".9">
+    <path class="vine" d="M54 140 L54 294 M79 140 L79 294 M104 140 L104 294 M129 140 L129 294 M154 140 L154 294"/>
+    <path class="vine" d="M60 556 L60 692 M85 556 L85 692 M110 556 L110 692 M135 556 L135 692 M160 556 L160 692"/>
+    <path class="vine" d="M750 119 L750 176 M776 119 L776 176 M802 119 L802 176 M828 119 L828 176 M854 119 L854 176"/>
+  </g>
+  <text class="small" x="110" y="322">VINEYARDS</text><text class="small" x="111" y="717">VINEYARDS</text>
+  <path class="wall" d="M201 115 H872 V715 H201 V443 M201 367 V115"/>
+  <rect x="193" y="368" width="17" height="75" fill="#f7f3e9"/>
+  <path class="path" d="M3 406 H238"/>
+  <text class="label" x="102" y="383">road from city</text>
+  <text class="label" x="225" y="348">GATE</text>
+  <rect class="court" x="242" y="360" width="158" height="165" rx="3"/>
+  <text class="label" x="321" y="430">ARRIVAL</text><text class="small" x="322" y="452">COURT</text>
+  <rect class="service" x="233" y="137" width="171" height="109"/>
+  <text class="label" x="318" y="188">STABLES</text><text class="small" x="319" y="211">grooms · tack</text>
+  <path class="path" d="M320 247 V361"/>
+  <rect class="service" x="232" y="538" width="170" height="55"/>
+  <text class="label" x="317" y="570">SERVICE YARD</text>
+  <rect class="room" x="424" y="209" width="391" height="329"/>
+  <rect class="court" x="530" y="302" width="171" height="149"/>
+  <rect x="512" y="284" width="207" height="185" fill="none" stroke="#8c907e" stroke-width="19" stroke-dasharray="7 8"/>
+  <text class="label" x="616" y="364">OPEN</text><text class="label" x="616" y="388">COURT</text>
+  <text class="small" x="617" y="489">MARBLE PERISTYLE + STATUES</text>
+  <rect class="room" x="424" y="302" width="88" height="149"/>
+  <text class="small" x="467" y="365">GRANITE</text><text class="small" x="467" y="386">ENTRY</text><text class="small" x="468" y="408">horse inlay</text>
+  <rect class="room" x="424" y="209" width="190" height="75"/>
+  <text class="label" x="519" y="253">GREAT HALL</text>
+  <rect class="room" x="614" y="209" width="201" height="75"/>
+  <text class="label" x="714" y="244">PRIVATE DINING</text><text class="small" x="714" y="266">hearth · Ignara offering</text>
+  <rect class="room" x="719" y="284" width="96" height="185"/>
+  <text class="label" x="766" y="363">LANDRIC'S</text><text class="label" x="766" y="386">GALLERY</text>
+  <rect class="service" x="424" y="469" width="150" height="69"/>
+  <text class="label" x="499" y="502">KITCHEN</text><text class="small" x="499" y="523">stores nearby</text>
+  <rect class="court" x="591" y="538" width="224" height="66"/>
+  <text class="label" x="704" y="573">KITCHEN GARDEN</text>
+  <rect class="service" x="696" y="625" width="163" height="72"/>
+  <text class="label" x="778" y="657">BATHHOUSE</text><text class="small" x="777" y="678">spring cold · fire heated</text>
+  <path class="path" d="M703 604 V624"/>
+  <path class="path" d="M401 406 H425"/>
+  <path class="path" d="M570 506 H592"/>
+  <text class="tiny" x="431" y="113">two-storey main house · roof silhouette TBD</text>
+  <text class="note" x="45" y="745">Solid rooms / courts = proposed masses     Dashed brown = circulation     Everything can rotate or mirror at the chosen site.</text>
+</svg>
