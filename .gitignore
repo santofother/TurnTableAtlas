@@ -16,3 +16,6 @@ __pycache__/
 blender/renders/*/frames/
 atlas/perf_results/*.png
 atlas/perf_results/*.import
+blender/renders/*/preview/
+blender/renders/*.log
+blender/renders/scratch/
