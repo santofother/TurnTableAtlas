@@ -63,8 +63,12 @@ It builds a walled Mediterranean / Roman-style city. The config's `layout` sets:
 - **Sea:** `ships`, `ship_scale`; plus at the top level `ship_lanes`, `spawn_zones`, `portals`,
   `extra_walkways`, `routes`, `landmarks` (camera presets), `events`, `sun`, `world_map`.
 
-Anything else (an inland city with no sea, a citadel, a lighthouse as its own building, canals, windmills,
-non-Roman architecture, a much bigger or smaller plinth) is **new generator work**. Say so in the brief's
+Two other builders exist: `generator/villa.py` (`"kind": "estate"`, a country house and its grounds) and
+`generator/metropolis.py` (`"kind": "metropolis"`, an inland terraced city in a mountain basin at regional scale:
+peaks, cliff bands, graded rivers, canals, fields, instanced courtyard houses on terraces, freight yards,
+caravanserais, a market, villages; see `generator/cities/karn_ashur.json` for its `layout` keys). Anything else (a
+citadel, a lighthouse as its own building, windmills, other architecture, another plinth size for the Roman city) is
+**new generator work**. Say so in the brief's
 "Agent's reading", build the closest city the generator can make now, and write what's missing as a proposed
 card in the handoff. Don't hack it into `fantasy_capital.py` unasked.
 

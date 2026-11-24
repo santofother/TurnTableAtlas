@@ -35,6 +35,7 @@ Rendered shots land in `blender/renders/<shot>/<shot>.mp4`.
 | id | what | latitude |
 |---|---|---|
 | `fantasy_capital` | crescent harbour capital: palace headland, colosseum, hippodrome, theatre, baths, aqueduct | 38°N |
+| `karn_ashur` | the Temple of the First Flame's inland metropolis (a *metropolis*, `generator/metropolis.py`): ~500k people on ~30 km² of adobe courtyard terraces in a red-cliff basin between two snow peaks; grain yards, caravanserais and the shaded market at the freight road, Al-Mirah's spring, the Library, the pilgrims' climb to the First Flame, bridges, canals, fields and walled villages downstream; on the Known World as its own 6× miniature amid the High Dunes' rivers, villages and the grain route from the River Flame | 15.8°N, mid-Mar |
 | `landric_villa` | Prince Landric's walled country villa (an *estate*, `generator/villa.py`): peristyle villa with furnished rooms and a cutaway, stables, kitchen garden, two-pool bathhouse, vineyards, lake; stands on the Known World north of Calderra | 38°N, late Oct |
 
 Names and map pins are `LORE?` placeholders (see `docs/DECISIONS.md`).

@@ -25,11 +25,17 @@ Points are `[x, y, z]` unless the field says 2D (`[x, y]`).
 | `landmarks[]` | `{id, label, camera:{target, dist, yaw, pitch}}` | camera presets: camera = target + dist·(cos p cos y, cos p sin y, sin p) |
 | `steam_vents[]` | `[x,y,z]` | bath steam sources |
 | `events[]` | names | events this city supports (an estate lists its own scenes, e.g. `villa_return`; their timelines are `atlas/events/<name>.json`) |
-| `kind` | `"city"` (default) or `"estate"` | an estate is a country house with its grounds (`generator/villa.py`): no venues or ships, a handful of people, no lighthouse |
+| `kind` | `"city"` (default), `"estate"` or `"metropolis"` | an estate is a country house with its grounds (`generator/villa.py`): no venues or ships, a handful of people, no lighthouse |
 | `anchors` (estate) | `{id: [x,y,z]}` | named staging points for the estate's scenes (`gate_stop`, `private_dining`, `hearth_offer`, `aegis_painting`, `cold_pool`, `heated_pool`, `bath_fire`…) |
 | `cutaway` (estate) | `{roofs:[prefix], upper:[prefix]}` | object-name prefixes the Atlas hides to look inside (Layers → Roofs, Upper floor) |
 | `terrain_grid` (estate) | `{n, z:[n·n]}` | the ground in model metres on an n×n grid over `extent`, row 0 to the south; the Known World stands the estate's miniature on it |
 | `world_map.miniature` (estate) | `{exaggeration, hills_radius_units}` | the estate on the Known World: its model drawn `exaggeration`× true size, hills out to that radius (blend units) |
+| `kind: "metropolis"` | | an inland terraced city at regional scale (`generator/metropolis.py`, Karn Ashur): no venues or ships |
+| `files.instances`, `instances` (metropolis) | `{file, count, stride: 11, fields, kinds:{name:id}, groups:{name:[first, count]}, protos:{name:{v, f}}}` | instanced houses, terraces, walls, awnings, domes, camels and trees: `instances.bin` is `count` × 11 little-endian float32 (`x y z w d h rot r g b kind`: base point and size in model metres, heading in radians CCW from +X, sRGB tint), sorted by kind. A prototype lives in a unit box (x, y in [-0.5, 0.5], z in [0, 1]); each face `{i: [vertex ids, CCW from outside], m: "tint" \| "abs" \| "win", c: [shade] or [r, g, b]}` (tint = the instance colour × shade; win = a window, lit at night by the instance's order) |
+| `files.terrain_height`, `terrain_height` (metropolis) | `{file, n, min_m, max_m, model_vertical_exaggeration, model_datum_m}` | the ground in **true metres** (16 bit in R high / G low of a PNG, row 0 to the north) over the extent; the model's own ground is `datum + (true − datum) × exaggeration` |
+| `site` (metropolis) | `{anchor, plinth_half_km, peaks, cliff_zones, sand_aprons, districts, fields, rivers, canals, roads, pilgrimage_climb, places, villages, freight_entry_km, outlet_km}` | the basin's layout in **kilometres from the settlement** (+x east, +y north; a river point's third value is its bed in metres); the Known World's basin patch draws the same layout |
+| `world_map.miniature` (metropolis) | `{exaggeration, patch_half_units}` | the basin on the Known World: the package's ground and instances at `exaggeration`× true size, on a patch of this half size |
+| `stats` (metropolis) | | the generator's counts (houses, blocks, `population_estimate`, …) |
 
 **Boat voyages.** `voyage` contains `points:[[x,y]]`, `speed` in model metres per second, `dwell_s`, and a start offset `phase_s` in seconds. A voyage with no dwell closes from the last point back to the first. A docked voyage starts and ends at the berth and waits there for `dwell_s` each cycle. Blender and the Atlas use the same path and timing.
 

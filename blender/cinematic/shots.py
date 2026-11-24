@@ -49,6 +49,16 @@ SHOTS = {
     'top_map': dict(seconds=10, hours=(10.0, 18.8), haze=0.0, ship_time_scale=6.0, cloud_speed=2.0, clouds=4,
                     cam=dict(kind='fixed', name='CAP_Cam_TopMap'),
                     note="top-down map view (matches the Atlas world map), day to dusk"),
+    # Karn Ashur (generator/metropolis.py): slow moves round the brief's three views, from the manifest's presets
+    'ka_caravan_arrival': dict(seconds=10, hour=16.6, clouds=3, cloud_height=(70.0, 80.0), city='karn_ashur',
+                               cam=dict(kind='landmark', id='caravan_arrival', sweep=-10.0, push=0.12, lens=26),
+                               note="Karn Ashur: along the freight road into the grain yards, the striated massif beyond"),
+    'ka_terraces': dict(seconds=12, hour=16.2, clouds=3, cloud_height=(70.0, 80.0), city='karn_ashur',
+                        cam=dict(kind='landmark', id='terraces', sweep=24.0, push=0.0, lens=30),
+                        note="Karn Ashur: across the terraced neighbourhoods, an ocean of roofs"),
+    'ka_downstream': dict(seconds=10, hour=17.2, clouds=3, cloud_height=(70.0, 80.0), city='karn_ashur',
+                          cam=dict(kind='landmark', id='downstream', sweep=14.0, push=0.08, lens=28),
+                          note="Karn Ashur: down the outlet over the fields, mills and walled villages"),
 }
 
 
@@ -78,6 +88,26 @@ def track_to(cam, target):
 
 def rig_camera(man, spec, f0, f1, ev):
     k = spec['kind']
+    if k == 'landmark':                              # orbit a little round a manifest preset (the Atlas's camera too)
+        lm = next(l for l in man['landmarks'] if l['id'] == spec['id'])['camera']
+        cam = make_camera("CIN_ShotCam", spec.get('lens', 30))
+        cam.constraints.clear()
+        tgt = bpy.data.objects.get("CIN_CamTarget") or bpy.data.objects.new("CIN_CamTarget", None)
+        if tgt.name not in bpy.context.scene.collection.objects:
+            bpy.context.scene.collection.objects.link(tgt)
+        tgt.location = lm['target']
+        cam.data.clip_end = 2000.0
+        for f in range(f0, f1 + 1, 2):
+            u = (f - f0) / max(1, f1 - f0)
+            e = u * u * (3 - 2 * u)
+            yaw = math.radians(lm['yaw'] + spec.get('sweep', 0.0) * (e - 0.5))
+            pit = math.radians(lm['pitch'])
+            d = lm['dist'] * (1.0 - spec.get('push', 0.0) * e)
+            t = lm['target']
+            cam.location = (t[0] + d * math.cos(pit) * math.cos(yaw), t[1] + d * math.cos(pit) * math.sin(yaw), t[2] + d * math.sin(pit))
+            cam.keyframe_insert('location', frame=f)
+        track_to(cam, tgt)
+        return cam
     if k == 'fixed':
         cam = bpy.data.objects[spec['name']]
         if spec.get('push'):
@@ -135,7 +165,11 @@ def rig_camera(man, spec, f0, f1, ev):
 
 
 def build(name, man, preview=False):
-    spec = SHOTS[name]
+    spec = dict(SHOTS[name])
+    metro = man.get('kind') == 'metropolis'
+    if metro and name == 'hero_turntable':        # a 20 km basin with 30 m peaks: wider, higher, round its centre
+        spec['cam'] = dict(spec['cam'], center=(0.0, 2.0, 9.0), radius=112.0, height=58.0)
+        spec['cloud_height'] = (70.0, 80.0)
     scene = bpy.context.scene
     f0, f1 = 1, int(spec['seconds'] * cine.FPS)
     scene.frame_start, scene.frame_end = f0, f1
@@ -167,10 +201,11 @@ def build(name, man, preview=False):
     else:
         sh.traffic(only=['coast_south', 'coast_east', 'fishing_west', 'fishing_east'])
     cr = crowds_mod.Crowds(man)
-    cr.add_walkers(900 if preview else 1500)
-    cr.add_idlers()
-    for f in range(f0, f1 + 1, 24 if 'hours' in spec else f1):
-        cr.key_density(f, hour_of(f))
+    if not metro:                                   # at 1:200 people are below a pixel; the prototypes are 1:15
+        cr.add_walkers(900 if preview else 1500)
+        cr.add_idlers()
+        for f in range(f0, f1 + 1, 24 if 'hours' in spec else f1):
+            cr.key_density(f, hour_of(f))
     ev = {}
     e = spec.get('event')
     if spec.get('venue_fill'):
