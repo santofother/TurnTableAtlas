@@ -16,3 +16,13 @@ All eleven cards ran on 2026-11-23 in one unattended session.
 | S8 | Atlas ambient life, EventSystem, UI | `atlas/` (life, events, UI) | S7 | DONE |
 | S9 | World map, city switching | `atlas/` (map) | S7 | DONE |
 | S10 | Generator parametrised by `generator/cities/<id>.json`; second city | `generator/`, `cities/` | S2 | DONE |
+
+## Known World round 2 (planned 2026-11-23, detail in `docs/world_map/PLAN.md`)
+
+| Card | Scope | Depends on | Status |
+|---|---|---|---|
+| W1 | CK3-style 3D map table and frame | none | TODO |
+| W2 | Terrain: Oravian Expanse mountains, Dovaran Crown fjords (blend) | none | TODO |
+| W3 | Fix sea colour round Dovaran Crown | W2 | TODO |
+| W4 | Salmara–Calderra shared border, no no-man's-land | W2 | TODO |
+| W5 | Karn Ashur matches the concept (map model; city package later) | W2 if terrain | TODO |
