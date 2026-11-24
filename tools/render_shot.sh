@@ -22,5 +22,6 @@ start=$(date +%s)
 "$BLENDER" -b "blender/$city.blend" --python blender/cinematic/run.py -- shot "$shot" --city "$city" "${extra[@]:-}" >"$log" 2>&1 || true
 if ! grep -q "\[Cine\] OK" "$log"; then echo "[render_shot] $shot FAILED, see $log"; tail -20 "$log"; exit 1; fi
 out="blender/renders/$shot/$shot$([ "$sub" = preview ] && echo _preview).mp4"
-"$BLENDER" -b --factory-startup --python tools/encode.py -- "blender/renders/$shot/$sub" "$PWD/$out" 24 2>&1 | grep "^\[Encode\]"
+encode() { "$BLENDER" -b --factory-startup --python tools/encode.py -- "blender/renders/$shot/$sub" "$PWD/$out" 24 2>&1 | grep "^\[Encode\]"; }
+encode || { echo "[render_shot] encode failed once, retrying"; sleep 5; encode; }
 echo "[render_shot] $shot done in $(( $(date +%s) - start )) s -> $out"
