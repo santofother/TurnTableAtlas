@@ -35,7 +35,9 @@ def make_cases():
                     out.append({'lat': lat, 'doy': doy, 'hour': hour, 'north_offset': off, 'elevation': round(el, 6),
                                 'azimuth': round(az, 6), 'dir': [round(v, 6) for v in d],
                                 'sunrise': None if rise is None else round(rise, 6),
-                                'sunset': None if sset is None else round(sset, 6)})
+                                'sunset': None if sset is None else round(sset, 6),
+                                'daylight': round(sunarc.daylight(el), 6), 'dusk': round(sunarc.dusk(el), 6),
+                                'window_level': round(sunarc.window_level(el, hour), 6)})
     return out
 
 
@@ -92,6 +94,13 @@ class SunArcTests(unittest.TestCase):
         self.assertEqual(sunarc.night_level(30), 0.0)
         self.assertAlmostEqual(sunarc.night_level(-20), 0.9)
         self.assertLess(sunarc.night_level(-20), 0.99)       # 'Col' alpha 1.0 (not a window) must never light
+
+    def test_window_level_goes_down_after_midnight(self):
+        self.assertAlmostEqual(sunarc.window_level(-20, 21.0), 0.9)
+        self.assertLess(sunarc.window_level(-20, 2.5), 0.4)
+        self.assertEqual(sunarc.window_level(40, 12.0), 0.0)
+        self.assertAlmostEqual(sunarc.lateness(19.0), 0.0)
+        self.assertAlmostEqual(sunarc.lateness(3.0), 1.0)
 
     def test_shared_case_table_is_current(self):
         cases = make_cases()

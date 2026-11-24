@@ -58,3 +58,21 @@ def night_level(elevation_deg):
     t = (4.0 - elevation_deg) / 12.0
     t = max(0.0, min(1.0, t))
     return 0.9 * t * t * (3.0 - 2.0 * t)
+
+
+def lateness(hour):
+    """0 in the evening .. 1 in the small hours (about 01:00-04:00): most households have gone to bed."""
+    h = (hour - 12.0) % 24.0                   # noon = 0, midnight = 12
+    a = max(0.0, min(1.0, (h - 10.5) / 2.5))
+    b = max(0.0, min(1.0, (h - 16.0) / 1.5))
+    return (a * a * (3 - 2 * a)) * (1.0 - b * b * (3 - 2 * b))
+
+
+def window_level(elevation_deg, hour):
+    """NightLevel for the window shader: lights come on through dusk, most go out after midnight."""
+    return night_level(elevation_deg) * (1.0 - 0.6 * lateness(hour))
+
+
+def dusk(elevation_deg):
+    """Golden-hour / twilight weight, peaking with the sun just above the horizon."""
+    return math.exp(-((elevation_deg - 2.0) / 7.0) ** 2)
