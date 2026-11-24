@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Thirty and thirty-five mile rings around Calderra</title>
+  <desc id="desc">Screenshot from the Turntable Atlas Known World map, centered on Calderra, with exact straight-line distance rings. Yellow marks 30 miles, coral marks 35 miles. The villa's road journey may curve inside these rings.</desc>
+  <image href="landrics_villa_calderra_map_capture.png" xlink:href="landrics_villa_calderra_map_capture.png" x="0" y="0" width="1600" height="900"/>
+  <g fill="none" stroke-linejoin="round">
+    <circle cx="800" cy="450" r="332.867" stroke="#20242b" stroke-opacity=".83" stroke-width="9"/>
+    <circle cx="800" cy="450" r="332.867" stroke="#ff6a68" stroke-width="5"/>
+    <circle cx="800" cy="450" r="285.315" stroke="#20242b" stroke-opacity=".83" stroke-width="9"/>
+    <circle cx="800" cy="450" r="285.315" stroke="#ffd94f" stroke-width="5"/>
+  </g>
+  <circle cx="800" cy="450" r="8" fill="#fff" stroke="#20242b" stroke-width="3"/>
+  <path d="M800 434 V420 M800 466 V480 M784 450 H770 M816 450 H830" fill="none" stroke="#20242b" stroke-width="3"/>
+  <g font-family="system-ui, sans-serif" fill="#fff">
+    <rect x="1188" y="105" width="378" height="167" rx="12" fill="#1d2528" fill-opacity=".88"/>
+    <text x="1211" y="137" font-size="22" font-weight="700">Calderra distance rings</text>
+    <line x1="1212" y1="166" x2="1262" y2="166" stroke="#ffd94f" stroke-width="5"/>
+    <text x="1278" y="173" font-size="21">30 miles · 48 km</text>
+    <line x1="1212" y1="204" x2="1262" y2="204" stroke="#ff6a68" stroke-width="5"/>
+    <text x="1278" y="211" font-size="21">35 miles · 56 km</text>
+    <text x="1212" y="245" font-size="16">Straight-line radii; road distance may be longer.</text>
+  </g>
+</svg>
