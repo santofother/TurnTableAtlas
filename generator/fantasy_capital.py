@@ -73,6 +73,17 @@ PLATEAU = (-31.0, -18.5, 9.5, 7.5)        # palace headland ellipse (cx, cy, rx,
 HIPPO = (15.2, -5.0, 25.0, 19.0, 5.6)     # open-end centre x, y, axis heading (deg), length, width
 HIPPO_Z = 0.55                            # levelled ground height under the track
 
+# Anchors recorded by the builders while they run (venues, entrances, lights, ...). build_all() resets it;
+# generator/anchors.py turns it into the `Anchors` collection and the city.json manifest.
+ANCHORS = {}
+
+
+def anchor_venue(vid, **data):
+    """Record (or extend) a venue's anchor data in world coordinates."""
+    v = ANCHORS.setdefault('venues', {}).setdefault(vid, {'id': vid})
+    v.update(data)
+    return v
+
 
 def hippo_local(x, y):
     """World XY -> hippodrome local coords (lx along the axis from the open end, ly across)."""
@@ -1408,8 +1419,10 @@ def u_path(r, x_start, xc, step=0.55, nsemi=16):
     return pts
 
 
-def hippodrome(mb, T, occ, avenue_occ, rng, trees):
-    """Chariot-racing circus. Local frame: lx runs from the open harbour end (0) to the curved end (L)."""
+def hippodrome(mb, T, occ, avenue_occ, rng, trees, chariots=None):
+    """Chariot-racing circus. Local frame: lx runs from the open harbour end (0) to the curved end (L).
+    The static display chariots go into `chariots` (own object, hidden during animated races)."""
+    chariots = mb if chariots is None else chariots
     x0, y0, a_deg, L, W = HIPPO
     ang = math.radians(a_deg)
     ca, sa = math.cos(ang), math.sin(ang)
@@ -1531,18 +1544,78 @@ def hippodrome(mb, T, occ, avenue_occ, rng, trees):
     mb.box(kc[0], kc[1], zk + 0.72, 1.98, 1.84, 0.1, ang, MARBLE, MARBLE)
     mb.cyl(kc[0], kc[1], zk + 0.82, 0.56, 0.15, 18, MARBLE, top=False)
     mb.dome(kc[0], kc[1], zk + 0.97, 0.56, 0.75, GOLD, 18, 5)
+    # carceres - the twelve starting stalls across the open end, with the porta pompae in the middle
+    cx0, cx1 = x_open, x_open + 0.55                 # depth along the axis, between the harbour towers
+    ccen = W2((cx0 + cx1) / 2, 0)
+    zc = z0 + 0.5
+    mb.box(ccen[0], ccen[1], zb, cx1 - cx0, 2 * ra, zc - zb, ang, TRAV, MARBLE_D)
+    mb.box(ccen[0], ccen[1], zc, cx1 - cx0 + 0.06, 2 * ra + 0.04, 0.05, ang, MARBLE, MARBLE)       # cornice
+    stall_w = (ra - 0.3) / 6
+    stalls = []
+    for sgn in (-1, 1):
+        for k in range(6):
+            ly = sgn * (0.3 + stall_w * (k + 0.5))
+            mb.arch(W2(cx1, ly), wv(0, 1), wv(1, 0), z0, stall_w * 0.72, 0.36)                 # stall gate
+            mb.arch(W2(cx0, ly), wv(0, 1), wv(-1, 0), z0 + 0.08, stall_w * 0.5, 0.24)           # harbour side
+            stalls.append(W2(cx1 + 0.12, ly))
+    for nx_, lxf in ((1, cx1), (-1, cx0)):                                                       # porta pompae
+        mb.arch(W2(lxf, 0), wv(0, 1), wv(nx_, 0), z0, 0.36, 0.46)
+    ac = W2((cx0 + cx1) / 2, 0)
+    mb.box(ac[0], ac[1], zc + 0.05, cx1 - cx0 - 0.1, 0.8, 0.22, ang, MARBLE, MARBLE)            # attic
+    for oy in (-0.09, -0.03, 0.03, 0.09):                                                        # gilded quadriga
+        q = W2((cx0 + cx1) / 2, oy)
+        mb.box(q[0], q[1], zc + 0.27, 0.18, 0.035, 0.1, ang, GOLD, GOLD)
+    for sgn in (-1, 1):                                                                          # end statues
+        q = W2((cx0 + cx1) / 2, sgn * (ra - 0.08))
+        mb.box(q[0], q[1], zc + 0.05, 0.1, 0.1, 0.06, ang, MARBLE, MARBLE)
+        mb.box(q[0], q[1], zc + 0.11, 0.045, 0.04, 0.14, ang, GOLD, GOLD)
     # chariots of the four racing colours rounding the spina
     teams = [(0.78, 0.12, 0.10), (0.15, 0.30, 0.72), (0.18, 0.55, 0.20), (0.95, 0.95, 0.92)]
     for (lx, ly, d), team in zip(((6.4, 0.95, -1), (11.8, 1.0, -1), (8.6, -0.98, 1), (13.6, -0.9, 1)), teams):
         c = W2(lx, ly)
-        mb.box(c[0], c[1], z0, 0.12, 0.13, 0.09, ang, team, team)
+        chariots.box(c[0], c[1], z0, 0.12, 0.13, 0.09, ang, team, team)
         for oy in (-0.075, -0.025, 0.025, 0.075):
             hcol = [(0.40, 0.25, 0.14), (0.15, 0.10, 0.08), (0.92, 0.90, 0.86), (0.55, 0.36, 0.20)][rng.integers(4)]
             h = W2(lx + d * 0.22, ly + oy)
-            mb.box(h[0], h[1], z0 + 0.06, 0.17, 0.035, 0.06, ang, hcol, hcol)
-            mb.box(h[0], h[1], z0, 0.12, 0.025, 0.06, ang, hcol, hcol)
+            chariots.box(h[0], h[1], z0 + 0.06, 0.17, 0.035, 0.06, ang, hcol, hcol)
+            chariots.box(h[0], h[1], z0, 0.12, 0.025, 0.06, ang, hcol, hcol)
             hd = W2(lx + d * 0.32, ly + oy)
-            mb.box(hd[0], hd[1], z0 + 0.09, 0.05, 0.03, 0.07, ang, hcol, hcol)
+            chariots.box(hd[0], hd[1], z0 + 0.09, 0.05, 0.03, 0.07, ang, hcol, hcol)
+    # ---- anchors: race loop (counter-clockwise, spina on the left), lanes, seats, gates, entrances
+    m0, m1 = sx0 - 0.28, sx1 + 0.28                       # turning posts
+    def race_loop(r, step=0.25):
+        pts = []
+        n = max(2, int((m1 - m0) / step))
+        pts += [(m0 + (m1 - m0) * i / n, -r) for i in range(n)]                 # outbound, ly < 0
+        for k in range(16):
+            a = -math.pi / 2 + math.pi * k / 16
+            pts.append((m1 + r * math.cos(a), r * math.sin(a)))
+        pts += [(m1 - (m1 - m0) * i / n, r) for i in range(n)]                  # home straight, ly > 0
+        for k in range(16):
+            a = math.pi / 2 + math.pi * k / 16
+            pts.append((m0 + r * math.cos(a), r * math.sin(a)))
+        return [(*W2(px, py), z0) for px, py in pts]
+    tiers = []
+    for k in range(ntier):
+        ri = ra + (rw - ra) * k / ntier
+        ro = ra + (rw - ra) * (k + 1) / ntier
+        zt_ = z0 + 0.22 + 0.17 * (k + 1)
+        ring_pts = []
+        for px, py in u_path((ri + ro) / 2, x_open + 0.1, xc, 0.13):
+            if py > 0 and 8.45 < px < 10.55:
+                continue                                                         # under the kathisma
+            ring_pts.append((*W2(px, py), zt_))
+        tiers.append({'ring': ring_pts, 'capacity': len(ring_pts)})
+    entrances = [(*W2(cx0 - 0.4, 0), z0)]
+    for px, py in u_path(R + 0.25, x_open + 1.0, xc, 3.2)[::3]:
+        q = W2(px, py)
+        entrances.append((q[0], q[1], T.hs(*q)))
+    anchor_venue('hippodrome', type='circus', label='Hippodrome', center=list(W2(L / 2, 0)),
+                 heading_deg=a_deg, track_centerline=race_loop(0.95), lanes=6, lane_width=0.2,
+                 lane_radii=[0.45 + 0.2 * i for i in range(6)], start_gates=[(*p, z0) for p in stalls],
+                 turning_posts=[(*W2(m0, 0), z0), (*W2(m1, 0), z0)], laps=7,
+                 floor_poly=[W2(px, py) for px, py in u_path(ra, -0.05, xc, 0.5)],
+                 seat_tiers=tiers, entrances=entrances, royal_box=(*W2(9.5, 2.62), zk))
     # cypresses round the curved end
     for a in (-70, -40, -12, 12, 40, 70):
         p = W2(xc + (R + 0.75) * math.cos(math.radians(a)), (R + 0.75) * math.sin(math.radians(a)))
@@ -1980,7 +2053,7 @@ def build_city(T, coll, mats, rng_seed=2024):
     palace(L("Palace"), T, occ, trees, rng)
     forum(L("Forum_Temple_Basilica"), T, occ, trees, rng)
     colosseum(L("Colosseum"), T, 22.0, 10.5, 5.0, 4.0, 20, 2.0, occ)
-    hippodrome(L("Hippodrome"), T, occ, avenue_occ, rng, trees)
+    hippodrome(L("Hippodrome"), T, occ, avenue_occ, rng, trees, chariots=L("Hippodrome_Chariots"))
     baths(L("Baths_West"), T, -21.5, 10.5, 10, occ, 1.0, steam)
     baths(L("Baths_East"), T, 31.6, 9.0, -90, occ, 0.6, steam)
     rotunda(L("Rotunda"), T, 25.5, -11.5, 180, 1.6, occ, steam)
