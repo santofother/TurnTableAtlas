@@ -72,6 +72,46 @@ PLATEAU = (-31.0, -18.5, 9.5, 7.5)        # palace headland ellipse (cx, cy, rx,
 # Hippodrome: straight (open) short end sits on the harbour quay, curved end points inland toward the colosseum
 HIPPO = (15.2, -5.0, 25.0, 19.0, 5.6)     # open-end centre x, y, axis heading (deg), length, width
 HIPPO_Z = 0.55                            # levelled ground height under the track
+RING_CENTER = (2.0, -8.0)                  # houses are laid out in rings around this point
+FORUM_POS = (1.5, 11.0)                    # houses get a little taller near the forum
+AQUEDUCT_Z = (5.6, 3.7)                    # aqueduct deck height at its start / end
+ROAD_STUBS = [[(-35.5, 6.5), (-36.3, 6.8)]]  # short road pieces linking a gate to a country road
+BRIDGE = [(-41.8, 10.0), (-45.6, 12.3)]    # bridge over the river (None: no bridge)
+BOULDERS = (-42.0, -18.0, -30.0, -17.0)    # xmin, xmax, ymin, ymax of the cliff-foot boulder field (None: none)
+STEAM_EXTRA = [(-3.5, 13.5, 2.0, 0.6), (18.0, 20.5, 2.2, 0.6)]
+TERRAIN = {'base_slope': 0.045, 'north_ridge': (35.0, 50.0), 'west_hills': True, 'hills': []}
+HARBOUR_FRONT = {'stoa_north_of': -3.2, 'market_min_y': -3.0, 'market_gaps': (-2.5, 5.0), 'market_gap_y': -1.0}
+ROOF_HIP, ROOF_FLAT = 0.58, 0.9            # house roof odds: hip below ROOF_HIP, gable below ROOF_FLAT, flat above
+LANDMARKS = [                              # built in this order (it matters: they share the random stream)
+    {'type': 'palace', 'x': -31.6, 'y': -17.0, 'angle': 15.0},
+    {'type': 'forum', 'x': 1.5, 'y': 11.0},
+    {'type': 'colosseum', 'x': 22.0, 'y': 10.5, 'a': 5.0, 'b': 4.0, 'angle': 20.0, 'height': 2.0},
+    {'type': 'hippodrome'},
+    {'type': 'baths', 'name': 'Baths_West', 'x': -21.5, 'y': 10.5, 'angle': 10.0, 'scale': 1.0},
+    {'type': 'baths', 'name': 'Baths_East', 'x': 31.6, 'y': 9.0, 'angle': -90.0, 'scale': 0.6},
+    {'type': 'rotunda', 'x': 25.5, 'y': -11.5, 'face': 180.0, 'r': 1.6},
+    {'type': 'theatre', 'x': 11.5, 'y': 18.0, 'face': -90.0, 'r': 3.0},
+    {'type': 'temple', 'name': 'Temples', 'x': -11.5, 'y': 17.0, 'face': -60.0, 'w': 2.6, 'l': 3.6, 'h': 0.95, 'cols': 6},
+    {'type': 'tholos', 'name': 'Temples', 'x': -7.8, 'y': 19.6, 'r': 0.8, 'h': 0.85},
+    {'type': 'temple', 'name': 'Temples', 'x': 12.5, 'y': 6.5, 'face': -90.0, 'w': 2.0, 'l': 2.8, 'h': 0.75, 'cols': 4},
+    {'type': 'temple', 'name': 'Temples', 'x': -17.0, 'y': 0.0, 'face': -80.0, 'w': 2.0, 'l': 2.8, 'h': 0.75, 'cols': 4},
+    {'type': 'temple', 'name': 'Temples', 'x': 6.5, 'y': 23.0, 'face': -90.0, 'w': 1.9, 'l': 2.6, 'h': 0.7, 'cols': 4},
+    {'type': 'tholos', 'name': 'Temples', 'x': -27.5, 'y': -3.5, 'r': 0.7, 'h': 0.7},
+    {'type': 'temple', 'name': 'Temples', 'x': 31.5, 'y': -6.0, 'face': 180.0, 'w': 2.0, 'l': 2.9, 'h': 0.75, 'cols': 4},
+    {'type': 'castellum', 'x': -9.0, 'y': 25.2},
+]
+CAMERAS = [                                # name, location, target, lens (CAP_Cam_Hero and TopMap are always made)
+    ("CAP_Cam_Harbour", (-14.0, -40.0, 12.0), (2.0, -6.0, 1.0), 40),
+    ("CAP_Cam_Palace", (-12, -36, 10), (-31, -17, 4.5), 35),
+    ("CAP_Cam_Countryside", (20, -10, 22), (36, 28, 2), 30),
+    ("CAP_Cam_Hippodrome", (6.5, -15.5, 8.5), (23.0, -0.8, 0.6), 30),
+]
+HERO_CAM = ((-2.0, -92.0, 40.0), (3.0, 2.0, 1.5))
+
+
+def _rel(v, d0, c):
+    """A coordinate given relative to a landmark's default position: exactly `v` at the default."""
+    return v if c == d0 else c + (v - d0)
 
 # Anchors recorded by the builders while they run (venues, entrances, lights, ...). build_all() resets it;
 # generator/anchors.py turns it into the `Anchors` collection and the city.json manifest.
@@ -626,32 +666,41 @@ class Terrain:
         dwall = dist_to_polyline(X, Y, WALL_PATH)
         country = smoothstep(0.6, 4.0, dwall) * (~inside_wall)
 
-        z = 0.35 + 0.045 * np.clip(sd, 0, 32)
+        z = 0.35 + TERRAIN['base_slope'] * np.clip(sd, 0, 32)
         z = z + (fbm(X * 0.07, Y * 0.07, 4, 11) - 0.5) * 1.8 * country
         ridged = 1.0 - np.abs(2.0 * fbm(X * 0.045 + 7, Y * 0.045 + 3, 6, 23) - 1.0)
-        z = z + smoothstep(35.0, 50.0, Y) ** 1.5 * (1.8 + 6.5 * ridged ** 1.4 + 1.5 * fbm(X * 0.15, Y * 0.15, 4, 41))
-        wm = smoothstep(-38.0, -50.0, X) * smoothstep(-12.0, 4.0, Y)
-        z = z + wm * (0.8 + 3.2 * fbm(X * 0.06 + 2, Y * 0.06 + 9, 5, 31))
-        cx, cy, rx, ry = PLATEAU
-        er = np.sqrt(((X - cx) / rx) ** 2 + ((Y - cy) / ry) ** 2)
-        z = np.maximum(z, 0.35 + 4.2 * smoothstep(1.4, 0.8, er))
+        if TERRAIN.get('north_ridge'):
+            y0, y1 = TERRAIN['north_ridge']
+            z = z + smoothstep(y0, y1, Y) ** 1.5 * (1.8 + 6.5 * ridged ** 1.4 + 1.5 * fbm(X * 0.15, Y * 0.15, 4, 41))
+        if TERRAIN.get('west_hills'):
+            wm = smoothstep(-38.0, -50.0, X) * smoothstep(-12.0, 4.0, Y)
+            z = z + wm * (0.8 + 3.2 * fbm(X * 0.06 + 2, Y * 0.06 + 9, 5, 31))
+        for hx, hy, hr, hh in TERRAIN.get('hills', []):        # round hills (island cities)
+            hd = smoothstep(hr, 0.0, np.hypot(X - hx, Y - hy))
+            z = z + hd ** 1.3 * hh * (0.75 + 0.5 * ridged ** 1.2)
+        if PLATEAU:
+            cx, cy, rx, ry = PLATEAU
+            er = np.sqrt(((X - cx) / rx) ** 2 + ((Y - cy) / ry) ** 2)
+            z = np.maximum(z, 0.35 + 4.2 * smoothstep(1.4, 0.8, er))
+        else:
+            er = np.full_like(X, 10.0)
         z = 0.32 + (z - 0.32) * smoothstep(0.0, 1.3, sd)
         # cliff roughness on the headland face
         cliff = (1 - smoothstep(0.0, 1.6, sd)) * smoothstep(1.5, 0.9, er) * (sd > 0)
         z = z + (fbm(X * 0.9, Y * 0.9, 3, 5) - 0.5) * 1.2 * cliff
-        dr = dist_to_polyline(X, Y, RIVER)
+        dr = dist_to_polyline(X, Y, RIVER) if RIVER else np.full_like(X, 1e3)
         width = 0.9 + 0.3 * np.clip(z, 0, None)
         s = smoothstep(0.55, width + 0.55, dr)
         zl = -0.35 + (z + 0.35) * s
         seabed = -0.45 - 0.6 * smoothstep(0.0, 12.0, -sd)
         Z = np.where(sd > 0, zl, seabed)
-        # level pad for the hippodrome
-        hx, hy = hippo_local(X, Y)
-        HL, HW = HIPPO[3], HIPPO[4]
-        ddx = np.maximum(np.maximum(-0.3 - hx, hx - (HL + 0.5)), 0.0)
-        ddy = np.maximum(np.abs(hy) - (HW / 2 + 0.9), 0.0)
-        pad = (1.0 - smoothstep(0.0, 1.5, np.hypot(ddx, ddy))) * smoothstep(0.05, 0.7, sd)
-        Z = Z * (1 - pad) + HIPPO_Z * pad
+        if HIPPO:                                  # level pad for the hippodrome
+            hx, hy = hippo_local(X, Y)
+            HL, HW = HIPPO[3], HIPPO[4]
+            ddx = np.maximum(np.maximum(-0.3 - hx, hx - (HL + 0.5)), 0.0)
+            ddy = np.maximum(np.abs(hy) - (HW / 2 + 0.9), 0.0)
+            pad = (1.0 - smoothstep(0.0, 1.5, np.hypot(ddx, ddy))) * smoothstep(0.05, 0.7, sd)
+            Z = Z * (1 - pad) + HIPPO_Z * pad
         self.Z = Z
         self.sd = sd
         self.dr = dr
@@ -1241,6 +1290,8 @@ def build_walls(T, coll, mats, fire_mb, lights):
     H = resample(HARBOR, 0.6)
     NH = polyline_normals(H)                     # left = inland
     def at_water_stair(p):                       # the hippodrome's stair replaces the quay here
+        if not HIPPO:
+            return False
         hx, hy = hippo_local(p[0], p[1])
         return -3.0 < hx < 1.5 and abs(hy) < 1.9
 
@@ -1858,9 +1909,10 @@ def stoa(mb, T, a, b, rng, kind):
     return m, L, ang
 
 
-def palace(mb, T, occ, trees, rng):
-    ang = math.radians(15)
-    cx, cy = -31.6, -17.0
+def palace(mb, T, occ, trees, rng, cx=-31.6, cy=-17.0, ang_deg=15.0):
+    ang = math.radians(ang_deg)
+    def RX(v): return _rel(v, -31.6, cx)
+    def RY(v): return _rel(v, -17.0, cy)
     zt = fp_ground(T, cx, cy, 8, 7, ang)[1]
     W1 = (0.95, 0.92, 0.86)
     # main hall with portico
@@ -1921,14 +1973,14 @@ def palace(mb, T, occ, trees, rng):
     tp = L2W(cx, cy, ang, 3.6, 3.0)
     temple(mb, T, tp[0], tp[1], math.degrees(ang) - 90, 1.6, 2.3, 0.7, 4)
     # keep
-    kx, ky = -36.6, -15.8
+    kx, ky = RX(-36.6), RY(-15.8)
     kz = T.hs(kx, ky)
     mb.box(kx, ky, kz - 0.6, 1.5, 1.5, 3.9, ang, STONE_D, STONE_TOP)
     mb.hip_roof(kx, ky, kz + 3.3, 1.5, 1.5, ang, 0.9, ROOF, 0.08)
     for zz in (kz + 1.2, kz + 2.3):
         mb.window(kx, ky, ang, 0, -0.75, zz, 0.1, 0.22, True, DARK)
     # tholos & gardens
-    tholos(mb, T, -26.2, -20.4, 0.75, 0.9)
+    tholos(mb, T, RX(-26.2), RY(-20.4), 0.75, 0.9)
     gc = L2W(cx, cy, ang, 0, -4.1)
     gz = fp_ground(T, gc[0], gc[1], 6.4, 2.6, ang)
     mb.box(gc[0], gc[1], gz[0] - 0.5, 6.4, 2.6, gz[1] + 0.08 - (gz[0] - 0.5), ang, MARBLE_D, GRASS)
@@ -1938,7 +1990,7 @@ def palace(mb, T, occ, trees, rng):
             p = L2W(gc[0], gc[1], ang, -2.9 + k * 0.97, side * 1.05)
             trees.append(('cypress', p[0], p[1], gz[1] + 0.06, rng.uniform(0.8, 1.05)))
     # cliff colonnade
-    a, b = (-35.2, -22.6), (-27.4, -23.4)
+    a, b = (RX(-35.2), RY(-22.6)), (RX(-27.4), RY(-23.4))
     za = min(T.hs(*a), T.hs(*b))
     mb.columns(a, b, 18, za, 0.6, 0.045)
     d = np.subtract(b, a)
@@ -1949,8 +2001,8 @@ def palace(mb, T, occ, trees, rng):
                 (fc[0], fc[1], 9.4, 1.6), (gc[0], gc[1], 6.8, 3.0)]
     placed = 0
     for k in range(400):
-        x = rng.uniform(-38.5, -23.5)
-        y = rng.uniform(-24.0, -12.0)
+        x = rng.uniform(RX(-38.5), RX(-23.5))
+        y = rng.uniform(RY(-24.0), RY(-12.0))
         er = math.hypot((x - PLATEAU[0]) / PLATEAU[2], (y - PLATEAU[1]) / PLATEAU[3])
         if er > 0.86:
             continue
@@ -1961,7 +2013,7 @@ def palace(mb, T, occ, trees, rng):
             if abs(dx * c - dy * s) < kw / 2 and abs(dx * s + dy * c) < kd / 2:
                 lx_ok = False
                 break
-        if not lx_ok or math.hypot(x + 26.2, y + 20.4) < 1.4 or math.hypot(x + 36.6, y + 15.8) < 1.3:
+        if not lx_ok or math.hypot(x - RX(-26.2), y - RY(-20.4)) < 1.4 or math.hypot(x - RX(-36.6), y - RY(-15.8)) < 1.3:
             continue
         if any(math.hypot(x - t[1], y - t[2]) < 0.45 for t in trees):
             continue
@@ -1975,8 +2027,8 @@ def palace(mb, T, occ, trees, rng):
             break
 
 
-def forum(mb, T, occ, trees, rng):
-    cx, cy, W, D = 1.5, 11.0, 7.0, 7.5
+def forum(mb, T, occ, trees, rng, cx=1.5, cy=11.0):
+    W, D = 7.0, 7.5
     zmin, zmax = fp_ground(T, cx, cy, W + 2.2, D, 0)
     z = zmax + 0.05
     mb.box(cx, cy, zmin - 0.4, W + 2.2, D, z - (zmin - 0.4), 0, MARBLE_D, PAVE)
@@ -1998,9 +2050,9 @@ def forum(mb, T, occ, trees, rng):
     # rostra & small shrines
     mb.box(cx - 1.8, cy + 2.2, z, 1.0, 0.5, 0.18, 0, MARBLE_D, MARBLE)
     tholos(mb, T, cx + 2.0, cy + 2.4, 0.45, 0.5)
-    temple(mb, T, 1.5, 16.8, -90, 3.0, 4.0, 1.05, 6, occ)
+    temple(mb, T, _rel(1.5, 1.5, cx), _rel(16.8, 11.0, cy), -90, 3.0, 4.0, 1.05, 6, occ)
     # basilica
-    bx, by = 7.3, 11.0
+    bx, by = _rel(7.3, 1.5, cx), _rel(11.0, 11.0, cy)
     bz = fp_ground(T, bx, by, 3.4, 7.2, 0)
     mb.box(bx, by, bz[0] - 0.4, 3.3, 7.0, bz[1] + 0.85 - (bz[0] - 0.4), 0, STUCCO, top=False)
     mb.hip_roof(bx, by, bz[1] + 0.85, 3.3, 7.0, 0, 0.3, jit(rng, ROOF))
@@ -2014,7 +2066,7 @@ def forum(mb, T, occ, trees, rng):
     occ.rect(cx, cy, W + 2.6, D + 0.6, 0)
     occ.rect(bx, by, 3.6, 7.6, 0)
     for sgn in (-1, 1):
-        trees.append(('cypress', cx + sgn * 1.95, 15.0, z, 0.75))
+        trees.append(('cypress', cx + sgn * 1.95, _rel(15.0, 11.0, cy), z, 0.75))
 
 
 def harbor_front(T, occ, avenue_occ, rng, mb, trees):
@@ -2044,7 +2096,7 @@ def harbor_front(T, occ, avenue_occ, rng, mb, trees):
             continue
         if np.linalg.norm(b - a) < 1.2:
             continue
-        kind = 'stoa' if m[1] > -3.2 else 'warehouse'
+        kind = 'stoa' if m[1] > HARBOUR_FRONT['stoa_north_of'] else 'warehouse'
         mm, L, ang = stoa(mb, T, a, b, rng, kind)
         occ.rect(mm[0], mm[1], L + 0.2, 1.4, ang)
         built += 1
@@ -2054,9 +2106,9 @@ def harbor_front(T, occ, avenue_occ, rng, mb, trees):
         R = off(dist)
         for k in range(0, len(R), 2):
             x, y = R[k]
-            if y < -3.0 or not avenue_occ.free(x, y) or rng.random() < 0.35:
+            if y < HARBOUR_FRONT['market_min_y'] or not avenue_occ.free(x, y) or rng.random() < 0.35:
                 continue
-            if any(abs(x - px) < 0.5 for px in (-2.5, 5.0)) and y > -1:
+            if any(abs(x - px) < 0.5 for px in HARBOUR_FRONT['market_gaps']) and y > HARBOUR_FRONT['market_gap_y']:
                 continue
             zg = T.hs(x, y)
             a = rng.uniform(0, math.pi)
@@ -2091,12 +2143,12 @@ def build_house(mb, rng, T, cx, cy, w, d, ang, hbias=0.0):
     zb = zmin - 0.35
     zt = zmax + h
     rt = rng.random()
-    flat = rt > 0.9
+    flat = rt > ROOF_FLAT
     mb.box(cx, cy, zb, w, d, zt - zb, ang, wall, lighten(wall, 0.92), top=flat)
     ANCHORS.setdefault('_houses', []).append((cx, cy, w, d, ang, zmax, zt, floors))
-    if rt < 0.58:
+    if rt < ROOF_HIP:
         mb.hip_roof(cx, cy, zt, w, d, ang, min(w, d) * rng.uniform(0.26, 0.36), roof)
-    elif rt < 0.9:
+    elif rt < ROOF_FLAT:
         mb.gable_roof(cx, cy, zt, w, d, ang, min(w, d) * rng.uniform(0.28, 0.38), roof, wall)
     else:
         hx, hy = L2W(cx, cy, ang, rng.uniform(-w / 4, w / 4), rng.uniform(-d / 5, d / 5))
@@ -2115,6 +2167,48 @@ def build_house(mb, rng, T, cx, cy, w, d, ang, hbias=0.0):
         mb.box(tx, ty, zb, 0.32, 0.32, zmax + th - zb, ang, wall)
         mb.hip_roof(tx, ty, zmax + th, 0.32, 0.32, ang, 0.18, roof, 0.03)
         mb.window(tx, ty, ang, 0, -0.16, zmax + th - 0.22, 0.07, 0.12, True)
+
+
+LANDMARK_NAMES = {'palace': 'Palace', 'forum': 'Forum_Temple_Basilica', 'colosseum': 'Colosseum', 'hippodrome': 'Hippodrome',
+                  'rotunda': 'Rotunda', 'theatre': 'Theatre', 'castellum': 'Castellum', 'temple': 'Temples', 'tholos': 'Temples',
+                  'baths': 'Baths'}
+
+
+def build_landmark(spec, L, lm, T, occ, avenue_occ, trees, rng, steam):
+    """Build one landmark from its config entry into the MB named spec['name'] (or the type's default name)."""
+    t = spec['type']
+    nm = spec.get('name') or LANDMARK_NAMES[t]
+    mb = lm[nm] if nm in lm else L(nm)
+    g = spec.get
+    if t == 'palace':
+        palace(mb, T, occ, trees, rng, g('x', -31.6), g('y', -17.0), g('angle', 15.0))
+    elif t == 'forum':
+        forum(mb, T, occ, trees, rng, g('x', 1.5), g('y', 11.0))
+    elif t == 'colosseum':
+        colosseum(mb, T, g('x'), g('y'), g('a', 5.0), g('b', 4.0), g('angle', 0.0), g('height', 2.0), occ)
+    elif t == 'hippodrome':
+        hippodrome(mb, T, occ, avenue_occ, rng, trees, chariots=L(nm + "_Chariots"))
+    elif t == 'baths':
+        baths(mb, T, g('x'), g('y'), g('angle', 0.0), occ, g('scale', 1.0), steam)
+    elif t == 'rotunda':
+        rotunda(mb, T, g('x'), g('y'), g('face', 0.0), g('r', 1.6), occ, steam)
+    elif t == 'theatre':
+        theater(mb, T, g('x'), g('y'), g('face', -90.0), g('r', 3.0), occ)
+    elif t == 'temple':
+        temple(mb, T, g('x'), g('y'), g('face', -90.0), g('w', 2.0), g('l', 2.8), g('h', 0.75), g('cols', 4), occ)
+    elif t == 'tholos':
+        tholos(mb, T, g('x'), g('y'), g('r', 0.8), g('h', 0.85), occ)
+    elif t == 'castellum':
+        x, y = g('x'), g('y')
+        cz = fp_ground(T, x, y, 1.3, 1.0, 0)
+        mb.box(x, y, cz[0] - 0.4, 1.3, 1.0, cz[1] + 0.95 - (cz[0] - 0.4), 0.3, STUCCO, top=False)
+        mb.hip_roof(x, y, cz[1] + 0.95, 1.3, 1.0, 0.3, 0.3, ROOF)
+        occ.rect(x, y, 1.6, 1.4, 0.3)
+    else:
+        raise ValueError("unknown landmark type %r" % t)
+    vid = {'colosseum': 'colosseum', 'theatre': 'theatre', 'hippodrome': 'hippodrome'}.get(t)
+    if vid and spec.get('label') and vid in ANCHORS.get('venues', {}):
+        ANCHORS['venues'][vid]['label'] = spec['label']
 
 
 def build_city(T, coll, mats, rng_seed=2024):
@@ -2143,28 +2237,10 @@ def build_city(T, coll, mats, rng_seed=2024):
         lm[name] = MB()
         return lm[name]
 
-    palace(L("Palace"), T, occ, trees, rng)
-    forum(L("Forum_Temple_Basilica"), T, occ, trees, rng)
-    colosseum(L("Colosseum"), T, 22.0, 10.5, 5.0, 4.0, 20, 2.0, occ)
-    hippodrome(L("Hippodrome"), T, occ, avenue_occ, rng, trees, chariots=L("Hippodrome_Chariots"))
-    baths(L("Baths_West"), T, -21.5, 10.5, 10, occ, 1.0, steam)
-    baths(L("Baths_East"), T, 31.6, 9.0, -90, occ, 0.6, steam)
-    rotunda(L("Rotunda"), T, 25.5, -11.5, 180, 1.6, occ, steam)
-    theater(L("Theatre"), T, 11.5, 18.0, -90, 3.0, occ)
-    mbt = L("Temples")
-    temple(mbt, T, -11.5, 17.0, -60, 2.6, 3.6, 0.95, 6, occ)
-    tholos(mbt, T, -7.8, 19.6, 0.8, 0.85, occ)
-    temple(mbt, T, 12.5, 6.5, -90, 2.0, 2.8, 0.75, 4, occ)
-    temple(mbt, T, -17.0, 0.0, -80, 2.0, 2.8, 0.75, 4, occ)
-    temple(mbt, T, 6.5, 23.0, -90, 1.9, 2.6, 0.7, 4, occ)
-    tholos(mbt, T, -27.5, -3.5, 0.7, 0.7, occ)
-    temple(mbt, T, 31.5, -6.0, 180, 2.0, 2.9, 0.75, 4, occ)
-    # aqueduct castellum
-    mc = L("Castellum")
-    cz = fp_ground(T, -9.0, 25.2, 1.3, 1.0, 0)
-    mc.box(-9.0, 25.2, cz[0] - 0.4, 1.3, 1.0, cz[1] + 0.95 - (cz[0] - 0.4), 0.3, STUCCO, top=False)
-    mc.hip_roof(-9.0, 25.2, cz[1] + 0.95, 1.3, 1.0, 0.3, 0.3, ROOF)
-    occ.rect(-9.0, 25.2, 1.6, 1.4, 0.3)
+    for spec in LANDMARKS:
+        build_landmark(spec, L, lm, T, occ, avenue_occ, trees, rng, steam)
+    if PLATEAU and not any(l['type'] == 'palace' for l in LANDMARKS):
+        occ.ellipse(PLATEAU[0], PLATEAU[1], PLATEAU[2] * 0.92, PLATEAU[3] * 0.92)     # keep houses off a bare acropolis
     # harbour front buildings
     hf = L("Harbour_Front")
     n_hf = harbor_front(T, occ, avenue_occ, rng, hf, trees)
@@ -2182,7 +2258,7 @@ def build_city(T, coll, mats, rng_seed=2024):
 
     # houses in concentric rings around the harbour
     mbh = ChunkedMB("CAP_Houses", 20.0)
-    C = (2.0, -8.0)
+    C = RING_CENTER
     ANCHORS['_ring_center'] = C
     ring_streets = ANCHORS.setdefault('_ring_streets', [])
     widths = np.array([0.55, 0.65, 0.75, 0.85, 0.95, 1.1, 1.3])
@@ -2215,7 +2291,7 @@ def build_city(T, coll, mats, rng_seed=2024):
             if rng.random() < 0.035:
                 trees.append(('pine' if rng.random() < 0.5 else 'cypress', cx, cy, T.hs(cx, cy), rng.uniform(0.6, 0.9)))
                 continue
-            dforum = math.hypot(cx - 1.5, cy - 11.0)
+            dforum = math.hypot(cx - FORUM_POS[0], cy - FORUM_POS[1])
             build_house(mbh.at(cx, cy), rng, T, cx, cy, w, depth, ang, 0.18 * math.exp(-dforum / 14.0))
             count += 1
         if ring % 5 == 4:
@@ -2233,7 +2309,7 @@ def build_city(T, coll, mats, rng_seed=2024):
     tm.to_object("CAP_CityTrees", coll['city'], [mats['painted']])
     # steam plumes
     smat = mats['steam']
-    vents = steam + [(-3.5, 13.5, 2.0, 0.6), (18.0, 20.5, 2.2, 0.6)]
+    vents = steam + [tuple(v) for v in STEAM_EXTRA]
     ANCHORS['_steam'] = [(x + 0.6 * sc, y + 0.4 * sc, z) for (x, y, z, sc) in vents]
     for i, (x, y, z, sc) in enumerate(vents):
         me = bpy.data.meshes.new("CAP_SteamMesh_%d" % i)
@@ -2379,30 +2455,33 @@ def build_countryside(T, coll, mats, seed=77):
     t0 = time.time()
     # aqueduct
     am = MB()
-    aqueduct(am, T, AQUEDUCT, 5.6, 3.7)
+    if AQUEDUCT:
+        aqueduct(am, T, AQUEDUCT, AQUEDUCT_Z[0], AQUEDUCT_Z[1])
     am.to_object("CAP_Aqueduct", coll, [mats['painted']])
     # roads & bridge
     rm = MB()
     ROAD_C = (0.72, 0.60, 0.42)
     for pts in ROADS:
         ribbon(rm, T, pts, 0.55, ROAD_C, 0.5, 0.06, min_z=0.15)
-    ribbon(rm, T, [(-35.5, 6.5), (-36.3, 6.8)], 0.55, ROAD_C)
+    for stub in ROAD_STUBS:
+        ribbon(rm, T, [tuple(p) for p in stub], 0.55, ROAD_C)
     # bridge over the river on the west road
-    bp = np.array([(-41.8, 10.0), (-45.6, 12.3)])
-    d = bp[1] - bp[0]
-    u = d / np.linalg.norm(d)
-    n = np.array([-u[1], u[0]])
-    zdeck = max(T.hs(*bp[0]), T.hs(*bp[1])) + 0.15
-    Pb = resample(bp, 1.0)
-    for i in range(len(Pb)):
-        zg = T.hs(*Pb[i])
-        half = 0.5 * np.linalg.norm(d) / (len(Pb) - 1)
-        zd = zdeck - 0.15
-        r = min(half - 0.12, max(0.12, zd - zg - 0.3))
-        zs = zd - r - 0.08
-        arch_unit(rm, Pb[i], u, n, half, half - r, r, zg - 0.4, zs, zd, 0.6, STONE)
-    m = bp.mean(axis=0)
-    rm.box(m[0], m[1], zdeck - 0.15, float(np.linalg.norm(d)) + 0.6, 0.66, 0.15, math.atan2(u[1], u[0]), STONE_D, ROAD_C)
+    bp = np.array(BRIDGE if BRIDGE else [(0.0, 0.0), (1.0, 0.0)])
+    if BRIDGE:
+        d = bp[1] - bp[0]
+        u = d / np.linalg.norm(d)
+        n = np.array([-u[1], u[0]])
+        zdeck = max(T.hs(*bp[0]), T.hs(*bp[1])) + 0.15
+        Pb = resample(bp, 1.0)
+        for i in range(len(Pb)):
+            zg = T.hs(*Pb[i])
+            half = 0.5 * np.linalg.norm(d) / (len(Pb) - 1)
+            zd = zdeck - 0.15
+            r = min(half - 0.12, max(0.12, zd - zg - 0.3))
+            zs = zd - r - 0.08
+            arch_unit(rm, Pb[i], u, n, half, half - r, r, zg - 0.4, zs, zd, 0.6, STONE)
+        m = bp.mean(axis=0)
+        rm.box(m[0], m[1], zdeck - 0.15, float(np.linalg.norm(d)) + 0.6, 0.66, 0.15, math.atan2(u[1], u[0]), STONE_D, ROAD_C)
     rm.to_object("CAP_Roads_Bridge", coll, [mats['painted']])
 
     # countryside occupancy
@@ -2413,8 +2492,10 @@ def build_countryside(T, coll, mats, seed=77):
     occ.B |= (~land) | (dco < 1.0)
     for pts in ROADS:
         occ.line(pts, 0.55)
-    occ.line(AQUEDUCT, 0.55)
-    occ.line(RIVER, 1.3)
+    if AQUEDUCT:
+        occ.line(AQUEDUCT, 0.55)
+    if RIVER:
+        occ.line(RIVER, 1.3)
 
     trees = []
     vm = MB()
@@ -2489,8 +2570,8 @@ def build_countryside(T, coll, mats, seed=77):
         trees.append((kind, x, y, z, rng.uniform(0.75, 1.35)))
         nf += 1
     # river-bank trees
-    Rv = resample(RIVER, 0.9)
-    Nv = polyline_normals(Rv)
+    Rv = resample(RIVER, 0.9) if RIVER else np.zeros((0, 2))
+    Nv = polyline_normals(Rv) if RIVER else np.zeros((0, 2))
     for k in range(len(Rv)):
         for sgn in (-1, 1):
             if rng.random() < 0.5:
@@ -2506,8 +2587,8 @@ def build_countryside(T, coll, mats, seed=77):
     bm_ = MB()
     rp = proto_round(6)
     pos, scl, rot, cols = [], [], [], []
-    for _ in range(4000):
-        x, y = rng.uniform(-42, -18), rng.uniform(-30, -17)
+    for _ in range(4000 if BOULDERS else 0):
+        x, y = rng.uniform(BOULDERS[0], BOULDERS[1]), rng.uniform(BOULDERS[2], BOULDERS[3])
         sdv = float(T.m(T.sd, x, y))
         if -1.6 < sdv < 0.25:
             s = rng.uniform(0.15, 0.45)
@@ -2745,9 +2826,9 @@ def build_scene(coll, lights_pts, fire_obj=None):
     cd.clip_start = 0.5
     cd.clip_end = 1000
     cam = bpy.data.objects.new("CAP_Cam_Hero", cd)
-    cam.location = (-2.0, -92.0, 40.0)
+    cam.location = HERO_CAM[0]
     coll.objects.link(cam)
-    look_at(cam, (3.0, 2.0, 1.5))
+    look_at(cam, HERO_CAM[1])
     # orthographic map camera
     cm = bpy.data.cameras.new("CAP_Cam_TopMap")
     cm.type = 'ORTHO'
@@ -2756,24 +2837,14 @@ def build_scene(coll, lights_pts, fire_obj=None):
     tcam = bpy.data.objects.new("CAP_Cam_TopMap", cm)
     tcam.location = (0, 0, 120)
     coll.objects.link(tcam)
-    # close-up camera over the harbour
-    cc = bpy.data.cameras.new("CAP_Cam_Harbour")
-    cc.lens = 40
-    cc.clip_start = 0.1
-    ccam = bpy.data.objects.new("CAP_Cam_Harbour", cc)
-    ccam.location = (-14.0, -40.0, 12.0)
-    coll.objects.link(ccam)
-    look_at(ccam, (2.0, -6.0, 1.0))
-    for name, loc, tgt, lens in (("CAP_Cam_Palace", (-12, -36, 10), (-31, -17, 4.5), 35),
-                                 ("CAP_Cam_Countryside", (20, -10, 22), (36, 28, 2), 30),
-                                 ("CAP_Cam_Hippodrome", (6.5, -15.5, 8.5), (23.0, -0.8, 0.6), 30)):
+    for name, loc, tgt, lens in CAMERAS:
         cdx = bpy.data.cameras.new(name)
         cdx.lens = lens
         cdx.clip_start = 0.1
         ox = bpy.data.objects.new(name, cdx)
-        ox.location = loc
+        ox.location = tuple(loc)
         coll.objects.link(ox)
-        look_at(ox, tgt)
+        look_at(ox, tuple(tgt))
     scene.camera = cam
     r = scene.render
     r.engine = 'BLENDER_EEVEE'
@@ -2804,9 +2875,71 @@ def build_scene(coll, lights_pts, fire_obj=None):
 # =============================================================================
 # Orchestration
 # =============================================================================
+_LAYOUT_KEYS = {
+    # config key: (module global, converter)
+    'coast_line': ('COAST_LINE', lambda v: [tuple(p) for p in v]),
+    'harbor_center': ('HARBOR_CENTER', tuple),
+    'wall_path': ('WALL_PATH', lambda v: [tuple(p) for p in v]),
+    'w_mole': ('W_MOLE', lambda v: [tuple(p) for p in v]),
+    'e_mole': ('E_MOLE', lambda v: [tuple(p) for p in v]),
+    'gates': ('GATES', lambda v: [tuple(p) for p in v]),
+    'river': ('RIVER', lambda v: [tuple(p) for p in v]),
+    'aqueduct': ('AQUEDUCT', lambda v: [tuple(p) for p in v]),
+    'aqueduct_z': ('AQUEDUCT_Z', tuple),
+    'roads': ('ROADS', lambda v: [[tuple(p) for p in r] for r in v]),
+    'avenues': ('AVENUES', lambda v: [([tuple(p) for p in a[0]], float(a[1])) for a in v]),
+    'paved_avenues': ('PAVED_AVENUES', tuple),
+    'piers': ('PIERS', lambda v: [(tuple(a), tuple(b)) for a, b in v]),
+    'plateau': ('PLATEAU', lambda v: tuple(v) if v else None),
+    'hippo': ('HIPPO', lambda v: tuple(v) if v else None),
+    'hippo_z': ('HIPPO_Z', float),
+    'ring_center': ('RING_CENTER', tuple),
+    'road_stubs': ('ROAD_STUBS', lambda v: [[tuple(p) for p in st] for st in v]),
+    'bridge': ('BRIDGE', lambda v: [tuple(p) for p in v] if v else None),
+    'boulders': ('BOULDERS', lambda v: tuple(v) if v else None),
+    'steam_extra': ('STEAM_EXTRA', lambda v: [tuple(p) for p in v]),
+    'ships': ('SHIPS', lambda v: [tuple(p) for p in v]),
+    'ship_scale': ('SHIP_SCALE', float),
+    'wall_cols': ('WALL_COLS', lambda v: [tuple(c) for c in v]),
+    'roof_cols': ('ROOF_COLS', lambda v: [tuple(c) for c in v]),
+    'roof_hip': ('ROOF_HIP', float),
+    'roof_flat': ('ROOF_FLAT', float),
+    'landmarks': ('LANDMARKS', list),
+    'cameras': ('CAMERAS', lambda v: [(c[0], tuple(c[1]), tuple(c[2]), c[3]) for c in v]),
+    'hero_cam': ('HERO_CAM', lambda v: (tuple(v[0]), tuple(v[1]))),
+}
+_DEFAULTS = {}
+
+
 def apply_config(cfg):
-    """Apply a city config (generator/cities/<id>.json) to the module-level layout before build_all()."""
-    global LANE_KEEPOUT
+    """Apply a city config (generator/cities/<id>.json) to the module-level layout before build_all().
+    Everything missing from cfg['layout'] keeps the Fantasy Capital default, so the first city needs no layout."""
+    global LANE_KEEPOUT, COAST_POLY, HARBOR, TERRAIN, HARBOUR_FRONT
+    g = globals()
+    if not _DEFAULTS:
+        for key, (name, _conv) in _LAYOUT_KEYS.items():
+            _DEFAULTS[name] = g[name]
+        for name in ('COAST_POLY', 'HARBOR', 'TERRAIN', 'HARBOUR_FRONT'):
+            _DEFAULTS[name] = g[name]
+    for name, v in _DEFAULTS.items():
+        g[name] = v
+    lay = cfg.get('layout', {})
+    for key, (name, conv) in _LAYOUT_KEYS.items():
+        if key in lay:
+            g[name] = conv(lay[key])
+    if 'coast_line' in lay:
+        COAST_POLY = [tuple(p) for p in lay['coast_poly']] if 'coast_poly' in lay else COAST_LINE + [(56, 56), (-56, 56)]
+    if 'harbor' in lay:
+        HARBOR = [tuple(p) for p in lay['harbor']]
+    elif 'harbor_slice' in lay or 'coast_line' in lay:
+        a, b = lay.get('harbor_slice', (9, 22))
+        HARBOR = COAST_LINE[a:b]
+    TERRAIN = dict(_DEFAULTS['TERRAIN'], **lay.get('terrain', {}))
+    HARBOUR_FRONT = dict(_DEFAULTS['HARBOUR_FRONT'], **lay.get('harbour_front', {}))
+    fr = next((l for l in g['LANDMARKS'] if l['type'] == 'forum'), None)
+    g['FORUM_POS'] = (fr.get('x', 1.5), fr.get('y', 11.0)) if fr else g['RING_CENTER']
+    if 'palette' in cfg:
+        pass
     LANE_KEEPOUT = [ln['points'] for ln in cfg.get('ship_lanes', []) if not ln.get('loop')]
 
 

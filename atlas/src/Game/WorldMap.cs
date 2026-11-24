@@ -39,11 +39,12 @@ namespace Atlas
             _map = new TextureRect { Texture = tex, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale,
                                      MouseFilter = Control.MouseFilterEnum.Ignore, TextureFilter = CanvasItem.TextureFilterEnum.LinearWithMipmaps };
             _view.AddChild(_map);
+            BuildCard();
             foreach (var m in root.Cities)
             {
                 var pin = new MapPin { Text = m.Name, TooltipText = "" };
                 pin.MouseEntered += () => ShowCard(m, pin);
-                pin.MouseExited += () => _card.Visible = false;
+                pin.MouseExited += () => { if (_card != null) _card.Visible = false; };
                 var id = m.Id;
                 pin.Pressed += () => _root.OpenCity(id);
                 _view.AddChild(pin);
@@ -61,7 +62,7 @@ namespace Atlas
             sub.AddThemeColorOverride("font_outline_color", new Color(0, 0, 0, 0.8f));
             sub.Position = new Vector2(26, 58);
             AddChild(sub);
-            BuildCard();
+            MoveChild(_card, GetChildCount() - 1);
             _view.Resized += Fit;
             Callable.From(Fit).CallDeferred();
         }
@@ -98,6 +99,7 @@ namespace Atlas
 
         void ShowCard(CityManifest m, MapPin pin)
         {
+            if (_card == null || _view == null) return;
             var thumb = m.Files.TryGetValue("thumb", out var t) ? Path.Combine(m.Directory, t) : null;
             _cardThumb.Texture = thumb != null && File.Exists(thumb) ? ImageTexture.CreateFromImage(Image.LoadFromFile(thumb)) : null;
             _cardTitle.Text = m.Name;
