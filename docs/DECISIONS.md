@@ -18,3 +18,11 @@ Other defaults taken while building:
 - **No ffmpeg on this Mac**: shots are encoded to H.264 `.mp4` by Blender's own FFmpeg (VSE) in `tools/render_shot.sh`.
 - **Windows at night** are carried in the vertex-colour alpha (`Col.a < 1` = window, its value = light-up order),
   so Blender and Godot light the same windows in the same order from one attribute.
+- **Renders** are 1920×1080, 24 fps, EEVEE 32 samples with motion blur (about 1-2 s per frame on the M1 Pro);
+  `--preview` is 960×540, 12 samples, no blur. Event shots are tuned for Fantasy Capital's layout.
+- **Race length:** the Atlas runs 5 laps at about 1.9 model-m/s (roughly 2.5 min with the fill); the film runs
+  2 laps in 24 s. `laps` in the manifest (7) is the historical figure; `atlas/events/chariot_race.json` sets the shown laps.
+- **Speeds at 1:15:** people stroll at 0.09-0.15 model-m/s (real time); ships 1.1-1.5 model-m/s; clouds drift faster
+  when the clock runs fast.
+- **Atlas performance settings:** FSR 1 at 0.7 render scale, 4k directional shadows, SSAO, MSAA 2×: 72-93 fps at
+  1600×900 with life and an event running.

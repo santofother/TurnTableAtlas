@@ -19,7 +19,8 @@ import sky
 import venues
 
 SHOTS = {
-    'hero_turntable': dict(seconds=20, hour=18.3, cam=dict(kind='orbit', center=(1.0, -2.0, 1.5), radius=92.0,
+    'hero_turntable': dict(seconds=20, hour=18.75, clouds=4, cloud_height=(33.0, 37.0),
+                           cam=dict(kind='orbit', center=(1.0, -2.0, 1.5), radius=92.0,
                                                           height=40.0, deg=360.0, start_deg=-90.0, lens=35),
                            note="360-degree orbit of the whole diorama at golden hour"),
     'day_night_timelapse': dict(seconds=20, hours=(14.5, 23.8), ship_time_scale=8.0, cloud_speed=3.0,
@@ -38,8 +39,8 @@ SHOTS = {
                                      lens=30),
                             note="six chariots, two laps, the crowd roaring at the finish"),
     'festival_night': dict(seconds=22, hour=21.4, event='festival_night',
-                           cam=dict(kind='follow', target='CIN_ProcHead', offset=(-3.5, -6.0, 8.5), smooth=0.03,
-                                    lens=30),
+                           cam=dict(kind='follow', target='CIN_ProcHead', offset=(-6.0, -12.0, 16.0), smooth=0.025,
+                                    lens=32),
                            note="torch-lit procession through the streets to the lantern-hung forum"),
     'theatre_play': dict(seconds=12, hour=18.3, event='theatre_play',
                          cam=dict(kind='orbit', center='theatre', radius=8.5, height=6.0, deg=35.0, start_deg=-80.0,
@@ -155,7 +156,11 @@ def build(name, man, preview=False):
         if ad is not None:
             ad.action = None
     # clouds, ships, people
-    clouds.setup_clouds(man, f0, f1, count=spec.get('clouds', 10), speed=0.55 * spec.get('cloud_speed', 1.0))
+    clouds.setup_clouds(man, f0, f1, count=spec.get('clouds', 10), speed=0.55 * spec.get('cloud_speed', 1.0),
+                        height=spec.get('cloud_height', (15.0, 21.0)))
+    import extras
+    h_mid = spec.get('hour', sum(spec.get('hours', (12, 12))) / 2)
+    extras.add(man, f0, f1, daylight=6.0 < h_mid < 20.0)
     sh = ships_mod.Ships(man, f0, f1, time_scale=spec.get('ship_time_scale', 1.0))
     if spec.get('event') != 'fleet_arrival':
         sh.traffic()
