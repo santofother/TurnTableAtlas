@@ -19,6 +19,7 @@ The original eleven cards ran on 2026-11-23 in one unattended session.
 | S13 | Calderra voyages, port shipping, Known World-only viewer | `generator/`, `cities/fantasy_capital/city.json`, `blender/cinematic/ships.py`, `atlas/`, `docs/city_schema.md` | S4, S8, S11, S12 | DONE |
 | S14 | Known World fog banks, shipping routes, and trireme miniatures | `WorldMap.cs`, `regional_fog.gdshader`, `WorldShipping.cs`, `shipping_routes.json` | S11, S12, S13 | DONE |
 | S15 | Landric's villa first wireframe from Chapter 1 | `docs/design/landrics_villa*` | none | DONE (design only) |
+| S16 | Landric's villa: estate generator, package, cutaway, Known World patch | `generator/villa.py`, `cities/landric_villa/`, `atlas/src/{Core/EstateSite,Game/Estate}.cs`, `estate_ground.gdshader` | S15, W5 | DONE |
 
 ## Known World round 2 (planned 2026-11-23, detail in `docs/world_map/PLAN.md`)
 

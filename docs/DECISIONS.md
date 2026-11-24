@@ -12,6 +12,7 @@ depend on it say what to rerun.
 | 5 | Cinematic or Atlas first? | **Both, in the plan's order** (S3–S5 then S6–S9); they only share S2's package. | all |
 | 6 | Events beyond the core four | Core five only: gladiator games, chariot race, theatre play, fleet arrival, festival night. A triumph parade reuses the festival procession data. | S5, S8 |
 | 7 | World-map style | ~~Flat painted Caelora map~~ → **3D world map** (S11): the painted Geography map lying flat on a board, and the Known World relief baked from `KnownWorld.blend` (its own materials, unlit; 1 unit = 10 miles; 15× relief), in one frame, with clouds, weather and time of day. | S9, S11 |
+| 8 | Landric's villa (S16) | **An estate, not a city**: own builder `generator/villa.py` (`"kind": "estate"` in the config and `city.json`), 300 m plinth (`model_scale` 3). Site: the user's X north-north-west of Calderra (Known World 107.65, 147.95), moved there from the peninsula at the user's request. On the Known World it stands as its own `city.glb` at 12× true size on a hero patch with hills (`EstateSite.cs`). Late October at 38°N. | S16 |
 
 Other defaults taken while building:
 - **Git LFS** tracks `.blend`, `.glb`, `.png`, `.jpg`, `.mp4`, `.exr`. There is no remote yet; nothing is pushed.

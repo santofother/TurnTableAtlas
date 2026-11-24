@@ -25,6 +25,8 @@ def main(argv):
     with open(os.path.join(ROOT, "generator", "cities", city_id + ".json")) as f:
         cfg = json.load(f)
     t0 = time.time()
+    if cfg.get('kind') == 'estate':     # FIX(villa): a country estate has its own builder (generator/villa.py)
+        return build_estate(city_id, cfg, argv, t0)
     if hasattr(m, "apply_config"):
         m.apply_config(cfg)
     stats = m.build_all()
@@ -50,6 +52,37 @@ def main(argv):
     if "--export" in argv:
         import export_city
         export_city.export(city_id, out_dir, man)
+    print("[Build] OK in %.1f s" % (time.time() - t0))
+
+
+def build_estate(city_id, cfg, argv, t0):
+    import bpy
+    import villa
+    import anchors
+    villa.apply_config(cfg)
+    stats = villa.build_all()
+    print("[Build] estate", json.dumps(stats))
+    report = {}
+    man = villa.build_manifest(cfg, report)
+    root = villa.ANCHORS['_root']
+    anchors.write_blend_anchors(villa, man, root)
+    villa.write_proxies(root)
+    out_dir = os.path.join(ROOT, "cities", city_id)
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "city.json"), "w") as f:
+        json.dump(man, f, separators=(",", ":"))
+    print("[Build] anchors", json.dumps(report))
+    print("[Build] manifest %s: %d nodes, %d edges, %d zones, %d lights, %d landmarks, %d anchors (%.0f KB)" % (
+        city_id, len(man['street_graph']['nodes']), len(man['street_graph']['edges']), len(man['spawn_zones']),
+        len(man['night_lights']), len(man['landmarks']), len(man['anchors']),
+        os.path.getsize(os.path.join(out_dir, "city.json")) / 1024))
+    if "--no-save" not in argv:
+        path = os.path.join(ROOT, "blender", city_id + ".blend")
+        bpy.ops.wm.save_as_mainfile(filepath=path, compress=True)
+        print("[Build] saved", path)
+    if "--export" in argv:
+        import export_city
+        export_city.export(city_id, out_dir, man, root_name=villa.ROOT_NAME)
     print("[Build] OK in %.1f s" % (time.time() - t0))
 
 

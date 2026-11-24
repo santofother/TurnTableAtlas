@@ -25,6 +25,11 @@ Points are `[x, y, z]` unless the field says 2D (`[x, y]`).
 | `landmarks[]` | `{id, label, camera:{target, dist, yaw, pitch}}` | camera presets: camera = target + dist·(cos p cos y, cos p sin y, sin p) |
 | `steam_vents[]` | `[x,y,z]` | bath steam sources |
 | `events[]` | names | events this city supports |
+| `kind` | `"city"` (default) or `"estate"` | an estate is a country house with its grounds (`generator/villa.py`): no venues or ships, a handful of people, no lighthouse |
+| `anchors` (estate) | `{id: [x,y,z]}` | named staging points for the estate's scenes (`gate_stop`, `private_dining`, `hearth_offer`, `aegis_painting`, `cold_pool`, `heated_pool`, `bath_fire`…) |
+| `cutaway` (estate) | `{roofs:[prefix], upper:[prefix]}` | object-name prefixes the Atlas hides to look inside (Layers → Roofs, Upper floor) |
+| `terrain_grid` (estate) | `{n, z:[n·n]}` | the ground in model metres on an n×n grid over `extent`, row 0 to the south; the Known World stands the estate's miniature on it |
+| `world_map.miniature` (estate) | `{exaggeration, hills_radius_units}` | the estate on the Known World: its model drawn `exaggeration`× true size, hills out to that radius (blend units) |
 
 **Boat voyages.** `voyage` contains `points:[[x,y]]`, `speed` in model metres per second, `dwell_s`, and a start offset `phase_s` in seconds. A voyage with no dwell closes from the last point back to the first. A docked voyage starts and ends at the berth and waits there for `dwell_s` each cycle. Blender and the Atlas use the same path and timing.
 

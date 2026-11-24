@@ -85,7 +85,10 @@ namespace Atlas.Core.Tests
                 Assert.NotEmpty(m.Landmarks);
                 Assert.Contains(m.Landmarks, l => l.Id == "overview");
                 Assert.True(File.Exists(m.FilePath("model")), "model missing for " + m.Id);
-                Assert.True(m.Venues.Sum(v => v.Capacity) > 500);
+                if (m.IsEstate)   // FIX(villa): a country estate has no venues, but a ground grid for the Known World
+                    Assert.True(m.Venues.Count == 0 && m.Terrain.Z.Length == m.Terrain.N * m.Terrain.N && m.Anchors.Count >= 10);
+                else
+                    Assert.True(m.Venues.Sum(v => v.Capacity) > 500);
                 Assert.InRange(m.WorldMap.PinUv[0], 0, 1);
             }
         }

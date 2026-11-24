@@ -1,0 +1,30 @@
+{
+ "id": "landric_villa",
+ "name": "Landric's Villa",
+ "kind": "estate",
+ "model_scale": 3.0,
+ "world_map": {
+  "map": "caelora_geography",
+  "pin_uv": [
+   0.383907,
+   0.757702
+  ],
+  "lore": "Prince Landric Caldravi's country villa, a ride out of Calderra (LORE? site: on the upland between the coast road and the river, ~24 km north-north-west of the city). Landric: \"Charismatic heir and finest horseman of his generation; impatient with his father's caution; privately cruel to those who cannot hold him to account.\" (atlas_data.json)",
+  "miniature": {
+   "exaggeration": 12.0,
+   "hills_radius_units": 0.36
+  }
+ },
+ "sun": {
+  "latitude_deg": 38.0,
+  "default_day_of_year": 298,
+  "north_offset_deg": 0.0
+ },
+ "layout": {
+  "offset": [
+   -31.0,
+   -20.0
+  ]
+ },
+ "events": []
+}

@@ -76,9 +76,12 @@ namespace Atlas.Core
         public double Time;
         public int Wanderers;
 
-        public Crowd(StreetGraph g, int wanderers, int seed = 1)
+        /// <summary>Walking speed and lane offset scale (model metres per real metre, relative to a 1:15 city).</summary>
+        public readonly double Scale;
+
+        public Crowd(StreetGraph g, int wanderers, int seed = 1, double scale = 1.0)
         {
-            G = g; _rng = new Random(seed);
+            G = g; _rng = new Random(seed); Scale = scale;
             Wanderers = wanderers;
             for (int i = 0; i < wanderers; i++) W.Add(NewWanderer());
         }
@@ -88,8 +91,8 @@ namespace Atlas.Core
             int a = _rng.Next(G.Nodes.Length);
             while (G.Adj[a].Count == 0) a = _rng.Next(G.Nodes.Length);
             var (b, _) = G.Adj[a][_rng.Next(G.Adj[a].Count)];
-            return new Walker { From = a, To = b, T = _rng.NextDouble(), Speed = 0.09 + 0.06 * _rng.NextDouble(),
-                                Side = (_rng.NextDouble() * 2 - 1) * 0.09, Kind = _rng.Next(2) };
+            return new Walker { From = a, To = b, T = _rng.NextDouble(), Speed = (0.09 + 0.06 * _rng.NextDouble()) * Scale,
+                                Side = (_rng.NextDouble() * 2 - 1) * 0.09 * Scale, Kind = _rng.Next(2) };
         }
 
         /// <summary>How busy the streets are by hour (same curve as blender/cinematic/crowds.py).</summary>

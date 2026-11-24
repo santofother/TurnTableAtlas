@@ -31,6 +31,15 @@ namespace Atlas.Core
         [JsonPropertyName("landmarks")] public List<Landmark> Landmarks { get; set; } = new();
         [JsonPropertyName("steam_vents")] public List<double[]> SteamVents { get; set; } = new();
         [JsonPropertyName("events")] public List<string> Events { get; set; } = new();
+        /// <summary>"city" (default) or "estate": a country house with its grounds (fewer people, no ships or venues).</summary>
+        [JsonPropertyName("kind")] public string Kind { get; set; } = "city";
+        /// <summary>Estates: named staging points (gate_stop, aegis_painting, cold_pool...), model metres.</summary>
+        [JsonPropertyName("anchors")] public Dictionary<string, double[]> Anchors { get; set; } = new();
+        /// <summary>Estates: object name prefixes the Atlas can hide to look inside (roofs, upper storey).</summary>
+        [JsonPropertyName("cutaway")] public Dictionary<string, List<string>> Cutaway { get; set; } = new();
+        /// <summary>Estates: the ground as an n x n height grid over the extent (model metres, row 0 = south).</summary>
+        [JsonPropertyName("terrain_grid")] public TerrainGrid Terrain { get; set; }
+        [JsonIgnore] public bool IsEstate => Kind == "estate";
 
         [JsonIgnore] public string Directory { get; set; }
 
@@ -63,8 +72,33 @@ namespace Atlas.Core
         public string FilePath(string key) => Path.Combine(Directory, Files[key]);
     }
 
+    public class TerrainGrid
+    {
+        [JsonPropertyName("n")] public int N { get; set; }
+        [JsonPropertyName("z")] public double[] Z { get; set; }
+
+        /// <summary>Bilinear height at a model point (extent [-half, half] on both axes).</summary>
+        public double At(double x, double y, double half)
+        {
+            double fx = Math.Clamp((x + half) / (2 * half) * (N - 1), 0, N - 1.000001), fy = Math.Clamp((y + half) / (2 * half) * (N - 1), 0, N - 1.000001);
+            int i = (int)fx, j = (int)fy;
+            double tx = fx - i, ty = fy - j;
+            double a = Z[j * N + i] + (Z[j * N + i + 1] - Z[j * N + i]) * tx;
+            double b = Z[(j + 1) * N + i] + (Z[(j + 1) * N + i + 1] - Z[(j + 1) * N + i]) * tx;
+            return a + (b - a) * ty;
+        }
+    }
+
+    /// <summary>How an estate stands on the Known World: its miniature's size (x its true size) and its hills.</summary>
+    public class MapMiniature
+    {
+        [JsonPropertyName("exaggeration")] public double Exaggeration { get; set; } = 12;
+        [JsonPropertyName("hills_radius_units")] public double HillsRadius { get; set; } = 0.55;
+    }
+
     public class WorldMapPin
     {
+        [JsonPropertyName("miniature")] public MapMiniature Miniature { get; set; }
         [JsonPropertyName("map")] public string Map { get; set; }
         [JsonPropertyName("pin_uv")] public double[] PinUv { get; set; }
         /// <summary>Optional settlement id on the Known World relief map (e.g. "settlement:calderra").</summary>

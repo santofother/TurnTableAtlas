@@ -35,6 +35,7 @@ Rendered shots land in `blender/renders/<shot>/<shot>.mp4`.
 | id | what | latitude |
 |---|---|---|
 | `fantasy_capital` | crescent harbour capital: palace headland, colosseum, hippodrome, theatre, baths, aqueduct | 38°N |
+| `landric_villa` | Prince Landric's walled country villa (an *estate*, `generator/villa.py`): peristyle villa with furnished rooms and a cutaway, stables, kitchen garden, two-pool bathhouse, vineyards, lake; stands on the Known World north of Calderra | 38°N, late Oct |
 
 Names and map pins are `LORE?` placeholders (see `docs/DECISIONS.md`).
 

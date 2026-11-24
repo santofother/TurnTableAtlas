@@ -54,10 +54,11 @@ namespace Atlas
                 case 1 when t > 0.6:
                 {
                     var tod = v.Tod;
-                    tod.Hour = 6; tod.Apply(); double e6 = tod.Elevation; double w6 = tod.WindowLevel;
+                    double dawn = Math.Max(6.0, v.M.Sun.SunriseH + 0.75);   // FIX(villa): an autumn package is still dark at 6
+                    tod.Hour = dawn; tod.Apply(); double e6 = tod.Elevation; double w6 = tod.WindowLevel;
                     tod.Hour = 12; tod.Apply(); double e12 = tod.Elevation;
                     tod.Hour = 22.5; tod.Apply(); double w22 = tod.WindowLevel;
-                    Check(e12 > e6 + 15 && w22 > 0.5 && w6 < w22, $"scrub dawn→noon→night: elevation {e6:0}°→{e12:0}°, windows lit {w22:0.00} at 22:30");
+                    Check(e12 > e6 + 15 && w22 > 0.5 && w6 < w22, $"scrub dawn ({dawn:0.0}h)→noon→night: elevation {e6:0}°→{e12:0}°, windows lit {w22:0.00} at 22:30");
                     tod.Hour = 12; tod.Latitude = 60; tod.DayOfYear = 355; tod.Apply(); double hi = tod.Elevation;
                     tod.Latitude = 10; tod.Apply(); double lo = tod.Elevation;
                     var arc60 = SunArc.Arc(60, 355, 0).Count; var arc10 = SunArc.Arc(10, 355, 0).Count;
@@ -78,7 +79,11 @@ namespace Atlas
                     _venueType = _event switch { "chariot_race" => "circus", "gladiator_games" => "arena", "theatre_play" => "theatre", _ => null };
                     v.Events.TimeScale = 25;
                     if (_event != null) v.Events.Trigger(_event);
-                    Check(_event != null && v.Events.Running != null, $"event '{_event}' triggered ({v.Events.Available.Count} available here)");
+                    if (v.M.IsEstate)   // FIX(villa): an estate has no public events, but named staging anchors
+                        Check(v.Events.Available.Count == 0 && v.M.Anchors.Count >= 10 && v.M.Routes.ContainsKey("peristyle_loop"),
+                              $"estate: no public events, {v.M.Anchors.Count} staging anchors, {v.M.Routes.Count} routes");
+                    else
+                        Check(_event != null && v.Events.Running != null, $"event '{_event}' triggered ({v.Events.Available.Count} available here)");
                     _step++; break;
                 }
                 case 3 when t > 6.2:
@@ -91,9 +96,26 @@ namespace Atlas
                     }
                     bool showOn = _event switch { "chariot_race" => v.Events.Race != null && v.Events.Race.Time > 1, "gladiator_games" => v.Events.Arena != null,
                                                   "theatre_play" => v.Events.Play != null, _ => v.Events.Running != null };
-                    Check(showOn, $"show running: {v.Events.Status}");
-                    Check(v.Life.Crowd.W.Count(w => w.Active) > 100, $"{v.Life.Crowd.W.Count(w => w.Active)} people walking");
-                    Check(v.Life.Traffic.Ships.Count(s => s.Visible) > 2, $"{v.Life.Traffic.Ships.Count(s => s.Visible)} ships under way");
+                    if (v.M.IsEstate)
+                    {
+                        int walking = v.Life.Crowd.W.Count(w => w.Active);
+                        Check(walking >= 3 && walking < 30 && Swarm.FigureScale > 3f, $"estate household: {walking} people about, figures x{Swarm.FigureScale:0.0}");
+                        var layers = v.Life.Layers().ToDictionary(l => l.Item1);
+                        bool cut = layers.ContainsKey("Roofs") && layers.ContainsKey("Upper floor");
+                        if (cut)
+                        {
+                            layers["Roofs"].Item3(false); layers["Upper floor"].Item3(false);
+                            cut = !layers["Roofs"].Item2() && !layers["Upper floor"].Item2();
+                            layers["Roofs"].Item3(true); layers["Upper floor"].Item3(true);
+                        }
+                        Check(cut, "cutaway: roofs and the upper floor lift off");
+                    }
+                    else
+                    {
+                        Check(showOn, $"show running: {v.Events.Status}");
+                        Check(v.Life.Crowd.W.Count(w => w.Active) > 100, $"{v.Life.Crowd.W.Count(w => w.Active)} people walking");
+                        Check(v.Life.Traffic.Ships.Count(s => s.Visible) > 2, $"{v.Life.Traffic.Ships.Count(s => s.Visible)} ships under way");
+                    }
                     if (_localBoat.Node != null)
                         Check(_localBoat.Node.Position.DistanceTo(_localBoat.Position) > 0.5f,
                               "a placed rowboat travels through the harbour");
@@ -127,6 +149,14 @@ namespace Atlas
                     Check(karn != null && karn.S.Buildings.Count > 2500 && karn.FallCount == 6 && karn.FlameCount >= 10
                           && map.Kw.Cameras.Any(c => c.Id == KarnAshur.ViewId) && Math.Abs(karnY - karn.S.Units(KarnAshurSite.IslandM)) < 0.05f,
                           $"Karn Ashur: {karn?.S.Buildings.Count} buildings, {karn?.FallCount} falls, {karn?.FlameCount} fires, settlement on the island at {karnY:0.00}");
+                    foreach (var m in root.Cities.Where(c => c.IsEstate))   // FIX(villa): an estate stands on the map as its miniature
+                    {
+                        var est = map.Estates.FirstOrDefault(e => e.M.Id == m.Id);
+                        var pinE = map.Pins.FirstOrDefault(p => p.M.Id == m.Id);
+                        float onPatch = est != null && pinE != null ? Math.Abs(pinE.Position.Y - (est.HeightAt(est.S.Cx, est.S.Cy) ?? -9f)) : 9f;
+                        Check(est != null && est.MiniMeshes > 20 && onPatch < 0.002f && map.Kw.Cameras.Any(c => c.Id == est.ViewId),
+                              $"{m.Name} on the Known World: {est?.MiniMeshes} miniature meshes, {est?.S.Half * 2:0.000} units across, pin on its patch");
+                    }
                     _mapBoats = map.Shipping.GetChildren().OfType<Node3D>().Select(b => b.Position).ToArray();
                     _step++; break;
                 }

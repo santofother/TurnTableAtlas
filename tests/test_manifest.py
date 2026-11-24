@@ -65,7 +65,7 @@ class ManifestTests(unittest.TestCase):
     def test_venues(self):
         for p, m in self.manifests():
             types = {v['type'] for v in m['venues']}
-            self.assertTrue(types, p)
+            self.assertTrue(types or m.get('kind') == 'estate', p)   # an estate has no public venues
             for v in m['venues']:
                 self.assertTrue(v['seat_tiers'], v['id'])
                 for t in v['seat_tiers']:
@@ -94,7 +94,8 @@ class ManifestTests(unittest.TestCase):
                 self.assertTrue(z['points'], "%s: empty zone %s" % (p, z['id']))
             kinds = {l['kind'] for l in m['night_lights']}
             self.assertTrue(kinds <= {'window', 'lamp', 'torch', 'lighthouse'})
-            self.assertIn('lighthouse', kinds)
+            if m.get('kind', 'city') == 'city':
+                self.assertIn('lighthouse', kinds)
             for l in m['night_lights']:
                 if l['kind'] == 'window':
                     self.assertTrue(0 < l['order'] < 1)
@@ -108,6 +109,23 @@ class ManifestTests(unittest.TestCase):
                 self.assertGreater(len(pts), 5, rid)
                 for a, b in zip(pts[:-1], pts[1:]):
                     self.assertLess(math.dist(a[:2], b[:2]), 2.5, rid)
+
+    def test_estate_extras(self):
+        """Estates (kind 'estate') carry named anchors, cutaway object prefixes and a ground grid for the map."""
+        for p, m in self.manifests():
+            if m.get('kind') != 'estate':
+                continue
+            self.assertFalse(m['events'], p)
+            for k, q in m['anchors'].items():
+                self.assertTrue(is_pt(q), k)
+            for k in ('gate_stop', 'private_dining', 'aegis_painting', 'cold_pool', 'heated_pool'):
+                self.assertIn(k, m['anchors'])
+            self.assertTrue(m['cutaway']['roofs'] and m['cutaway']['upper'])
+            g = m['terrain_grid']
+            self.assertEqual(len(g['z']), g['n'] * g['n'])
+            self.assertTrue(min(g['z']) < 0 < max(g['z']), "the lake lies below 0, the land above")
+            for rid in ('peristyle_loop', 'lagoon_riding_loop', 'garden_to_bath'):
+                self.assertIn(rid, m['routes'])
 
     def test_calderra_boat_voyages(self):
         for _, m in self.manifests():

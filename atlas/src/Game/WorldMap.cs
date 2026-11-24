@@ -20,6 +20,9 @@ namespace Atlas
         static int _hw, _hh;
         static KnownWorldMap _kw;
         static KarnAshurSite _karnSite;
+        static ReliefSampler _sampler;
+        /// <summary>Country estates' hero patches (Landric's villa), by city id; kept between visits.</summary>
+        static readonly Dictionary<string, EstateSite> _estateSites = new();
         // the relief mesh's quads (its PlaneMesh subdivisions + 1); hero patches meet its triangles at their edges
         const int ReliefQuadsX = 1024, ReliefQuadsY = 534;
 
@@ -38,6 +41,8 @@ namespace Atlas
         public MapTable Table { get; private set; }
         /// <summary>Karn Ashur's hero patch and city miniature (W5).</summary>
         public KarnAshur Karn { get; private set; }
+        /// <summary>Estates standing on the map as miniatures of their packages.</summary>
+        public readonly List<Estate> Estates = new();
         MeshInstance3D _karnGlow;
         public WorldShipping Shipping { get; private set; }
         ShaderMaterial _reliefMat;
@@ -90,7 +95,7 @@ namespace Atlas
             Weather.Setup(root.Weather, Tod,
                 new CloudScale { Base = 9, Top = 21, Center = new Vector2(cx, -cy), Half = new Vector2((float)_kw.Width / 2, (float)_kw.Depth / 2)   /* W1: clouds stay over the map, not the table */,
                                  Cell = 230, Shape = 20, Detail = 5.5f, NearFade = 1.5f, Edge = 45, FlashR = 30 },
-                new[] { _reliefMat }.Concat(Karn?.WeatherMaterials ?? new List<ShaderMaterial>()), false, () => Rig.Target,
+                new[] { _reliefMat }.Concat(Karn?.WeatherMaterials ?? new List<ShaderMaterial>()).Concat(Estates.SelectMany(e => e.WeatherMaterials)), false, () => Rig.Target,
                 () => Math.Clamp(Math.Abs(Tod.Speed) * 60, 1.0, 20.0));
 
             foreach (var m in root.Cities)
@@ -107,6 +112,8 @@ namespace Atlas
             AddChild(Shipping);
             Shipping.Build(this);
             if (_karnSite != null && !_kw.Cameras.Any(c => c.Id == KarnAshur.ViewId)) _kw.Cameras.Add(KarnAshur.View(_karnSite));
+            foreach (var e in Estates)
+                if (!_kw.Cameras.Any(c => c.Id == e.ViewId)) _kw.Cameras.Add(e.View());
             BuildOverlay();
             FillViews();
             if (_lastCamera is { } last) Rig.Snap(last.Target, last.Yaw, last.Pitch, last.Distance);
@@ -148,8 +155,19 @@ namespace Atlas
             ulong t0 = Time.GetTicksMsec();
             _kwTex ??= LoadTexture(Path.Combine(_kw.Directory, _kw.Albedo));
             if (_kwH == null) LoadHeights();
+            _sampler ??= new ReliefSampler(_kwH, _hw, _hh, _kw.BoundsXy, ReliefQuadsX, ReliefQuadsY);
             if (Args.Get("karn-ashur") != "off")   // --karn-ashur=off shows the baked relief alone (before/after shots)
-                _karnSite ??= KarnAshur.MakeSite(_kw, new ReliefSampler(_kwH, _hw, _hh, _kw.BoundsXy, ReliefQuadsX, ReliefQuadsY));
+                _karnSite ??= KarnAshur.MakeSite(_kw, _sampler);
+            if (Args.Get("estates") != "off")      // --estates=off: the relief alone where an estate stands
+                foreach (var m in _root.Cities.Where(c => c.IsEstate && !_estateSites.ContainsKey(c.Id)))
+                    if (Estate.MakeSite(m, _kw, _sampler) is { } es) _estateSites[m.Id] = es;
+            var estateSites = Args.Get("estates") == "off" ? new List<EstateSite>()
+                : _root.Cities.Where(c => _estateSites.ContainsKey(c.Id)).Select(c => _estateSites[c.Id]).Take(1).ToList();   // one hole2 for now
+            if (estateSites.Count > 0)
+            {
+                var (a0, b0, a1, b1) = estateSites[0].HoleUv;
+                _reliefMat.SetShaderParameter("hole2", new Vector4((float)a0, (float)b0, (float)a1, (float)b1));
+            }
             if (_karnSite != null)
             {
                 var (u0, v0, u1, v1) = _karnSite.HoleUv;   // the patch covers these vertices: sink them out of sight
@@ -173,6 +191,13 @@ namespace Atlas
                 AddChild(Karn);
                 Karn.Build(_karnSite, _kw, _kwTex);
             }
+            foreach (var es in estateSites)
+            {
+                var est = new Estate();
+                AddChild(est);
+                est.Build(es, _root.Cities.First(c => c.Id == es.Id), _kw, _kwTex);
+                Estates.Add(est);
+            }
 
             // collision at one sample per unit: keeps the camera above the mountains, double-click focus
             int cols = (int)Math.Round(_kw.Width) + 1, rows = (int)Math.Round(_kw.Depth) + 1;
@@ -185,6 +210,8 @@ namespace Atlas
                     var (x, y) = _kw.UvToXy(u, v);
                     if (_karnSite != null && _karnSite.Contains(x, y))   // Karn Ashur's own collision lies on top here
                         h = Math.Max(Math.Abs(x - _karnSite.Cx), Math.Abs(y - _karnSite.Cy)) < KarnAshurSite.PatchHalf - 1.0 ? -1f : Math.Min(h, (float)_karnSite.MeshUnits(x, y)) - 0.05f;
+                    foreach (var es in estateSites)       // an estate's own collision lies on top here
+                        if (es.Contains(x, y)) h = Math.Min(h, (float)es.MeshUnits(x, y)) - 0.05f;
                     data[r * cols + c] = h;
                 }
             var body = new StaticBody3D { Name = "KwCollision", CollisionLayer = CityLoader.CollisionLayer, CollisionMask = 0 };
@@ -286,6 +313,8 @@ namespace Atlas
         {
             var (x, y) = _kw.UvToXy(u, v);
             float h = _karnSite != null && _karnSite.Contains(x, y) ? (float)_karnSite.MeshUnits(x, y) : HeightUv(u, v);
+            foreach (var e in Estates)
+                if (e.HeightAt(x, y) is { } eh) h = eh;
             return new Vector3((float)x, Math.Max(0f, h), -(float)y);
         }
 
@@ -315,6 +344,9 @@ namespace Atlas
             _lastHour = Tod.Hour;
             float night = (float)Tod.LampLevel;
             Table.Tick(dt, night);
+            foreach (var e in Estates) e.SetNight((float)Tod.WindowLevel, night);
+            // close to an estate the camera may come down to its miniature
+            Rig.MinDist = Estates.Any(e => new Vector2(Rig.Target.X - (float)e.S.Cx, -Rig.Target.Z - (float)e.S.Cy).Length() < 1.2f) ? 0.12f : 0.8f;
             _fogMat.SetShaderParameter("daylight", (float)Tod.Daylight);
             _fogMat.SetShaderParameter("weather_fog", (float)_root.Weather.Current.Fog);
             float k = Math.Clamp(Rig.Dist * 0.024f, 0.03f, 16f);

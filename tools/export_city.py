@@ -166,10 +166,10 @@ def export_props():
     bpy.data.collections.remove(c)
 
 
-def export(city_id, out_dir, man):
+def export(city_id, out_dir, man, root_name=None):
     t0 = time.time()
     import fantasy_capital as fc
-    root = bpy.data.collections.get(fc.ROOT_NAME)
+    root = bpy.data.collections.get(root_name or fc.ROOT_NAME)   # FIX(villa): estates have their own root
     ter = prepare_sea_and_terrain()
     # city.glb: every render mesh except anchors, proxies, steam volumes
     skip_colls = {"Anchors", "Proxies"}

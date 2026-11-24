@@ -54,9 +54,13 @@ namespace Atlas
 
         public void Begin() => Count = 0;
 
+        /// <summary>Figure size for the open city (1 at Calderra's 1:15; an estate's 1:3 model draws people 5x larger).</summary>
+        public static float FigureScale = 1f;
+
         public void Add(Vector3 p, float heading, float scale, Color custom)
         {
             if (Count >= Capacity) return;
+            scale *= FigureScale;
             float c = Mathf.Cos(heading) * scale, s = Mathf.Sin(heading) * scale;
             int o = Count * 16;
             _buf[o + 0] = c; _buf[o + 1] = 0; _buf[o + 2] = s; _buf[o + 3] = p.X;
@@ -125,7 +129,10 @@ namespace Atlas
             _peopleRoot = Add("People"); _shipsRoot = Add("Ships"); _cloudsRoot = Add("Clouds"); _ambientRoot = Add("SteamBirds"); _labelsRoot = Add("Labels");
             _labelsRoot.Visible = false;
             var g = new StreetGraph(_m.StreetGraph);
-            Crowd = new Crowd(g, Math.Min(1400, g.Nodes.Length / 2 + 200), 1);
+            float k = _m.ModelScale > 0 ? (float)Math.Clamp(15.0 / _m.ModelScale, 1.0, 8.0) : 1f;
+            Swarm.FigureScale = k;
+            // an estate is private: a handful of household people, not a city's crowd
+            Crowd = new Crowd(g, _m.IsEstate ? 9 : Math.Min(1400, g.Nodes.Length / 2 + 200), 1, k);
             var fig = v.City.Mats.Figure;
             _walk = new[] { new Swarm("Walkers_citizen", Props.Get("citizen"), fig, 2400), new Swarm("Walkers_robed", Props.Get("robed"), fig, 2400) };
             foreach (var s in _walk) { _peopleRoot.AddChild(s.Node); s.Node.VisibilityRangeEnd = 140; }
@@ -171,6 +178,14 @@ namespace Atlas
             yield return ("Night lights", () => _v.Lights.Visible, b => _v.Lights.Visible = b);
             yield return ("Steam and birds", () => _ambientRoot.Visible, b => _ambientRoot.Visible = b);
             yield return ("Labels", () => _labelsRoot.Visible, b => _labelsRoot.Visible = b);
+            // estates: lift the roofs, then the upper storey, to look into the rooms
+            foreach (var (key, label) in new[] { ("roofs", "Roofs"), ("upper", "Upper floor") })
+            {
+                if (!_m.Cutaway.TryGetValue(key, out var prefixes)) continue;
+                var nodes = _v.City.ByName.Values.Where(n => prefixes.Any(p => n.Name.ToString().StartsWith(p))).ToList();
+                if (nodes.Count == 0) continue;
+                yield return (label, () => nodes[0].Visible, b => { foreach (var n in nodes) n.Visible = b; });
+            }
         }
 
         public void SetHour(double h) => _hour = h;
