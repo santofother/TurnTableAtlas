@@ -50,3 +50,4 @@ Write a brief and let an agent build it: `tools/new_city.py init <id> "Name"`, d
    `$BLENDER -b --factory-startup --python tools/debug/anchor_map.py -- <id> out.png` draws streets, lanes,
    zones and routes over the walk grid while you tune the layout.
 3. Start the Atlas: the new pin is on the world map. No code changes.
+# TurnTableAtlas
