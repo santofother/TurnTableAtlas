@@ -1,0 +1,623 @@
+{
+ "source": "~/PersonalProjects/FOMSMap/KnownWorld-Map/KnownWorld.blend (tools/bake_known_world.py)",
+ "bounds_xy": [
+  -185.0,
+  -62.0,
+  500.0,
+  295.0
+ ],
+ "elev_min_m": -6912.0,
+ "elev_max_m": 7872.0,
+ "unit_m": 16093.4404,
+ "exaggeration": 15.0,
+ "cameras": [
+  {
+   "id": "CAM_01_Overview_KnownWorld",
+   "name": "Overview KnownWorld",
+   "target": [
+    140.372,
+    151.751,
+    0.0
+   ],
+   "yaw": -102.0,
+   "pitch": 44.0,
+   "dist": 374.489
+  },
+  {
+   "id": "CAM_02_Overview_Opposite",
+   "name": "Overview Opposite",
+   "target": [
+    138.0,
+    138.0,
+    0.0
+   ],
+   "yaw": 78.0,
+   "pitch": 44.0,
+   "dist": 330.0
+  },
+  {
+   "id": "CAM_03_North",
+   "name": "North",
+   "target": [
+    135.0,
+    174.18,
+    0.0
+   ],
+   "yaw": 90.0,
+   "pitch": 30.0,
+   "dist": 190.947
+  },
+  {
+   "id": "CAM_04_South",
+   "name": "South",
+   "target": [
+    125.0,
+    70.0,
+    0.0
+   ],
+   "yaw": -95.0,
+   "pitch": 28.0,
+   "dist": 180.0
+  },
+  {
+   "id": "CAM_05_East_Thrasia",
+   "name": "East Thrasia",
+   "target": [
+    410.091,
+    205.016,
+    0.0
+   ],
+   "yaw": -170.0,
+   "pitch": 50.0,
+   "dist": 210.143
+  },
+  {
+   "id": "CAM_06_West_Vesperra",
+   "name": "West Vesperra",
+   "target": [
+    -80.377,
+    149.947,
+    0.0
+   ],
+   "yaw": 8.0,
+   "pitch": 50.0,
+   "dist": 210.593
+  },
+  {
+   "id": "CAM_07_Veryan_to_Vaelwood",
+   "name": "Veryan to Vaelwood",
+   "target": [
+    130.336,
+    218.393,
+    0.0
+   ],
+   "yaw": -118.0,
+   "pitch": 11.0,
+   "dist": 75.068
+  },
+  {
+   "id": "CAM_08_GreatGate",
+   "name": "GreatGate",
+   "target": [
+    141.9,
+    172.232,
+    0.0
+   ],
+   "yaw": -170.0,
+   "pitch": 24.0,
+   "dist": 3.184
+  },
+  {
+   "id": "CAM_09_Dovehall",
+   "name": "Dovehall",
+   "target": [
+    146.35,
+    124.62,
+    0.0
+   ],
+   "yaw": -98.0,
+   "pitch": 30.0,
+   "dist": 1.55
+  },
+  {
+   "id": "CAM_10_WholeWorld",
+   "name": "WholeWorld",
+   "target": [
+    157.5,
+    116.5,
+    0.0
+   ],
+   "yaw": -90.0,
+   "pitch": 70.0,
+   "dist": 900.0
+  }
+ ],
+ "albedo": "albedo.png",
+ "height": "height.png",
+ "height_size": [
+  3425,
+  1785
+ ],
+ "geo_to_kw": [
+  [
+   0.35558,
+   -0.012887,
+   0.300481
+  ],
+  [
+   -0.048215,
+   0.489261,
+   0.059701
+  ]
+ ],
+ "geo_to_kw_max_err": 0.01596,
+ "settlements": [
+  {
+   "id": "settlement:salmara",
+   "name": "Salmara",
+   "type": "capital",
+   "realm": "Salmara",
+   "uv": [
+    0.35197,
+    0.34594
+   ]
+  },
+  {
+   "id": "settlement:ruins_of_oravessa",
+   "name": "Ruins of Oravessa",
+   "type": "ruin",
+   "realm": "Calderra",
+   "uv": [
+    0.39781,
+    0.41373
+   ]
+  },
+  {
+   "id": "settlement:calderra",
+   "name": "Calderra",
+   "type": "capital",
+   "realm": "Calderra",
+   "uv": [
+    0.42788,
+    0.41597
+   ]
+  },
+  {
+   "id": "settlement:astera",
+   "name": "Astera",
+   "type": "capital",
+   "realm": "Astera",
+   "uv": [
+    0.42044,
+    0.31092
+   ]
+  },
+  {
+   "id": "settlement:madravella",
+   "name": "Madravella",
+   "type": "capital",
+   "realm": "Madravella",
+   "uv": [
+    0.44847,
+    0.32157
+   ]
+  },
+  {
+   "id": "settlement:corivessa_great_gate",
+   "name": "Corivessa / Great Gate",
+   "type": "capital",
+   "realm": "Valdora",
+   "uv": [
+    0.47474,
+    0.34398
+   ]
+  },
+  {
+   "id": "settlement:kervara",
+   "name": "Kervara",
+   "type": "capital",
+   "realm": "Kervara",
+   "uv": [
+    0.50978,
+    0.3451
+   ]
+  },
+  {
+   "id": "settlement:dovehall",
+   "name": "Dovehall",
+   "type": "capital",
+   "realm": "The Dovaran Crown",
+   "uv": [
+    0.48365,
+    0.47535
+   ]
+  },
+  {
+   "id": "settlement:haven",
+   "name": "Haven",
+   "type": "capital",
+   "realm": "Hamen",
+   "uv": [
+    0.52847,
+    0.6493
+   ]
+  },
+  {
+   "id": "settlement:karn_ashur",
+   "name": "Karn Ashur",
+   "type": "holy",
+   "realm": "Karn Ashur",
+   "uv": [
+    0.40657,
+    0.76134
+   ]
+  },
+  {
+   "id": "settlement:marrukah",
+   "name": "Marrukah",
+   "type": "city",
+   "realm": "The Coastal Sultanate",
+   "uv": [
+    0.35869,
+    0.61765
+   ]
+  },
+  {
+   "id": "settlement:sidrah",
+   "name": "Sidrah",
+   "type": "city",
+   "realm": "The Coastal Sultanate",
+   "uv": [
+    0.31723,
+    0.64174
+   ]
+  },
+  {
+   "id": "settlement:qasr",
+   "name": "Qasr Samir",
+   "type": "city",
+   "realm": "The Coastal Sultanate",
+   "uv": [
+    0.40978,
+    0.65518
+   ]
+  },
+  {
+   "id": "settlement:tarekah",
+   "name": "Tarekah",
+   "type": "city",
+   "realm": null,
+   "uv": [
+    0.46321,
+    0.61989
+   ]
+  },
+  {
+   "id": "settlement:babazara",
+   "name": "Bab Azara",
+   "type": "city",
+   "realm": "Hamen",
+   "uv": [
+    0.50058,
+    0.59804
+   ]
+  },
+  {
+   "id": "settlement:nahrun",
+   "name": "Nahrun",
+   "type": "city",
+   "realm": "Hamen",
+   "uv": [
+    0.56774,
+    0.61373
+   ]
+  },
+  {
+   "id": "settlement:oasis_league",
+   "name": "Oasis League",
+   "type": "city",
+   "realm": "The Oasis League",
+   "uv": [
+    0.46277,
+    0.73109
+   ]
+  },
+  {
+   "id": "settlement:southern_salt_sultanate",
+   "name": "Southern Salt Sultanate",
+   "type": "city",
+   "realm": "The Southern Salt Sultanate",
+   "uv": [
+    0.39854,
+    0.80392
+   ]
+  },
+  {
+   "id": "settlement:eastern_marches",
+   "name": "Eastern Marches",
+   "type": "city",
+   "realm": "The Eastern Marches",
+   "uv": [
+    0.51168,
+    0.77871
+   ]
+  },
+  {
+   "id": "settlement:varduun_trial_seat",
+   "name": "Varduun (Trial-Seat)",
+   "type": "capital",
+   "realm": "Varduun",
+   "uv": [
+    0.58029,
+    0.75686
+   ]
+  },
+  {
+   "id": "settlement:vesmara",
+   "name": "Vesmara",
+   "type": "city",
+   "realm": "Vesperra",
+   "uv": [
+    0.16511,
+    0.19972
+   ]
+  },
+  {
+   "id": "settlement:occara",
+   "name": "Occara",
+   "type": "city",
+   "realm": "Vesperra",
+   "uv": [
+    0.18204,
+    0.35994
+   ]
+  },
+  {
+   "id": "settlement:hespera",
+   "name": "Hespera",
+   "type": "city",
+   "realm": "Vesperra",
+   "uv": [
+    0.19051,
+    0.42829
+   ]
+  },
+  {
+   "id": "settlement:serotina",
+   "name": "Serotina",
+   "type": "city",
+   "realm": "Vesperra",
+   "uv": [
+    0.16394,
+    0.49048
+   ]
+  },
+  {
+   "id": "settlement:calloway",
+   "name": "Calloway seat",
+   "type": "city",
+   "realm": "Calderra",
+   "uv": [
+    0.40409,
+    0.38852
+   ]
+  },
+  {
+   "id": "settlement:corivessa_port",
+   "name": "Corivessa port",
+   "type": "city",
+   "realm": "Valdora",
+   "uv": [
+    0.46526,
+    0.37731
+   ]
+  },
+  {
+   "id": "settlement:ossmere",
+   "name": "Ossmere port",
+   "type": "city",
+   "realm": "Calderra",
+   "uv": [
+    0.44044,
+    0.40028
+   ]
+  }
+ ],
+ "realms": [
+  {
+   "id": "kingdom:calderra",
+   "name": "Calderra",
+   "uv": [
+    0.42146,
+    0.38403
+   ],
+   "colour": [
+    0.62,
+    0.24,
+    0.18
+   ]
+  },
+  {
+   "id": "kingdom:astera",
+   "name": "Astera",
+   "uv": [
+    0.41796,
+    0.31905
+   ],
+   "colour": [
+    0.52,
+    0.38,
+    0.76
+   ]
+  },
+  {
+   "id": "kingdom:madravella",
+   "name": "Madravella",
+   "uv": [
+    0.45153,
+    0.31905
+   ],
+   "colour": [
+    0.6,
+    0.26,
+    0.52
+   ]
+  },
+  {
+   "id": "kingdom:valdora",
+   "name": "Valdora",
+   "uv": [
+    0.47401,
+    0.3437
+   ],
+   "colour": [
+    0.3,
+    0.38,
+    0.76
+   ]
+  },
+  {
+   "id": "kingdom:kervara",
+   "name": "Kervara",
+   "uv": [
+    0.51226,
+    0.33417
+   ],
+   "colour": [
+    0.7,
+    0.24,
+    0.38
+   ]
+  },
+  {
+   "id": "kingdom:salmara",
+   "name": "Salmara",
+   "uv": [
+    0.3654,
+    0.34426
+   ],
+   "colour": [
+    0.18,
+    0.55,
+    0.62
+   ]
+  },
+  {
+   "id": "kingdom:dovaran_crown",
+   "name": "The Dovaran Crown",
+   "uv": [
+    0.50292,
+    0.46807
+   ],
+   "colour": [
+    0.16,
+    0.5,
+    0.8
+   ]
+  },
+  {
+   "id": "kingdom:hamen",
+   "name": "Hamen",
+   "uv": [
+    0.52628,
+    0.6479
+   ],
+   "colour": [
+    0.66,
+    0.18,
+    0.28
+   ]
+  },
+  {
+   "id": "kingdom:coastal_sultanate",
+   "name": "The Coastal Sultanate",
+   "uv": [
+    0.3546,
+    0.67535
+   ],
+   "colour": [
+    0.14,
+    0.54,
+    0.5
+   ]
+  },
+  {
+   "id": "kingdom:high_dunes",
+   "name": "The High Dunes",
+   "uv": [
+    0.40423,
+    0.74986
+   ],
+   "colour": [
+    0.56,
+    0.24,
+    0.48
+   ]
+  },
+  {
+   "id": "kingdom:oasis_league",
+   "name": "The Oasis League",
+   "uv": [
+    0.46204,
+    0.72185
+   ],
+   "colour": [
+    0.24,
+    0.4,
+    0.74
+   ]
+  },
+  {
+   "id": "kingdom:southern_salt_sultanate",
+   "name": "The Southern Salt Sultanate",
+   "uv": [
+    0.38292,
+    0.83782
+   ],
+   "colour": [
+    0.76,
+    0.4,
+    0.16
+   ]
+  },
+  {
+   "id": "kingdom:eastern_marches",
+   "name": "The Eastern Marches",
+   "uv": [
+    0.51985,
+    0.80644
+   ],
+   "colour": [
+    0.5,
+    0.34,
+    0.76
+   ]
+  },
+  {
+   "id": "kingdom:karn_ashur",
+   "name": "Karn Ashur",
+   "uv": [
+    0.40657,
+    0.76106
+   ],
+   "colour": [
+    0.82,
+    0.56,
+    0.12
+   ]
+  },
+  {
+   "id": "kingdom:varduun",
+   "name": "Varduun",
+   "uv": [
+    0.5835,
+    0.73922
+   ],
+   "colour": [
+    0.16,
+    0.56,
+    0.66
+   ]
+  }
+ ]
+}

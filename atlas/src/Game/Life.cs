@@ -147,7 +147,6 @@ namespace Atlas
             Traffic = new ShipTraffic(_m, 7);
             foreach (var mi in v.City.ByName.Values.Where(n => n.Name.ToString().StartsWith("CAP_Ship_")))
                 _staticShips.Add((mi, mi.Transform, (float)GD.RandRange(0, 100), mi.Name.ToString().Contains("boat") || mi.Name.ToString().Contains("fisher")));
-            BuildClouds();
             BuildSteam();
             BuildBirds();
             BuildLabels();
@@ -159,7 +158,7 @@ namespace Atlas
         {
             yield return ("People", () => _peopleRoot.Visible, b => _peopleRoot.Visible = b);
             yield return ("Ships", () => _shipsRoot.Visible, b => _shipsRoot.Visible = b);
-            yield return ("Clouds", () => _cloudsRoot.Visible, b => _cloudsRoot.Visible = b);
+            yield return ("Clouds", () => _v.Weather?.Clouds.Visible ?? false, b => { if (_v.Weather != null) _v.Weather.Clouds.Visible = b; });
             yield return ("Night lights", () => _v.Lights.Visible, b => _v.Lights.Visible = b);
             yield return ("Steam and birds", () => _ambientRoot.Visible, b => _ambientRoot.Visible = b);
             yield return ("Labels", () => _labelsRoot.Visible, b => _labelsRoot.Visible = b);
@@ -194,7 +193,6 @@ namespace Atlas
             Traffic.Step(dt);
             UpdateShips();
             BobStaticShips();
-            DriftClouds((float)delta);
             UpdateBirds();
         }
 

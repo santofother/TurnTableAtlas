@@ -1,14 +1,15 @@
 {
+ "_note": "Reference only: every generator/cities/<id>.json key in use, from a removed test city (an island port). Copy keys, not the design. See docs/new_city/README.md.",
  "id": "thalassa_minor",
  "name": "Thalassa Minor",
  "model_scale": 15,
  "world_map": {
-  "map": "caelora",
+  "map": "caelora_geography",
   "pin_uv": [
-   0.11,
-   0.75
+   0.112,
+   0.752
   ],
-  "lore": "LORE? placeholder name and pin: the south-west island"
+  "lore": "LORE? placeholder name and pin: the large island south-west of the Gulf of Salmara"
  },
  "sun": {
   "latitude_deg": 31.0,

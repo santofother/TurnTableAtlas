@@ -1,5 +1,5 @@
 // App shell: discovers city packages, shows the world map or a city, handles screenshots and test flags.
-//   --city=<id>        open a city directly (otherwise the world map)
+//   --city=<id>        open a city directly (otherwise the world map)   --map-mode=known_world --view=CAM_03_North
 //   --hour=19.5 --speed=0.1 --landmark=forum --event=chariot_race --arc
 //   --quit-after=5     exit after N seconds (smoke tests)    --shots=3,6   save screenshots at those seconds
 //   --cities=<dir>     where the packages live (default: <repo>/cities, or ./cities next to the executable)
@@ -19,6 +19,8 @@ namespace Atlas
         CityView _city;
         public CityView City => _city;
         public WorldMap Map => _map;
+        /// <summary>One weather for the whole Atlas: it carries over between the map and the cities.</summary>
+        public Weather Weather { get; } = new(WeatherKind.Fair);
         AtlasUI _ui;
         WorldMap _map;
         double _t, _benchT; long _benchFrames;
@@ -36,7 +38,6 @@ namespace Atlas
                 if (double.TryParse(s, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var d)) _shots.Add(d);
             var id = Args.Get("city");
             if (id != null && Cities.Any(c => c.Id == id)) OpenCity(id);
-            else if (Cities.Count == 1 && !Args.Has("map")) OpenCity(Cities[0].Id);
             else ShowMap();
         }
 
@@ -56,6 +57,7 @@ namespace Atlas
             var m = Cities.First(c => c.Id == id);
             CloseAll();
             _city = CityView.Create(m);
+            _city.SharedWeather = Weather;
             AddChild(_city);
             if (Args.Has("hour")) { _city.Tod.Hour = Args.F("hour", 17.5f); _city.Tod.Apply(); }
             if (Args.Has("speed")) _city.Tod.Speed = Args.F("speed", 0);

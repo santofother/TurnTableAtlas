@@ -7,11 +7,11 @@ depend on it say what to rerun.
 |---|---|---|---|
 | 1 | Are these cities in the Caelora world? | **Yes.** Pins sit on `CaeloraMapv3.png` (copied to `atlas/assets/map/`). Pin positions are `LORE?` placeholders until you place them. | S9 |
 | 2 | Is the hippodrome final? | **Yes, treated as final.** This repo's generator is now the only copy that changes. | S1 |
-| 3 | City names and latitude | Fantasy Capital (`LORE?` name), **38°N**, day 172. Second city: *Thalassa Minor* (`LORE?`), **31°N**, day 200 (a hotter, southern island port on the south-west island). | S2, S10 |
+| 3 | City names and latitude | Fantasy Capital (`LORE?` name), **38°N**, day 172. ~~Second city: *Thalassa Minor*~~: removed 2026-11-23 at the user's request (it read as a copy of Calderra); its config is kept as `docs/new_city/example_layout.json`. New cities come from briefs (`docs/new_city/README.md`). | S2, S10 |
 | 4 | Art direction for people and night | **Stylised painted miniature**, matching the current renders: tiny low-poly figures tinted by vertex colour, warm window glow, no realistic humans. | S3, S4, S8 |
 | 5 | Cinematic or Atlas first? | **Both, in the plan's order** (S3–S5 then S6–S9); they only share S2's package. | all |
 | 6 | Events beyond the core four | Core five only: gladiator games, chariot race, theatre play, fleet arrival, festival night. A triumph parade reuses the festival procession data. | S5, S8 |
-| 7 | World-map style | **Flat painted Caelora map**, zoom and pan, with pins. A 3D tabletop can come later. | S9 |
+| 7 | World-map style | ~~Flat painted Caelora map~~ → **3D world map** (S11): the painted Geography map lying flat on a board, and the Known World relief baked from `KnownWorld.blend` (its own materials, unlit; 1 unit = 10 miles; 15× relief), in one frame, with clouds, weather and time of day. | S9, S11 |
 
 Other defaults taken while building:
 - **Git LFS** tracks `.blend`, `.glb`, `.png`, `.jpg`, `.mp4`, `.exr`. There is no remote yet; nothing is pushed.

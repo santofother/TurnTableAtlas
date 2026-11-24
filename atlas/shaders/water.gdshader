@@ -1,6 +1,7 @@
 // Sea: colour by depth (packed into COLOR.r by the exporter), gentle animated ripples.
 shader_type spatial;
 render_mode cull_back, diffuse_burley, specular_schlick_ggx;
+#include "res://shaders/cloud_shadow.gdshaderinc"
 
 uniform vec3 shallow : source_color = vec3(0.24, 0.64, 0.62);
 uniform vec3 mid1 : source_color = vec3(0.12, 0.44, 0.58);
@@ -22,10 +23,10 @@ void fragment() {
     vec3 c = mix(shallow, mid1, smoothstep(0.0, 0.15, d));
     c = mix(c, mid2, smoothstep(0.15, 0.5, d));
     c = mix(c, deep, smoothstep(0.5, 1.0, d));
-    ALBEDO = c;
+    ALBEDO = c * cloud_shadow(wpos);
     float e = 0.05;
     float h0 = waves(wpos.xz);
-    vec3 nw = normalize(vec3(-(waves(wpos.xz + vec2(e, 0.0)) - h0) / e * 0.06, 1.0, -(waves(wpos.xz + vec2(0.0, e)) - h0) / e * 0.06));
+    vec3 nw = normalize(vec3(-(waves(wpos.xz + vec2(e, 0.0)) - h0) / e * (0.06 + 0.1 * cloud_wet), 1.0, -(waves(wpos.xz + vec2(0.0, e)) - h0) / e * (0.06 + 0.1 * cloud_wet)));
     NORMAL = normalize((VIEW_MATRIX * vec4(nw, 0.0)).xyz);
     ROUGHNESS = 0.14;
     SPECULAR = 0.55;

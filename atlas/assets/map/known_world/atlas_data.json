@@ -1,0 +1,3132 @@
+{
+ "meta": {
+  "snapshot": "c. 2100 CR, Book One opening (Month 0)",
+  "built_by": "blender/scripts/prep_atlas_data.py",
+  "rules": "Stage 7: canon data extracted by hand from the Atlas entries (read-only sources under\n...\\The Harold Project\\The Histories\\). Nothing is invented: people, titles, houses and relationships come only\nfrom the entries' family trees, named-character lists and vassal lists. Unknowns are None and go to\ndata/data_gaps.md. Descriptions are short paraphrases. Snapshot: c. 2100 CR (Book One opening, M0); later\nmanuscript events go in LATER_EVENTS, never applied.\n\nLiege rules used consistently (documented in data/data_gaps.md):\n  - a reigning ruler has no liege (sovereign);\n  - royal family members and crown officers answer to the ruler;\n  - the head of a great vassal house answers to the ruler; members of that house answer to their head.",
+  "provisional_territories": "data/kingdoms_provisional.geojson",
+  "counts": {
+   "kingdoms": 17,
+   "houses": 40,
+   "characters": 91,
+   "settlements": 28,
+   "later_events": 10
+  }
+ },
+ "kingdoms": [
+  {
+   "id": "kingdom:calderra",
+   "name": "Calderra",
+   "ruling_house": "house:caldravi",
+   "ruler": "char:tavian_caldravi",
+   "capital": "settlement:calderra",
+   "government": "hereditary monarchy (House Caldravi)",
+   "description": "Plains kingdom of western Caelora famed for cattle, horses and elite cavalry; proud, honour-bound and, since c. 1500 CR, markedly devout. Imports grain from Hamen; rebuilt a navy after the Great Betrayal.",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "colour": [
+    0.62,
+    0.24,
+    0.18
+   ],
+   "territory": "PROVISIONAL (data/kingdoms_provisional.geojson, label 1)",
+   "seat_settlement": "settlement:calderra"
+  },
+  {
+   "id": "kingdom:astera",
+   "name": "Astera",
+   "ruling_house": null,
+   "ruler": "char:theodorus",
+   "capital": "settlement:astera",
+   "government": "elective theocracy: the High Aster Order (High Pontiff elected for life by the Curia; no crown, no bloodline)",
+   "description": "Religious capital and mediating power of northern Caelora; wealthy in tithes and pilgrims, defended but never projecting force (Calderra's faith is its only sword arm). Keeps the History Keepers and a buried older faith.",
+   "source": "The Histories\\Caelora\\Astera\\Astera Atlas Entry.md",
+   "ruling_body": "The High Aster Order",
+   "colour": [
+    0.52,
+    0.38,
+    0.76
+   ],
+   "territory": "PROVISIONAL (data/kingdoms_provisional.geojson, label 2)",
+   "seat_settlement": "settlement:astera"
+  },
+  {
+   "id": "kingdom:madravella",
+   "name": "Madravella",
+   "ruling_house": "house:serravene",
+   "ruler": "char:isabeau_serravene",
+   "capital": "settlement:madravella",
+   "government": "elective monarchy within the royal family (the Council of Blood elects any true-born member)",
+   "description": "Small, rich, scholarly kingdom on the open Oravian plains: vineyards, the great university and the continent's best intelligence network. Free for six centuries; above all it wants to prevent a general war.",
+   "source": "The Histories\\Caelora\\Madravella\\Madravella Atlas Entry.md",
+   "colour": [
+    0.6,
+    0.26,
+    0.52
+   ],
+   "territory": "PROVISIONAL (data/kingdoms_provisional.geojson, label 4)",
+   "seat_settlement": "settlement:madravella"
+  },
+  {
+   "id": "kingdom:valdora",
+   "name": "Valdora",
+   "ruling_house": "house:corivane",
+   "ruler": "char:severin_corivane",
+   "capital": "settlement:corivessa_great_gate",
+   "government": "hereditary monarchy, strict birth order regardless of gender (House Corivane)",
+   "description": "Master of the Great Gate and the Canyon Road at the Ventara canyon's western mouth; taxes nearly all traffic between Kervara and the plains; a pragmatic, process-run state. Founded c. 500 CR by betraying Thrennor.",
+   "source": "The Histories\\Caelora\\Valdora\\Valdora Atlas Entry.md",
+   "colour": [
+    0.3,
+    0.38,
+    0.76
+   ],
+   "territory": "PROVISIONAL (data/kingdoms_provisional.geojson, label 5)",
+   "seat_settlement": "settlement:corivessa_great_gate"
+  },
+  {
+   "id": "kingdom:kervara",
+   "name": "Kervara",
+   "ruling_house": "house:marcellus",
+   "ruler": "char:ossian_marcellus",
+   "capital": "settlement:kervara",
+   "government": "hereditary monarchy (eldest child), governed day to day by the King's Hand, a Dravenne relative, by custom",
+   "description": "Unconquered mountain military kingdom in the basin at the Ventara canyon's east end; rich in iron, gold, silver and craftsmen; sells the best mercenary companies in Caelora. Its crown descends from the usurper Garreth.",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md",
+   "offices": {
+    "King's Hand": "char:halvard_dravenne",
+    "Lord Marshal of the companies": "char:warrick_dravenne"
+   },
+   "colour": [
+    0.7,
+    0.24,
+    0.38
+   ],
+   "territory": "PROVISIONAL (data/kingdoms_provisional.geojson, label 6)",
+   "seat_settlement": "settlement:kervara"
+  },
+  {
+   "id": "kingdom:salmara",
+   "name": "Salmara",
+   "ruling_house": "house:salmara",
+   "ruler": "char:varro_salmara",
+   "capital": "settlement:salmara",
+   "government": "hereditary Princeps (strict succession in House Salmara) presiding over the Merchant Council, whose assent is required for war",
+   "description": "The wealthiest merchant kingdom of the Middle Sea: salt, banking, credit, insurance and shipping; newly and lavishly armed. Its fleet lies in tidal flats behind a bar that gates sailing on the tide.",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md",
+   "ruler_title": "Princeps",
+   "colour": [
+    0.18,
+    0.55,
+    0.62
+   ],
+   "territory": "PROVISIONAL (data/kingdoms_provisional.geojson, label 3)",
+   "seat_settlement": "settlement:salmara"
+  },
+  {
+   "id": "kingdom:dovaran_crown",
+   "name": "The Dovaran Crown",
+   "ruling_house": "house:dove",
+   "ruler": "char:peregrine_dove",
+   "capital": "settlement:dovehall",
+   "government": "hereditary monarchy, strict male primogeniture; the loyalty of the great captain-houses must be re-earned",
+   "description": "Island monarchy of the limestone Clearwater archipelago (Lofoten cliffs in an Aegean sea), ruling the Middle Sea's navigation, tolls and storm lore from Dovehall; takes tribute from Hamen; about 100,000 people fed entirely by trade. Senior Marcellus line (the Kervara claim).",
+   "source": "The Histories\\Caelora\\Dovaran Crown\\Dovaran Crown Atlas Entry.md",
+   "colour": [
+    0.16,
+    0.5,
+    0.8
+   ],
+   "territory": "PROVISIONAL (data/kingdoms_provisional.geojson, label 7)",
+   "seat_settlement": "settlement:dovehall"
+  },
+  {
+   "id": "kingdom:hamen",
+   "name": "Hamen",
+   "ruling_house": "house:amaranth",
+   "ruler": "char:meret_amaranth",
+   "capital": "settlement:haven",
+   "government": "hereditary monarchy (House Amaranth, the farmer-kings)",
+   "description": "The River Flame kingdom on both banks of the Flame: canal-fed surplus grain, trade 'with anyone', a doctrine of bleeding for no one; has paid House Dove tribute for three and a half centuries while Queen Meret secretly builds a fleet.",
+   "source": "The Histories\\Quadria\\The River Flame Chronicles\\Hamen Atlas Entry.md",
+   "colour": [
+    0.66,
+    0.18,
+    0.28
+   ],
+   "territory": "PROVISIONAL (data/kingdoms_provisional.geojson, label 8)",
+   "seat_settlement": "settlement:haven"
+  },
+  {
+   "id": "kingdom:coastal_sultanate",
+   "name": "The Coastal Sultanate",
+   "ruling_house": null,
+   "ruler": null,
+   "capital": null,
+   "government": "Sultanate (the Sultan is unnamed in canon)",
+   "description": "Wealthiest of the four Sultanates: harbours, ships and trade on Quadria's northern shore, north-west of the High Dunes; home of the Tide Court, single combat aboard anchored ships sacred to Tarek.",
+   "source": "The Histories\\Quadria\\The Dune Sea Chronoicles\\Coastal Sultanate Atlas Entry.md",
+   "colour": [
+    0.14,
+    0.54,
+    0.5
+   ],
+   "territory": "PROVISIONAL (data/kingdoms_provisional.geojson, label 9)",
+   "seat_settlement": null
+  },
+  {
+   "id": "kingdom:high_dunes",
+   "name": "The High Dunes",
+   "ruling_house": null,
+   "ruler": null,
+   "capital": null,
+   "government": "tribal: clan leadership, no Sultan and no single throne (by design)",
+   "description": "The purest surviving Bedouin culture of the Dune Sea: horse-breeding, camel cavalry, clan over dynasty. Karn Ashur sits within its territory without answering to it.",
+   "source": "The Histories\\Quadria\\The Dune Sea Chronoicles\\High Dunes Atlas Entry.md",
+   "colour": [
+    0.56,
+    0.24,
+    0.48
+   ],
+   "territory": "PROVISIONAL (data/kingdoms_provisional.geojson, label 10)",
+   "seat_settlement": null
+  },
+  {
+   "id": "kingdom:oasis_league",
+   "name": "The Oasis League",
+   "ruling_house": null,
+   "ruler": null,
+   "capital": null,
+   "government": "Sultanate over a league of oasis-towns and temples (Sultan unnamed)",
+   "description": "Rich, scholarly and temple-dense; closest of the successor states to the Ashen Order and Karn Ashur's Library; judge-priests and record-keeping.",
+   "source": "The Histories\\Quadria\\The Dune Sea Chronoicles\\Oasis League Atlas Entry.md",
+   "colour": [
+    0.24,
+    0.4,
+    0.74
+   ],
+   "territory": "PROVISIONAL (data/kingdoms_provisional.geojson, label 11)",
+   "seat_settlement": "settlement:oasis_league"
+  },
+  {
+   "id": "kingdom:southern_salt_sultanate",
+   "name": "The Southern Salt Sultanate",
+   "ruling_house": null,
+   "ruler": null,
+   "capital": null,
+   "government": "Sultanate (Sultan unnamed)",
+   "description": "Salt mines, copper and siege-proof desert fortresses; self-sufficient and defensively patient.",
+   "source": "The Histories\\Quadria\\The Dune Sea Chronoicles\\Southern Salt Sultanate Atlas Entry.md",
+   "colour": [
+    0.76,
+    0.4,
+    0.16
+   ],
+   "territory": "PROVISIONAL (data/kingdoms_provisional.geojson, label 12)",
+   "seat_settlement": "settlement:southern_salt_sultanate"
+  },
+  {
+   "id": "kingdom:eastern_marches",
+   "name": "The Eastern Marches",
+   "ruling_house": null,
+   "ruler": null,
+   "capital": null,
+   "government": "Sultanate (Sultan unnamed)",
+   "description": "The old frontier with Hamen; small grinding border wars; exports mercenary companies.",
+   "source": "The Histories\\Quadria\\The Dune Sea Chronoicles\\Eastern Marches Atlas Entry.md",
+   "colour": [
+    0.5,
+    0.34,
+    0.76
+   ],
+   "territory": "PROVISIONAL (data/kingdoms_provisional.geojson, label 13)",
+   "seat_settlement": "settlement:eastern_marches"
+  },
+  {
+   "id": "kingdom:karn_ashur",
+   "name": "Karn Ashur",
+   "ruling_house": null,
+   "ruler": null,
+   "capital": "settlement:karn_ashur",
+   "government": "neutral temple-city under the Ashen Order; claimed by none of the five successor states (not a kingdom)",
+   "description": "The Temple of the First Flame on the High Dunes' great peak: Al-Mirah's spring at its base, a flame at the summit, the Ashen Order and its Library; three thousand years of untouched neutrality. Fed in part by Hamen grain; shelters House Qadir's hidden slave-trafficking network.",
+   "source": "The Histories\\Quadria\\The Dune Sea Chronoicles\\Karn Ashur Atlas Entry.md",
+   "polity_type": "neutral temple-city",
+   "ruling_body": "The Ashen Order",
+   "divine_houses": [
+    "Ashur",
+    "Nahar",
+    "Qamar",
+    "Samir",
+    "Azara",
+    "Tarek",
+    "Belat",
+    "Marruk"
+   ],
+   "colour": [
+    0.82,
+    0.56,
+    0.12
+   ],
+   "territory": "PROVISIONAL (data/kingdoms_provisional.geojson, label 15)",
+   "seat_settlement": "settlement:karn_ashur"
+  },
+  {
+   "id": "kingdom:varduun",
+   "name": "Varduun",
+   "ruling_house": null,
+   "ruler": "char:vareth",
+   "capital": "settlement:varduun_trial_seat",
+   "government": "elective chiefdom: the High Chief wins the Trial-Seat through the Trials, ending in the weaponless Pit of Stone; no hereditary throne, ever",
+   "description": "Rebuilt mountain people of the jungled basalt highlands near the River Flame's source: the Seven Great Clans, the Council of Elders and the Trials; iron, stonework and hard mercenaries; haunted by Old Karr's warning.",
+   "source": "The Histories\\Quadria\\Varduun Atlas Entry.md",
+   "ruler_title": "High Chief",
+   "ruling_body": "The Seven Great Clans and the Council of Elders",
+   "colour": [
+    0.16,
+    0.56,
+    0.66
+   ],
+   "territory": "PROVISIONAL (data/kingdoms_provisional.geojson, label 14)",
+   "seat_settlement": "settlement:varduun_trial_seat"
+  },
+  {
+   "id": "kingdom:vesperra",
+   "name": "Vesperra",
+   "ruling_house": null,
+   "ruler": null,
+   "capital": null,
+   "government": "unknown land: no political data",
+   "description": "The lightly detailed western continent across the Duskward Sea; name is a placeholder.",
+   "source": "Map Decisions.md (#11, #16, #42); pipeline\\world_spec.json names/cont_west",
+   "polity_type": "unknown land",
+   "placeholder": true,
+   "colour": null,
+   "territory": null,
+   "seat_settlement": null
+  },
+  {
+   "id": "kingdom:thrasia",
+   "name": "Thrasia",
+   "ruling_house": null,
+   "ruler": null,
+   "capital": null,
+   "government": "unknown land: no political data",
+   "description": "The remote eastern continent across the Dawnward Sea, mostly unknown; the Silent Coast, the Pale Mountains, the Interior Silence.",
+   "source": "The Histories\\World Atlas.md",
+   "polity_type": "unknown land",
+   "colour": null,
+   "territory": null,
+   "seat_settlement": null
+  }
+ ],
+ "houses": [
+  {
+   "id": "house:caldravi",
+   "name": "House Caldravi",
+   "kingdom": "kingdom:calderra",
+   "head": "char:tavian_caldravi",
+   "role": "royal house",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md"
+  },
+  {
+   "id": "house:vantry",
+   "name": "House Vantry",
+   "kingdom": "kingdom:calderra",
+   "head": "char:aldous_vantry",
+   "role": "great vassal house: inland cavalry",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md"
+  },
+  {
+   "id": "house:ossmere",
+   "name": "House Ossmere",
+   "kingdom": "kingdom:calderra",
+   "head": "char:serane_ossmere",
+   "role": "great vassal house: coastal, grown rich on the navy",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "seat": "settlement:ossmere"
+  },
+  {
+   "id": "house:calloway",
+   "name": "House Calloway",
+   "kingdom": "kingdom:calderra",
+   "head": "char:dennet_calloway",
+   "role": "great vassal house: holds the Salt Road tolls",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "seat": "settlement:calloway"
+  },
+  {
+   "id": "house:calvenne",
+   "name": "House Calvenne",
+   "kingdom": "kingdom:astera",
+   "head": null,
+   "role": "nominal temporal administrators of the city (markets, roads, watch)",
+   "source": "The Histories\\Caelora\\Astera\\Astera Atlas Entry.md"
+  },
+  {
+   "id": "house:ashvane",
+   "name": "House Ashvane",
+   "kingdom": "kingdom:astera",
+   "head": null,
+   "role": "Asteran noble house; birth house of Princess Yseult Caldravi",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md"
+  },
+  {
+   "id": "house:serravene",
+   "name": "House Serravene",
+   "kingdom": "kingdom:madravella",
+   "head": "char:isabeau_serravene",
+   "role": "royal house",
+   "source": "The Histories\\Caelora\\Madravella\\Madravella Atlas Entry.md"
+  },
+  {
+   "id": "house:verlain",
+   "name": "House Verlain",
+   "kingdom": "kingdom:madravella",
+   "head": null,
+   "role": "great vassal house: vineyard country and the wine trade",
+   "source": "The Histories\\Caelora\\Madravella\\Madravella Atlas Entry.md"
+  },
+  {
+   "id": "house:ondry",
+   "name": "House Ondry",
+   "kingdom": "kingdom:madravella",
+   "head": null,
+   "role": "great vassal house: nominal wardens of the Expanse frontier",
+   "source": "The Histories\\Caelora\\Madravella\\Madravella Atlas Entry.md"
+  },
+  {
+   "id": "house:corivane",
+   "name": "House Corivane",
+   "kingdom": "kingdom:valdora",
+   "head": "char:severin_corivane",
+   "role": "royal house",
+   "source": "The Histories\\Caelora\\Valdora\\Valdora Atlas Entry.md"
+  },
+  {
+   "id": "house:vallenar",
+   "name": "House Vallenar",
+   "kingdom": "kingdom:valdora",
+   "head": "char:ardin_vallenar",
+   "role": "great vassal house: hereditary Lord Wardens of the Great Gate",
+   "source": "The Histories\\Caelora\\Valdora\\Valdora Atlas Entry.md"
+  },
+  {
+   "id": "house:castellon",
+   "name": "House Castellon",
+   "kingdom": "kingdom:valdora",
+   "head": "char:ferro_castellon",
+   "role": "great vassal house: customs and toll administration",
+   "source": "The Histories\\Caelora\\Valdora\\Valdora Atlas Entry.md"
+  },
+  {
+   "id": "house:dellorin",
+   "name": "House Dellorin",
+   "kingdom": "kingdom:valdora",
+   "head": "char:ansel_dellorin",
+   "role": "great vassal house: old foothill establishment, keepers of the founding story",
+   "source": "The Histories\\Caelora\\Valdora\\Valdora Atlas Entry.md"
+  },
+  {
+   "id": "house:marcellus",
+   "name": "House Marcellus",
+   "kingdom": "kingdom:kervara",
+   "head": "char:ossian_marcellus",
+   "role": "royal house (Garreth's line)",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md"
+  },
+  {
+   "id": "house:dravenne",
+   "name": "House Dravenne",
+   "kingdom": "kingdom:kervara",
+   "head": "char:halvard_dravenne",
+   "role": "great vassal house: hereditary Lord Marshals, almost always the King's Hand",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md"
+  },
+  {
+   "id": "house:ferrus",
+   "name": "House Ferrus",
+   "kingdom": "kingdom:kervara",
+   "head": "char:torra_ferrus",
+   "role": "great vassal house: mining and smithing, risen on merit",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md"
+  },
+  {
+   "id": "house:harrow",
+   "name": "House Harrow",
+   "kingdom": "kingdom:kervara",
+   "head": "char:petran_harrow",
+   "role": "great vassal house: hereditary Wardens of the Hidden Paths",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md"
+  },
+  {
+   "id": "house:salmara",
+   "name": "House Salmara",
+   "kingdom": "kingdom:salmara",
+   "head": "char:varro_salmara",
+   "role": "ruling house (the Princeps)",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md"
+  },
+  {
+   "id": "house:varecia",
+   "name": "House Varecia",
+   "kingdom": "kingdom:salmara",
+   "head": "char:denarion_varecia",
+   "role": "Merchant Council: heirs of the old salt kingdom",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md"
+  },
+  {
+   "id": "house:lasca",
+   "name": "House Lasca",
+   "kingdom": "kingdom:salmara",
+   "head": null,
+   "role": "Merchant Council: lesser salt-pond house",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md"
+  },
+  {
+   "id": "house:solvane",
+   "name": "House Solvane",
+   "kingdom": "kingdom:salmara",
+   "head": "char:ilarion_solvane",
+   "role": "Merchant Council: the preeminent banking house",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md"
+  },
+  {
+   "id": "house:cortavel",
+   "name": "House Cortavel",
+   "kingdom": "kingdom:salmara",
+   "head": "char:serelia_cortavel",
+   "role": "Merchant Council: merchant fleets and warehousing",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md"
+  },
+  {
+   "id": "house:dove",
+   "name": "House Dove",
+   "kingdom": "kingdom:dovaran_crown",
+   "head": "char:peregrine_dove",
+   "role": "royal house (the senior Marcellus line)",
+   "source": "The Histories\\Caelora\\Dovaran Crown\\Dovaran Crown Atlas Entry.md"
+  },
+  {
+   "id": "house:thorne",
+   "name": "House Thorne",
+   "kingdom": "kingdom:dovaran_crown",
+   "head": "char:alder_thorne",
+   "role": "great captain-house: oldest and proudest",
+   "source": "The Histories\\Caelora\\Dovaran Crown\\Dovaran Crown Atlas Entry.md"
+  },
+  {
+   "id": "house:gale",
+   "name": "House Gale",
+   "kingdom": "kingdom:dovaran_crown",
+   "head": null,
+   "role": "great captain-house: risen on raiding and trade",
+   "source": "The Histories\\Caelora\\Dovaran Crown\\Dovaran Crown Atlas Entry.md"
+  },
+  {
+   "id": "house:amaranth",
+   "name": "House Amaranth",
+   "kingdom": "kingdom:hamen",
+   "head": "char:meret_amaranth",
+   "role": "royal house",
+   "source": "The Histories\\Quadria\\The River Flame Chronicles\\Hamen Atlas Entry.md"
+  },
+  {
+   "id": "house:nereth",
+   "name": "House Nereth",
+   "kingdom": "kingdom:hamen",
+   "head": "char:yara_nereth",
+   "role": "great house: canal engineers",
+   "source": "The Histories\\Quadria\\The River Flame Chronicles\\Hamen Atlas Entry.md"
+  },
+  {
+   "id": "house:dareth",
+   "name": "House Dareth",
+   "kingdom": "kingdom:hamen",
+   "head": "char:farid_dareth",
+   "role": "great house: scholars, keepers of the Dareth Archive",
+   "source": "The Histories\\Quadria\\The River Flame Chronicles\\Hamen Atlas Entry.md"
+  },
+  {
+   "id": "house:iskandar",
+   "name": "House Iskandar",
+   "kingdom": "kingdom:hamen",
+   "head": "char:rahim_iskandar",
+   "role": "great house: desert border lords",
+   "source": "The Histories\\Quadria\\The River Flame Chronicles\\Hamen Atlas Entry.md"
+  },
+  {
+   "id": "house:voss",
+   "name": "House Voss",
+   "kingdom": "kingdom:hamen",
+   "head": "char:renna_voss",
+   "role": "great house: the 'New Shield', garrison and military command",
+   "source": "The Histories\\Quadria\\The River Flame Chronicles\\Hamen Atlas Entry.md"
+  },
+  {
+   "id": "house:selenne",
+   "name": "House Selenne",
+   "kingdom": "kingdom:hamen",
+   "head": "char:mira_selenne",
+   "role": "great house: river-shrine keepers, the coronation house",
+   "source": "The Histories\\Quadria\\The River Flame Chronicles\\Hamen Atlas Entry.md"
+  },
+  {
+   "id": "house:fenn",
+   "name": "House Fenn",
+   "kingdom": "kingdom:hamen",
+   "head": "char:yasmin_fenn",
+   "role": "great house: merchants (Marakai's old place)",
+   "source": "The Histories\\Quadria\\The River Flame Chronicles\\Hamen Atlas Entry.md"
+  },
+  {
+   "id": "house:qadir",
+   "name": "House Qadir",
+   "kingdom": "kingdom:karn_ashur",
+   "head": null,
+   "role": "merchant house (Marruk-marked trade) and the desert's largest slave-trafficking network; secretly of Var Kaled descent",
+   "source": "The Histories\\Quadria\\The Dune Sea Chronoicles\\Karn Ashur Atlas Entry.md"
+  },
+  {
+   "id": "house:clan_karr",
+   "name": "Great Clan Karr",
+   "kingdom": "kingdom:varduun",
+   "head": null,
+   "role": "Great Clan: keepers of the Trials and the Pit of Stone",
+   "source": "The Histories\\Quadria\\Varduun Atlas Entry.md ; The Histories\\World Atlas.md"
+  },
+  {
+   "id": "house:clan_morvek",
+   "name": "Great Clan Morvek",
+   "kingdom": "kingdom:varduun",
+   "head": null,
+   "role": "Great Clan: masters of the deepest iron workings",
+   "source": "The Histories\\Quadria\\Varduun Atlas Entry.md ; The Histories\\World Atlas.md"
+  },
+  {
+   "id": "house:clan_odran",
+   "name": "Great Clan Odran",
+   "kingdom": "kingdom:varduun",
+   "head": null,
+   "role": "Great Clan: builders of bridges, roads, halls and fortresses",
+   "source": "The Histories\\Quadria\\Varduun Atlas Entry.md ; The Histories\\World Atlas.md"
+  },
+  {
+   "id": "house:clan_velka",
+   "name": "Great Clan Velka",
+   "kingdom": "kingdom:varduun",
+   "head": null,
+   "role": "Great Clan: guardians of the northern passes",
+   "source": "The Histories\\Quadria\\Varduun Atlas Entry.md ; The Histories\\World Atlas.md"
+  },
+  {
+   "id": "house:clan_brekan",
+   "name": "Great Clan Brekan",
+   "kingdom": "kingdom:varduun",
+   "head": "char:dessin_brekan",
+   "role": "Great Clan: soldiers and champions",
+   "source": "The Histories\\Quadria\\Varduun Atlas Entry.md ; The Histories\\World Atlas.md"
+  },
+  {
+   "id": "house:clan_tarsa",
+   "name": "Great Clan Tarsa",
+   "kingdom": "kingdom:varduun",
+   "head": null,
+   "role": "Great Clan: herders, wardens of the highest valleys",
+   "source": "The Histories\\Quadria\\Varduun Atlas Entry.md ; The Histories\\World Atlas.md"
+  },
+  {
+   "id": "house:clan_orun",
+   "name": "Great Clan Orun",
+   "kingdom": "kingdom:varduun",
+   "head": null,
+   "role": "Great Clan: judges, oath-keepers and council speakers",
+   "source": "The Histories\\Quadria\\Varduun Atlas Entry.md ; The Histories\\World Atlas.md"
+  }
+ ],
+ "characters": [
+  {
+   "id": "char:osric_caldravi",
+   "name": "Osric Caldravi",
+   "title": "King (deceased)",
+   "house": "house:caldravi",
+   "kingdom": "kingdom:calderra",
+   "liege": null,
+   "location": null,
+   "description": "Former king; father of Tavian, Dorric and Alys.",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "status": "deceased",
+   "vassals": []
+  },
+  {
+   "id": "char:maren_caldravi",
+   "name": "Maren Caldravi",
+   "title": "Queen (deceased)",
+   "house": "house:caldravi",
+   "kingdom": "kingdom:calderra",
+   "liege": null,
+   "location": null,
+   "description": "Former queen, Osric's wife.",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "status": "deceased",
+   "vassals": []
+  },
+  {
+   "id": "char:tavian_caldravi",
+   "name": "Tavian Caldravi",
+   "title": "King of Calderra",
+   "house": "house:caldravi",
+   "kingdom": "kingdom:calderra",
+   "liege": null,
+   "location": "settlement:calderra",
+   "description": "Reigning king: grey, stoic and exacting in public, privately weary and cautious, haunted by his house's thousand years of costly ambition.",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "status": "living",
+   "age_m0": 63,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": [
+    "char:aldous_vantry",
+    "char:dennet_calloway",
+    "char:dorric_caldravi",
+    "char:elenor_caldravi",
+    "char:emeric_fenmark",
+    "char:halden_caldravi",
+    "char:isolde_caldravi",
+    "char:landric_caldravi",
+    "char:ossane_vayle",
+    "char:renn_caldravi",
+    "char:serane_ossmere",
+    "char:yseult_caldravi"
+   ]
+  },
+  {
+   "id": "char:landric_caldravi",
+   "name": "Landric Caldravi",
+   "title": "Prince, heir to the throne",
+   "house": "house:caldravi",
+   "kingdom": "kingdom:calderra",
+   "liege": "char:tavian_caldravi",
+   "location": "settlement:calderra",
+   "description": "Charismatic heir and finest horseman of his generation; impatient with his father's caution; privately cruel to those who cannot hold him to account.",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "status": "living",
+   "age_m0": 38,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:yseult_caldravi",
+   "name": "Yseult Caldravi",
+   "title": "Princess",
+   "house": "house:caldravi",
+   "kingdom": "kingdom:calderra",
+   "liege": "char:tavian_caldravi",
+   "location": "settlement:calderra",
+   "description": "Landric's wife, born to House Ashvane of Astera; devout, observant, uneasy about the old imperial dream.",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "status": "living",
+   "born_house": "house:ashvane",
+   "age_m0": 36,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:elenor_caldravi",
+   "name": "Elenor Caldravi",
+   "title": "Princess",
+   "house": "house:caldravi",
+   "kingdom": "kingdom:calderra",
+   "liege": "char:tavian_caldravi",
+   "location": "settlement:calderra",
+   "description": "Landric and Yseult's daughter, nearly of age; betrothed to Tomlin Vantry to bind House Vantry to the crown.",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "status": "living",
+   "age_m0": 16,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:dorric_caldravi",
+   "name": "Dorric Caldravi",
+   "title": "Prince, commander of the royal cavalry",
+   "house": "house:caldravi",
+   "kingdom": "kingdom:calderra",
+   "liege": "char:tavian_caldravi",
+   "location": "settlement:calderra",
+   "description": "The king's younger brother; a loyal soldier, stung at being second-born; at odds with the navy over funding.",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:renn_caldravi",
+   "name": "Renn Caldravi",
+   "title": "Lord",
+   "house": "house:caldravi",
+   "kingdom": "kingdom:calderra",
+   "liege": "char:tavian_caldravi",
+   "location": null,
+   "description": "Dorric's son, Landric's first cousin; a gifted cavalry commander who privately resents birth order.",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "status": "living",
+   "age_m0": 35,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:isolde_caldravi",
+   "name": "Isolde Caldravi",
+   "title": "Lady (religious life at Astera)",
+   "house": "house:caldravi",
+   "kingdom": "kingdom:calderra",
+   "liege": "char:tavian_caldravi",
+   "location": "settlement:astera",
+   "description": "Dorric's daughter; took up religious life at Astera; the family's clear-eyed moral conscience.",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "status": "living",
+   "age_m0": 31,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:alys_caldravi",
+   "name": "Alys Corivane (born Caldravi)",
+   "title": "Princess of House Corivane",
+   "house": "house:corivane",
+   "kingdom": "kingdom:valdora",
+   "liege": "char:severin_corivane",
+   "location": "settlement:corivessa_great_gate",
+   "description": "The king's sister, married into Valdora; Calderra's sharpest unofficial back-channel to Valdora.",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md ; The Histories\\Caelora\\Valdora\\Valdora Atlas Entry.md",
+   "status": "living",
+   "note": "Canon inconsistency #3 (deliberate): Calderra's entry says she married 'a Valdoran lord's house'; Valdora's entry says House Corivane's royal line. Liege left unset here; see the Valdora extraction.",
+   "born_house": "house:caldravi",
+   "spouse": "char:varen_corivane",
+   "age_m0": 35,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:halden_caldravi",
+   "name": "Halden Caldravi",
+   "title": "Duke",
+   "house": "house:caldravi",
+   "kingdom": "kingdom:calderra",
+   "liege": "char:tavian_caldravi",
+   "location": null,
+   "description": "The king's uncle; elder statesman and war veteran who counsels restraint.",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:ossane_vayle",
+   "name": "Ossane Vayle",
+   "title": "Admiral of the navy",
+   "house": null,
+   "kingdom": "kingdom:calderra",
+   "liege": "char:tavian_caldravi",
+   "location": "settlement:calderra",
+   "description": "Common-born commander of the rebuilt navy; blunt, merit-risen, outside the old aristocracy.",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:emeric_fenmark",
+   "name": "Emeric Fenmark",
+   "title": "Lord Chancellor",
+   "house": null,
+   "kingdom": "kingdom:calderra",
+   "liege": "char:tavian_caldravi",
+   "location": "settlement:calderra",
+   "description": "The crown's senior adviser; meticulous, unglamorous and genuinely loyal.",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:aldous_vantry",
+   "name": "Aldous Vantry",
+   "title": "Ser, Lord of House Vantry",
+   "house": "house:vantry",
+   "kingdom": "kingdom:calderra",
+   "liege": "char:tavian_caldravi",
+   "location": null,
+   "description": "Old-school head of the great inland cavalry house; sees the navy as a loss of nerve.",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "status": "living",
+   "vassals": [
+    "char:tomlin_vantry"
+   ]
+  },
+  {
+   "id": "char:tomlin_vantry",
+   "name": "Tomlin Vantry",
+   "title": "Heir of House Vantry",
+   "house": "house:vantry",
+   "kingdom": "kingdom:calderra",
+   "liege": "char:aldous_vantry",
+   "location": null,
+   "description": "Aldous's eldest son and heir; betrothed to Princess Elenor.",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:serane_ossmere",
+   "name": "Serane Ossmere",
+   "title": "Lady, head of House Ossmere",
+   "house": "house:ossmere",
+   "kingdom": "kingdom:calderra",
+   "liege": "char:tavian_caldravi",
+   "location": null,
+   "description": "Sharp, patient head of the coastal house; funds naval expansion and admires Admiral Vayle; loyal to the crown.",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:dennet_calloway",
+   "name": "Dennet Calloway",
+   "title": "Ser, Lord of House Calloway",
+   "house": "house:calloway",
+   "kingdom": "kingdom:calderra",
+   "liege": "char:tavian_caldravi",
+   "location": null,
+   "description": "Pragmatic head of the Salt Road toll house; probably the shrewdest of the great vassals.",
+   "source": "The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:theodorus",
+   "name": "Theodorus",
+   "title": "High Pontiff",
+   "house": null,
+   "kingdom": "kingdom:astera",
+   "liege": null,
+   "location": "settlement:astera",
+   "description": "Serene, beloved head of the order; privately doubts whether his decades in office made the faith safer and emptier at once.",
+   "source": "The Histories\\Caelora\\Astera\\Astera Atlas Entry.md",
+   "status": "living",
+   "age_m0": 74,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": [
+    "char:damaris",
+    "char:sertorius",
+    "char:tullia"
+   ]
+  },
+  {
+   "id": "char:sertorius",
+   "name": "Sertorius",
+   "title": "Prelate of the Curia",
+   "house": null,
+   "kingdom": "kingdom:astera",
+   "liege": "char:theodorus",
+   "location": "settlement:astera",
+   "description": "Severe ascetic handling pilgrimage security and diplomacy; suspects the Tithed has a source inside the order.",
+   "source": "The Histories\\Caelora\\Astera\\Astera Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:damaris",
+   "name": "Damaris",
+   "title": "Prelate of the Curia",
+   "house": null,
+   "kingdom": "kingdom:astera",
+   "liege": "char:theodorus",
+   "location": "settlement:astera",
+   "description": "Warm, senior and devout; privately unsettled that the old faith's critique may be right.",
+   "source": "The Histories\\Caelora\\Astera\\Astera Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:tullia",
+   "name": "Tullia",
+   "title": "Magister, head of the History Keepers and archives",
+   "house": null,
+   "kingdom": "kingdom:astera",
+   "liege": "char:theodorus",
+   "location": "settlement:astera",
+   "description": "Brisk archivist protecting the archive's completeness, including the restricted old texts.",
+   "source": "The Histories\\Caelora\\Astera\\Astera Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:rufus_ashfather",
+   "name": "Rufus",
+   "title": "\"the Ashfather\", leader of the Tithed",
+   "house": null,
+   "kingdom": "kingdom:astera",
+   "liege": null,
+   "location": "settlement:astera",
+   "description": "Burn-scarred leader who has drawn the leaderless Tithed cult together for the first time in generations.",
+   "source": "The Histories\\Caelora\\Astera\\Astera Atlas Entry.md",
+   "status": "living",
+   "note": "Leader of a secret cult; no liege by design.",
+   "age_m0": 44,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:ambrose",
+   "name": "Ambrose",
+   "title": "Brother (expelled clergyman)",
+   "house": null,
+   "kingdom": "kingdom:astera",
+   "liege": null,
+   "location": "settlement:astera",
+   "description": "Former cleric cast out on suspicion of favouring the old faith; taught Rufus to read and brought him to the Tithed.",
+   "source": "The Histories\\Caelora\\Astera\\Astera Atlas Entry.md",
+   "status": "unknown",
+   "vassals": []
+  },
+  {
+   "id": "char:thevar_serravene",
+   "name": "Thevar Serravene",
+   "title": "King (deceased)",
+   "house": "house:serravene",
+   "kingdom": "kingdom:madravella",
+   "liege": null,
+   "location": null,
+   "description": "Previous king; his death triggered the Council of Blood vote.",
+   "source": "The Histories\\Caelora\\Madravella\\Madravella Atlas Entry.md",
+   "status": "deceased",
+   "vassals": []
+  },
+  {
+   "id": "char:isabeau_serravene",
+   "name": "Isabeau Serravene",
+   "title": "Queen of Madravella",
+   "house": "house:serravene",
+   "kingdom": "kingdom:madravella",
+   "liege": null,
+   "location": "settlement:madravella",
+   "description": "Youngest of three, elected for her cunning; quiet, watchful, comfortable being underestimated.",
+   "source": "The Histories\\Caelora\\Madravella\\Madravella Atlas Entry.md",
+   "status": "living",
+   "age_m0": 58,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": [
+    "char:corentin_serravene",
+    "char:davin_serravene",
+    "char:perrin_vashe",
+    "char:perrine_serravene"
+   ]
+  },
+  {
+   "id": "char:corentin_serravene",
+   "name": "Corentin Serravene",
+   "title": "Prince, master of the crown's intelligence",
+   "house": "house:serravene",
+   "kingdom": "kingdom:madravella",
+   "liege": "char:isabeau_serravene",
+   "location": "settlement:madravella",
+   "description": "Isabeau's elder brother, passed over; runs her intelligence apparatus, the second power in the kingdom.",
+   "source": "The Histories\\Caelora\\Madravella\\Madravella Atlas Entry.md",
+   "status": "living",
+   "age_m0": 60,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:perrine_serravene",
+   "name": "Perrine Serravene",
+   "title": "Lady, University Chancellor",
+   "house": "house:serravene",
+   "kingdom": "kingdom:madravella",
+   "liege": "char:isabeau_serravene",
+   "location": "settlement:madravella",
+   "description": "Isabeau's elder sister, passed over; warm public face of the university and quiet runner of its intelligence.",
+   "source": "The Histories\\Caelora\\Madravella\\Madravella Atlas Entry.md",
+   "status": "living",
+   "age_m0": 63,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:davin_serravene",
+   "name": "Davin Serravene",
+   "title": "Prince",
+   "house": "house:serravene",
+   "kingdom": "kingdom:madravella",
+   "liege": "char:isabeau_serravene",
+   "location": "settlement:madravella",
+   "description": "Isabeau's son; opted out of the Council of Blood; quietly obsessed with the Vaelwood's unexplained reports.",
+   "source": "The Histories\\Caelora\\Madravella\\Madravella Atlas Entry.md",
+   "status": "living",
+   "age_m0": 25,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:perrin_vashe",
+   "name": "Perrin Vashe",
+   "title": "Ser, scholar-advisor embedded at Astera",
+   "house": null,
+   "kingdom": "kingdom:madravella",
+   "liege": "char:isabeau_serravene",
+   "location": "settlement:astera",
+   "description": "Not family but trained in Serravene's system; the house's eyes at Astera's court.",
+   "source": "The Histories\\Caelora\\Madravella\\Madravella Atlas Entry.md",
+   "status": "living",
+   "age_m0": 41,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:severin_corivane",
+   "name": "Severin Corivane",
+   "title": "King of Valdora",
+   "house": "house:corivane",
+   "kingdom": "kingdom:valdora",
+   "liege": null,
+   "location": "settlement:corivessa_great_gate",
+   "description": "Methodical administrator-king, excellent at reading obvious threats; wilfully blind to his son Varen.",
+   "source": "The Histories\\Caelora\\Valdora\\Valdora Atlas Entry.md",
+   "status": "living",
+   "age_m0": 59,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": [
+    "char:alys_caldravi",
+    "char:ansel_dellorin",
+    "char:ardin_vallenar",
+    "char:elara_corivane",
+    "char:ferro_castellon",
+    "char:miriel_corivane",
+    "char:renata_corivane",
+    "char:varen_corivane"
+   ]
+  },
+  {
+   "id": "char:renata_corivane",
+   "name": "Renata Corivane",
+   "title": "Queen",
+   "house": "house:corivane",
+   "kingdom": "kingdom:valdora",
+   "liege": "char:severin_corivane",
+   "location": "settlement:corivessa_great_gate",
+   "description": "Born House Castellon; sharp, precise and the one who has never pretended about Varen.",
+   "source": "The Histories\\Caelora\\Valdora\\Valdora Atlas Entry.md",
+   "status": "living",
+   "born_house": "house:castellon",
+   "vassals": []
+  },
+  {
+   "id": "char:miriel_corivane",
+   "name": "Miriel Corivane",
+   "title": "Princess, heir",
+   "house": "house:corivane",
+   "kingdom": "kingdom:valdora",
+   "liege": "char:severin_corivane",
+   "location": "settlement:corivessa_great_gate",
+   "description": "Eldest child and heir; genuinely devout; preparing a pilgrimage to Astera.",
+   "source": "The Histories\\Caelora\\Valdora\\Valdora Atlas Entry.md",
+   "status": "living",
+   "age_m0": 33,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:varen_corivane",
+   "name": "Varen Corivane",
+   "title": "Prince, second in line",
+   "house": "house:corivane",
+   "kingdom": "kingdom:valdora",
+   "liege": "char:severin_corivane",
+   "location": "settlement:corivessa_great_gate",
+   "description": "The crown's blunt instrument against marcher raiders; privately a drunk and abusive husband; will escort Miriel's pilgrimage.",
+   "source": "The Histories\\Caelora\\Valdora\\Valdora Atlas Entry.md",
+   "status": "living",
+   "age_m0": 31,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:elara_corivane",
+   "name": "Elara Corivane",
+   "title": "Lady, third in line",
+   "house": "house:corivane",
+   "kingdom": "kingdom:valdora",
+   "liege": "char:severin_corivane",
+   "location": "settlement:corivessa_great_gate",
+   "description": "Varen and Alys's young daughter; half Caldravi.",
+   "source": "The Histories\\Caelora\\Valdora\\Valdora Atlas Entry.md",
+   "status": "living",
+   "age_m0": 6,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:livia_marcellus",
+   "name": "Livia Marcellus",
+   "title": "Princess (born Corivane)",
+   "house": "house:marcellus",
+   "kingdom": "kingdom:kervara",
+   "liege": null,
+   "location": "settlement:kervara",
+   "description": "Severin's sister, married to Prince Bram Marcellus; the open, working link of the Marcellus-Corivane alliance.",
+   "source": "The Histories\\Caelora\\Valdora\\Valdora Atlas Entry.md",
+   "status": "living",
+   "born_house": "house:corivane",
+   "vassals": []
+  },
+  {
+   "id": "char:ardin_vallenar",
+   "name": "Ardin Vallenar",
+   "title": "Lord Warden of the Great Gate",
+   "house": "house:vallenar",
+   "kingdom": "kingdom:valdora",
+   "liege": "char:severin_corivane",
+   "location": "settlement:corivessa_great_gate",
+   "description": "Commands the Gate's garrison; deeply respects Kervaran infantry.",
+   "source": "The Histories\\Caelora\\Valdora\\Valdora Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:ferro_castellon",
+   "name": "Ferro Castellon",
+   "title": "Lord, head of House Castellon",
+   "house": "house:castellon",
+   "kingdom": "kingdom:valdora",
+   "liege": "char:severin_corivane",
+   "location": "settlement:corivessa_great_gate",
+   "description": "Head of the customs house; enforces the preferential Kervaran toll to the letter.",
+   "source": "The Histories\\Caelora\\Valdora\\Valdora Atlas Entry.md",
+   "status": "living",
+   "vassals": [
+    "char:tiber_castellon"
+   ]
+  },
+  {
+   "id": "char:tiber_castellon",
+   "name": "Tiber Castellon",
+   "title": "of House Castellon",
+   "house": "house:castellon",
+   "kingdom": "kingdom:valdora",
+   "liege": "char:ferro_castellon",
+   "location": null,
+   "description": "Friend of Renzo Dellorin and Davin Serravene from Madravella's university.",
+   "source": "The Histories\\Caelora\\Valdora\\Valdora Atlas Entry.md",
+   "status": "living",
+   "note": "Relationship to Lord Ferro is not stated; liege set to the house head by the extraction rule.",
+   "vassals": []
+  },
+  {
+   "id": "char:ansel_dellorin",
+   "name": "Ansel Dellorin",
+   "title": "Lord, head of House Dellorin",
+   "house": "house:dellorin",
+   "kingdom": "kingdom:valdora",
+   "liege": "char:severin_corivane",
+   "location": null,
+   "description": "Dignified keeper of the founding story, told with open pride.",
+   "source": "The Histories\\Caelora\\Valdora\\Valdora Atlas Entry.md",
+   "status": "living",
+   "vassals": [
+    "char:renzo_dellorin"
+   ]
+  },
+  {
+   "id": "char:renzo_dellorin",
+   "name": "Renzo Dellorin",
+   "title": "second son of House Dellorin",
+   "house": "house:dellorin",
+   "kingdom": "kingdom:valdora",
+   "liege": "char:ansel_dellorin",
+   "location": null,
+   "description": "Read at Madravella's university; a rock-competent climber from the Gate inspections; corresponds with Davin.",
+   "source": "The Histories\\Caelora\\Valdora\\Valdora Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:tormund_marcellus_elder",
+   "name": "Tormund Marcellus",
+   "title": "King (deceased)",
+   "house": "house:marcellus",
+   "kingdom": "kingdom:kervara",
+   "liege": null,
+   "location": null,
+   "description": "Former king; Ossian's father.",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md",
+   "status": "deceased",
+   "vassals": []
+  },
+  {
+   "id": "char:elira_marcellus",
+   "name": "Elira Marcellus",
+   "title": "Queen (deceased)",
+   "house": "house:marcellus",
+   "kingdom": "kingdom:kervara",
+   "liege": null,
+   "location": null,
+   "description": "Former queen, born of a cadet branch of House Caldravi; her plain Caldravi honour shaped Corwin.",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md",
+   "status": "deceased",
+   "born_house": "house:caldravi",
+   "vassals": []
+  },
+  {
+   "id": "char:ossian_marcellus",
+   "name": "Ossian Marcellus",
+   "title": "King of Kervara",
+   "house": "house:marcellus",
+   "kingdom": "kingdom:kervara",
+   "liege": null,
+   "location": "settlement:kervara",
+   "description": "Calm, soldierly king who campaigned with the companies; lovingly, unknowingly governed by his Hand, Halvard.",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md",
+   "status": "living",
+   "age_m0": 61,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": [
+    "char:bram_marcellus",
+    "char:corwin_marcellus",
+    "char:halvard_dravenne",
+    "char:katra_marcellus",
+    "char:petran_harrow",
+    "char:sabine_marcellus",
+    "char:sern",
+    "char:torra_ferrus",
+    "char:vesna_marcellus"
+   ]
+  },
+  {
+   "id": "char:sabine_marcellus",
+   "name": "Sabine Marcellus",
+   "title": "Queen",
+   "house": "house:marcellus",
+   "kingdom": "kingdom:kervara",
+   "liege": "char:ossian_marcellus",
+   "location": "settlement:kervara",
+   "description": "Born House Dravenne; the clearest-eyed person in the palace about what the Hand arrangement is.",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md",
+   "status": "living",
+   "born_house": "house:dravenne",
+   "age_m0": 57,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:doran_marcellus",
+   "name": "Doran Marcellus",
+   "title": "Prince (deceased), former heir",
+   "house": "house:marcellus",
+   "kingdom": "kingdom:kervara",
+   "liege": null,
+   "location": null,
+   "description": "Firstborn and heir, betrothed to Selia Dravenne; died in a genuine accident weeks before the present day.",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md",
+   "status": "deceased",
+   "vassals": []
+  },
+  {
+   "id": "char:corwin_marcellus",
+   "name": "Corwin Marcellus",
+   "title": "Prince, heir",
+   "house": "house:marcellus",
+   "kingdom": "kingdom:kervara",
+   "liege": "char:ossian_marcellus",
+   "location": "settlement:kervara",
+   "description": "Second son, heir since Doran's death; campaigned with the companies; beginning to see the Hand arrangement for what it is.",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md",
+   "status": "living",
+   "age_m0": 26,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:katra_marcellus",
+   "name": "Katra Marcellus",
+   "title": "Lady",
+   "house": "house:marcellus",
+   "kingdom": "kingdom:kervara",
+   "liege": "char:ossian_marcellus",
+   "location": "settlement:kervara",
+   "description": "Corwin's blunt younger sister; urges him to refuse the Dravenne match.",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:bram_marcellus",
+   "name": "Bram Marcellus",
+   "title": "Prince, commander of the home garrison",
+   "house": "house:marcellus",
+   "kingdom": "kingdom:kervara",
+   "liege": "char:ossian_marcellus",
+   "location": "settlement:kervara",
+   "description": "Ossian's younger brother; a working soldier; married to Livia of Valdora.",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md",
+   "status": "living",
+   "spouse": "char:livia_marcellus",
+   "vassals": [
+    "char:hale_marcellus"
+   ]
+  },
+  {
+   "id": "char:hale_marcellus",
+   "name": "Hale Marcellus",
+   "title": "Lord, officer of the garrison",
+   "house": "house:marcellus",
+   "kingdom": "kingdom:kervara",
+   "liege": "char:bram_marcellus",
+   "location": "settlement:kervara",
+   "description": "Bram's son, Corwin's popular first cousin, liked by the mercenary captains.",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md",
+   "status": "living",
+   "age_m0": 28,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:vesna_marcellus",
+   "name": "Vesna Marcellus",
+   "title": "Dowager Duchess",
+   "house": "house:marcellus",
+   "kingdom": "kingdom:kervara",
+   "liege": "char:ossian_marcellus",
+   "location": "settlement:kervara",
+   "description": "The family's most senior member; one of the few who will say 'Dravenne' and 'throne' together.",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:halvard_dravenne",
+   "name": "Halvard Dravenne",
+   "title": "Lord Hand (the King's Hand), head of House Dravenne",
+   "house": "house:dravenne",
+   "kingdom": "kingdom:kervara",
+   "liege": "char:ossian_marcellus",
+   "location": "settlement:kervara",
+   "description": "Has run Kervara's daily government for decades; loves Ossian like a son and would see Corwin wed to Selia.",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md",
+   "status": "living",
+   "age_m0": 70,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": [
+    "char:selia_dravenne",
+    "char:warrick_dravenne"
+   ]
+  },
+  {
+   "id": "char:warrick_dravenne",
+   "name": "Warrick Dravenne",
+   "title": "Lord Marshal of the mercenary companies",
+   "house": "house:dravenne",
+   "kingdom": "kingdom:kervara",
+   "liege": "char:halvard_dravenne",
+   "location": "settlement:kervara",
+   "description": "Halvard's son, the queen's elder brother; excellent commander; expected to be the next King's Hand.",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md",
+   "status": "living",
+   "age_m0": 46,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:selia_dravenne",
+   "name": "Selia Dravenne",
+   "title": "Lady",
+   "house": "house:dravenne",
+   "kingdom": "kingdom:kervara",
+   "liege": "char:halvard_dravenne",
+   "location": "settlement:kervara",
+   "description": "Poised, ambitious Dravenne cousin; was betrothed to Doran, the match now passing to Corwin.",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md",
+   "status": "living",
+   "age_m0": 23,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:torra_ferrus",
+   "name": "Torra Ferrus",
+   "title": "Lady, head of House Ferrus",
+   "house": "house:ferrus",
+   "kingdom": "kingdom:kervara",
+   "liege": "char:ossian_marcellus",
+   "location": null,
+   "description": "Self-made forge-master; sceptical of the Hand held by marriage; a natural ally of Prince Bram.",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:petran_harrow",
+   "name": "Petran Harrow",
+   "title": "Lord, Warden of the Hidden Paths",
+   "house": "house:harrow",
+   "kingdom": "kingdom:kervara",
+   "liege": "char:ossian_marcellus",
+   "location": null,
+   "description": "Forgettable on purpose; the king's private confidant; keeps the tunnel secrets even from Dravenne.",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:sern",
+   "name": "Sern",
+   "title": "Master, Doorward of the King's Chamber",
+   "house": null,
+   "kingdom": "kingdom:kervara",
+   "liege": "char:ossian_marcellus",
+   "location": "settlement:kervara",
+   "description": "Holds the king's door and the order of admission, by Halvard's appointment.",
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:varro_salmara",
+   "name": "Varro Salmara",
+   "title": "Princeps of Salmara",
+   "house": "house:salmara",
+   "kingdom": "kingdom:salmara",
+   "liege": null,
+   "location": "settlement:salmara",
+   "description": "Composed architect of 'peace is better business'; negotiates the great trade deals himself.",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md",
+   "status": "living",
+   "age_m0": 56,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": [
+    "char:aurelio_vassaro",
+    "char:cassia_salmara",
+    "char:denarion_varecia",
+    "char:ilarion_solvane",
+    "char:lucan_salmara",
+    "char:serelia_cortavel",
+    "char:talia_salmara",
+    "char:tarquin_salmara"
+   ]
+  },
+  {
+   "id": "char:talia_salmara",
+   "name": "Talia Salmara",
+   "title": "Consort",
+   "house": "house:salmara",
+   "kingdom": "kingdom:salmara",
+   "liege": "char:varro_salmara",
+   "location": "settlement:salmara",
+   "description": "Born House Solvane; runs much of the state's finance; privately sympathetic to Tarquin's restlessness.",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md",
+   "status": "living",
+   "born_house": "house:solvane",
+   "vassals": []
+  },
+  {
+   "id": "char:tarquin_salmara",
+   "name": "Tarquin Salmara",
+   "title": "Heir to the Princeps",
+   "house": "house:salmara",
+   "kingdom": "kingdom:salmara",
+   "liege": "char:varro_salmara",
+   "location": "settlement:salmara",
+   "description": "Soldierly heir, popular with the new officers; cultivating the council houses' younger heirs.",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md",
+   "status": "living",
+   "age_m0": 27,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:cassia_salmara",
+   "name": "Cassia Salmara",
+   "title": "Lady, elder stateswoman",
+   "house": "house:salmara",
+   "kingdom": "kingdom:salmara",
+   "liege": "char:varro_salmara",
+   "location": "settlement:salmara",
+   "description": "Varro's sister; worries that building the army has already changed Salmara.",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:lucan_salmara",
+   "name": "Lucan Salmara",
+   "title": "Lord",
+   "house": "house:salmara",
+   "kingdom": "kingdom:salmara",
+   "liege": "char:varro_salmara",
+   "location": null,
+   "description": "Varro's younger brother; a legendary duellist and traveller who won the Coastal Sultanate's Tide Court; Tarquin idolises him.",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md",
+   "status": "living",
+   "age_m0": 42,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:denarion_varecia",
+   "name": "Denarion Varecia",
+   "title": "Lord, head of House Varecia",
+   "house": "house:varecia",
+   "kingdom": "kingdom:salmara",
+   "liege": "char:varro_salmara",
+   "location": null,
+   "description": "Walks the dikes; keeps Varecia's old forms; uneasy about Tarquin's ambitions.",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md",
+   "status": "living",
+   "vassals": [
+    "char:corvo_varecia"
+   ]
+  },
+  {
+   "id": "char:corvo_varecia",
+   "name": "Corvo Varecia",
+   "title": "heir of House Varecia",
+   "house": "house:varecia",
+   "kingdom": "kingdom:salmara",
+   "liege": "char:denarion_varecia",
+   "location": null,
+   "description": "Denarion's grandson; one of the young heirs Tarquin has cultivated.",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:renzo_lasca",
+   "name": "Renzo Lasca",
+   "title": "heir of House Lasca",
+   "house": "house:lasca",
+   "kingdom": "kingdom:salmara",
+   "liege": null,
+   "location": null,
+   "description": "In Tarquin's faction.",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md",
+   "status": "living",
+   "note": "House Lasca's head is unnamed; liege left unset.",
+   "vassals": []
+  },
+  {
+   "id": "char:ilarion_solvane",
+   "name": "Ilarion Solvane",
+   "title": "Lord, head of House Solvane",
+   "house": "house:solvane",
+   "kingdom": "kingdom:salmara",
+   "liege": "char:varro_salmara",
+   "location": null,
+   "description": "Talia's brother; argues against war in pure arithmetic.",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md",
+   "status": "living",
+   "vassals": [
+    "char:ottavio_solvane"
+   ]
+  },
+  {
+   "id": "char:ottavio_solvane",
+   "name": "Ottavio Solvane",
+   "title": "younger son of House Solvane",
+   "house": "house:solvane",
+   "kingdom": "kingdom:salmara",
+   "liege": "char:ilarion_solvane",
+   "location": null,
+   "description": "Brilliant arithmetician; the intellectual engine of Tarquin's faction.",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:serelia_cortavel",
+   "name": "Serelia Cortavel",
+   "title": "Lady, head of House Cortavel",
+   "house": "house:cortavel",
+   "kingdom": "kingdom:salmara",
+   "liege": "char:varro_salmara",
+   "location": null,
+   "description": "Sea-weathered head of the merchant fleets; alarmed by casual talk of war.",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md",
+   "status": "living",
+   "vassals": [
+    "char:dario_bellante",
+    "char:iacopo_serra"
+   ]
+  },
+  {
+   "id": "char:iacopo_serra",
+   "name": "Iacopo Serra",
+   "title": "Master of the Provident (Cortavel)",
+   "house": null,
+   "kingdom": "kingdom:salmara",
+   "liege": "char:serelia_cortavel",
+   "location": null,
+   "description": "Veteran Cortavel master.",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:dario_bellante",
+   "name": "Dario Bellante",
+   "title": "Master of the Assurance (Cortavel)",
+   "house": null,
+   "kingdom": "kingdom:salmara",
+   "liege": "char:serelia_cortavel",
+   "location": null,
+   "description": "Younger, prouder Cortavel master.",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:aurelio_vassaro",
+   "name": "Aurelio Vassaro",
+   "title": "Captain, senior captain of the southern anchorage",
+   "house": null,
+   "kingdom": "kingdom:salmara",
+   "liege": "char:varro_salmara",
+   "location": "settlement:salmara",
+   "description": "The fleet's respected professional; checks Tarquin to his face.",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md",
+   "status": "living",
+   "vassals": [
+    "char:petrus_baro"
+   ]
+  },
+  {
+   "id": "char:petrus_baro",
+   "name": "Petrus Baro",
+   "title": "salt-pond man, carried on the fleet's books",
+   "house": null,
+   "kingdom": "kingdom:salmara",
+   "liege": "char:aurelio_vassaro",
+   "location": null,
+   "description": "Of Calla Vecchia.",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md",
+   "status": "living",
+   "home": "settlement:calla_vecchia",
+   "vassals": []
+  },
+  {
+   "id": "char:peregrine_dove",
+   "name": "Peregrine Dove",
+   "title": "King of the Dovaran Crown",
+   "house": "house:dove",
+   "kingdom": "kingdom:dovaran_crown",
+   "liege": null,
+   "location": "settlement:dovehall",
+   "description": "Steady, weathered commander; carries every Dove monarch's dread of seeming unable to protect his own.",
+   "source": "The Histories\\Caelora\\Dovaran Crown\\Dovaran Crown Atlas Entry.md",
+   "status": "living",
+   "age_m0": 53,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": [
+    "char:alder_thorne",
+    "char:halcyon_dove",
+    "char:harrier_dove",
+    "char:talon_dove",
+    "char:wren_dove"
+   ]
+  },
+  {
+   "id": "char:halcyon_dove",
+   "name": "Halcyon Dove",
+   "title": "Queen",
+   "house": "house:dove",
+   "kingdom": "kingdom:dovaran_crown",
+   "liege": "char:peregrine_dove",
+   "location": "settlement:dovehall",
+   "description": "Runs Dovehall's intelligence and court; as central as the king to keeping it steady.",
+   "source": "The Histories\\Caelora\\Dovaran Crown\\Dovaran Crown Atlas Entry.md",
+   "status": "living",
+   "age_m0": 50,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:talon_dove",
+   "name": "Talon Dove",
+   "title": "Prince, heir",
+   "house": "house:dove",
+   "kingdom": "kingdom:dovaran_crown",
+   "liege": "char:peregrine_dove",
+   "location": "settlement:dovehall",
+   "description": "Heir who commands at sea in person; respected by captains twice his age.",
+   "source": "The Histories\\Caelora\\Dovaran Crown\\Dovaran Crown Atlas Entry.md",
+   "status": "living",
+   "age_m0": 24,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:harrier_dove",
+   "name": "Harrier Dove",
+   "title": "Prince (Fairborn, barred from succession)",
+   "house": "house:dove",
+   "kingdom": "kingdom:dovaran_crown",
+   "liege": "char:peregrine_dove",
+   "location": "settlement:dovehall",
+   "description": "Fairborn warrior raised apart; calm, settled purpose as the blade beside the throne.",
+   "source": "The Histories\\Caelora\\Dovaran Crown\\Dovaran Crown Atlas Entry.md",
+   "status": "living",
+   "fairborn": true,
+   "age_m0": 22,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:wren_dove",
+   "name": "Wren Dove",
+   "title": "Princess",
+   "house": "house:dove",
+   "kingdom": "kingdom:dovaran_crown",
+   "liege": "char:peregrine_dove",
+   "location": "settlement:dovehall",
+   "description": "Capable and trusted at court; outside the succession and content to be; declares voyages cursed half in jest.",
+   "source": "The Histories\\Caelora\\Dovaran Crown\\Dovaran Crown Atlas Entry.md",
+   "status": "living",
+   "age_m0": 19,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:alder_thorne",
+   "name": "Alder Thorne",
+   "title": "Lord, head of House Thorne",
+   "house": "house:thorne",
+   "kingdom": "kingdom:dovaran_crown",
+   "liege": "char:peregrine_dove",
+   "location": null,
+   "description": "Loudest voice at Dovehall on naval policy; loyal beyond question.",
+   "source": "The Histories\\Caelora\\Dovaran Crown\\Dovaran Crown Atlas Entry.md",
+   "status": "living",
+   "vassals": [
+    "char:brant_thorne",
+    "char:rowan_thorne"
+   ]
+  },
+  {
+   "id": "char:brant_thorne",
+   "name": "Brant Thorne",
+   "title": "Captain",
+   "house": "house:thorne",
+   "kingdom": "kingdom:dovaran_crown",
+   "liege": "char:alder_thorne",
+   "location": null,
+   "description": "Alder's youngest son; hard, professional, argues a plan then executes the version he lost.",
+   "source": "The Histories\\Caelora\\Dovaran Crown\\Dovaran Crown Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:rowan_thorne",
+   "name": "Rowan Thorne",
+   "title": "First mate of the home fleet",
+   "house": "house:thorne",
+   "kingdom": "kingdom:dovaran_crown",
+   "liege": "char:alder_thorne",
+   "location": null,
+   "description": "Alder's cousin's grandson; taught Prince Talon his splices.",
+   "source": "The Histories\\Caelora\\Dovaran Crown\\Dovaran Crown Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:meret_amaranth",
+   "name": "Meret Amaranth",
+   "title": "Queen of Hamen",
+   "house": "house:amaranth",
+   "kingdom": "kingdom:hamen",
+   "liege": null,
+   "location": "settlement:haven",
+   "description": "Widowed, unreadable queen who walks her own fields; secretly building a war fleet disguised as harbour renewal.",
+   "source": "The Histories\\Quadria\\The River Flame Chronicles\\Hamen Atlas Entry.md",
+   "status": "living",
+   "age_m0": 47,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": [
+    "char:darius_amaranth",
+    "char:farid_dareth",
+    "char:mira_selenne",
+    "char:nahla_amaranth",
+    "char:rahim_iskandar",
+    "char:renna_voss",
+    "char:yara_nereth",
+    "char:yasmin_fenn"
+   ]
+  },
+  {
+   "id": "char:nahla_amaranth",
+   "name": "Nahla Amaranth",
+   "title": "Crown Princess, heir",
+   "house": "house:amaranth",
+   "kingdom": "kingdom:hamen",
+   "liege": "char:meret_amaranth",
+   "location": "settlement:haven",
+   "description": "Warmer in public; has privately known for a year that her mother forged the harbour-renewal accounts.",
+   "source": "The Histories\\Quadria\\The River Flame Chronicles\\Hamen Atlas Entry.md",
+   "status": "living",
+   "age_m0": 24,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:darius_amaranth",
+   "name": "Darius Amaranth",
+   "title": "Prince, overseer of granaries and canals",
+   "house": "house:amaranth",
+   "kingdom": "kingdom:hamen",
+   "liege": "char:meret_amaranth",
+   "location": "settlement:haven",
+   "description": "Meret's younger brother; a true believer in the farmer-king ethos, unsettled by her secrecy.",
+   "source": "The Histories\\Quadria\\The River Flame Chronicles\\Hamen Atlas Entry.md",
+   "status": "living",
+   "age_m0": 44,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:yara_nereth",
+   "name": "Yara Nereth",
+   "title": "Warden, head of House Nereth",
+   "house": "house:nereth",
+   "kingdom": "kingdom:hamen",
+   "liege": "char:meret_amaranth",
+   "location": null,
+   "description": "Proud head of the canal house; has questioned the diversion of labour to 'harbour renewal'.",
+   "source": "The Histories\\Quadria\\The River Flame Chronicles\\Hamen Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:farid_dareth",
+   "name": "Farid Dareth",
+   "title": "Keeper, head of House Dareth",
+   "house": "house:dareth",
+   "kingdom": "kingdom:hamen",
+   "liege": "char:meret_amaranth",
+   "location": "settlement:haven",
+   "description": "Obsessive keeper of the Archive; keeps the Marakai treason file marked unresolved.",
+   "source": "The Histories\\Quadria\\The River Flame Chronicles\\Hamen Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:rahim_iskandar",
+   "name": "Rahim Iskandar",
+   "title": "Lord Warden, head of House Iskandar",
+   "house": "house:iskandar",
+   "kingdom": "kingdom:hamen",
+   "liege": "char:meret_amaranth",
+   "location": null,
+   "description": "Frontier lord long distrusted for his loyalty; trusted by Meret with much of the fleet's secret.",
+   "source": "The Histories\\Quadria\\The River Flame Chronicles\\Hamen Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:renna_voss",
+   "name": "Renna Voss",
+   "title": "Marshal, head of House Voss",
+   "house": "house:voss",
+   "kingdom": "kingdom:hamen",
+   "liege": "char:meret_amaranth",
+   "location": "settlement:haven",
+   "description": "Commands a disciplined, long-unused army; quietly ready for the fleet to matter.",
+   "source": "The Histories\\Quadria\\The River Flame Chronicles\\Hamen Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:mira_selenne",
+   "name": "Mira Selenne",
+   "title": "High Shrine-Keeper, head of House Selenne",
+   "house": "house:selenne",
+   "kingdom": "kingdom:hamen",
+   "liege": "char:meret_amaranth",
+   "location": "settlement:haven",
+   "description": "Performs every crown ceremony; blessed the fleet unknowingly and has since pieced it together.",
+   "source": "The Histories\\Quadria\\The River Flame Chronicles\\Hamen Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:yasmin_fenn",
+   "name": "Yasmin Fenn",
+   "title": "Lady, head of House Fenn",
+   "house": "house:fenn",
+   "kingdom": "kingdom:hamen",
+   "liege": "char:meret_amaranth",
+   "location": "settlement:haven",
+   "description": "Sharp merchant head; the 'harbour renewal' spending doesn't add up to any harbour she can find.",
+   "source": "The Histories\\Quadria\\The River Flame Chronicles\\Hamen Atlas Entry.md",
+   "status": "living",
+   "vassals": []
+  },
+  {
+   "id": "char:vareth",
+   "name": "Vareth",
+   "title": "High Chief (the Uniter of Stone)",
+   "house": "house:clan_morvek",
+   "kingdom": "kingdom:varduun",
+   "liege": null,
+   "location": "settlement:varduun_trial_seat",
+   "description": "Rose from an ordinary Morvek mining family and won the Pit; recites Old Karr's warning at every Trial, fearing it is ageing out of his people.",
+   "source": "The Histories\\Quadria\\Varduun Atlas Entry.md",
+   "status": "living",
+   "age_m0": 61,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": [
+    "char:dessin_brekan"
+   ]
+  },
+  {
+   "id": "char:kessa_karr",
+   "name": "Kessa Karr",
+   "title": "Elder, keeper of the Trials and the Pit",
+   "house": "house:clan_karr",
+   "kingdom": "kingdom:varduun",
+   "liege": null,
+   "location": "settlement:varduun_trial_seat",
+   "description": "Exacting enforcer of the Pit's rules, even against favoured claimants.",
+   "source": "The Histories\\Quadria\\Varduun Atlas Entry.md",
+   "status": "living",
+   "note": "The Trials answer to no one's convenience; no liege set by design.",
+   "age_m0": 68,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  },
+  {
+   "id": "char:dessin_brekan",
+   "name": "Dessin Brekan",
+   "title": "Lord, head of Great Clan Brekan",
+   "house": "house:clan_brekan",
+   "kingdom": "kingdom:varduun",
+   "liege": "char:vareth",
+   "location": null,
+   "description": "Loudest Council voice arguing that 'never again' has curdled into timidity toward Hamen.",
+   "source": "The Histories\\Quadria\\Varduun Atlas Entry.md",
+   "status": "living",
+   "age_m0": 46,
+   "age_source": "The Histories\\Book One - Main Character Sheet.md",
+   "vassals": []
+  }
+ ],
+ "settlements": [
+  {
+   "id": "settlement:salmara",
+   "name": "Salmara",
+   "display": "Salmara",
+   "placeholder": false,
+   "kingdom": "kingdom:salmara",
+   "kingdom_basis": "canon (capital)",
+   "type": "capital",
+   "tier": "capital",
+   "xy_mi": [
+    561.0,
+    1715.0
+   ],
+   "elev_m": 340,
+   "ruler": "char:varro_salmara",
+   "description": "Capital of Salmara at the Oravo mouth: tidal flats, canals, levees, windmills, salt ponds, warehouses and immense white salt mounds.",
+   "source": "output/places_resolved.json (position); The Histories\\World Atlas.md",
+   "population": null,
+   "continent": "Caelora",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:ruins_of_oravessa",
+   "name": "Ruins of Oravessa",
+   "display": "Ruins of Oravessa",
+   "placeholder": false,
+   "kingdom": "kingdom:calderra",
+   "kingdom_basis": "PROVISIONAL territory map",
+   "type": "ruin",
+   "tier": "ruin",
+   "xy_mi": [
+    875.0,
+    1473.0
+   ],
+   "elev_m": 250,
+   "ruler": null,
+   "description": "Ruins of the Velharian Empire's capital, 'the Crown of Caelora': now Calderran grazing land with a roofless columned hall, palace fragments and aqueduct stubs.",
+   "source": "output/places_resolved.json (position); The Histories\\World Atlas.md",
+   "population": null,
+   "continent": "Caelora",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:calderra",
+   "name": "Calderra",
+   "display": "Calderra",
+   "placeholder": false,
+   "kingdom": "kingdom:calderra",
+   "kingdom_basis": "canon (capital)",
+   "type": "capital",
+   "tier": "capital",
+   "xy_mi": [
+    1081.0,
+    1465.0
+   ],
+   "elev_m": 150,
+   "ruler": "char:tavian_caldravi",
+   "description": "Walled coastal capital of the cavalry kingdom, with the royal stables and the rebuilt navy's harbour. Its site: the sheltered head of its natural harbour, where the Aurenna comes down to the water, with the Tavian Aqueduct coming down off the high ground behind it (author direction 2026-09-28).",
+   "source": "output/places_resolved.json (position); The Histories\\Caelora\\Calderra\\Calderra Atlas Entry.md",
+   "population": null,
+   "continent": "Caelora",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:astera",
+   "name": "Astera",
+   "display": "Astera",
+   "placeholder": false,
+   "kingdom": "kingdom:astera",
+   "kingdom_basis": "canon (capital)",
+   "type": "capital",
+   "tier": "capital",
+   "xy_mi": [
+    1030,
+    1840
+   ],
+   "elev_m": 917,
+   "ruler": "char:theodorus",
+   "description": "Holy city of temples, cathedrals, monasteries, bridges, libraries and pilgrim houses in the Veryan foothills; seat of the High Pontiff; sealed shrines beneath.",
+   "source": "output/places_resolved.json (position); The Histories\\World Atlas.md",
+   "population": null,
+   "continent": "Caelora",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:madravella",
+   "name": "Madravella",
+   "display": "Madravella",
+   "placeholder": false,
+   "kingdom": "kingdom:madravella",
+   "kingdom_basis": "canon (capital)",
+   "type": "capital",
+   "tier": "capital",
+   "xy_mi": [
+    1222,
+    1802
+   ],
+   "elev_m": 485,
+   "ruler": "char:isabeau_serravene",
+   "description": "Scholarly capital on the open Oravian plains: the great university amid vineyards.",
+   "source": "output/places_resolved.json (position); The Histories\\Caelora\\Madravella\\Madravella Atlas Entry.md",
+   "population": null,
+   "continent": "Caelora",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:corivessa_great_gate",
+   "name": "Corivessa / Great Gate",
+   "display": "Corivessa / Great Gate",
+   "placeholder": false,
+   "kingdom": "kingdom:valdora",
+   "kingdom_basis": "canon (capital)",
+   "type": "capital",
+   "tier": "capital",
+   "xy_mi": [
+    1402,
+    1722
+   ],
+   "elev_m": 360,
+   "ruler": "char:severin_corivane",
+   "description": "Corivessa, Valdora's capital, built against the Great Gate that closes the Ventara canyon's western mouth; master of the Canyon Road.",
+   "source": "output/places_resolved.json (position); The Histories\\Caelora\\Valdora\\Valdora Atlas Entry.md",
+   "population": null,
+   "continent": "Caelora",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:kervara",
+   "name": "Kervara",
+   "display": "Kervara",
+   "placeholder": false,
+   "kingdom": "kingdom:kervara",
+   "kingdom_basis": "canon (capital)",
+   "type": "capital",
+   "tier": "capital",
+   "xy_mi": [
+    1642,
+    1718
+   ],
+   "elev_m": 839,
+   "ruler": "char:ossian_marcellus",
+   "description": "Unconquered mountain fortress-city in its basin at the canyon's east end; kings are crowned facing out at the outer gate.",
+   "source": "output/places_resolved.json (position); The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md",
+   "population": null,
+   "continent": "Caelora",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:dovehall",
+   "name": "Dovehall",
+   "display": "Dovehall",
+   "placeholder": false,
+   "kingdom": "kingdom:dovaran_crown",
+   "kingdom_basis": "canon (capital)",
+   "type": "capital",
+   "tier": "capital",
+   "xy_mi": [
+    1463.0,
+    1253.0
+   ],
+   "elev_m": 5,
+   "ruler": "char:peregrine_dove",
+   "description": "The White Castle: pale limestone capital of the Dovaran Crown, its harbour guarded by reefs, hidden rocks and shifting currents.",
+   "source": "output/places_resolved.json (position); The Histories\\Caelora\\Dovaran Crown\\Dovaran Crown Atlas Entry.md",
+   "population": null,
+   "continent": "Caelora",
+   "continent_basis": "nearest spec landmass outline"
+  },
+  {
+   "id": "settlement:haven",
+   "name": "Haven",
+   "display": "Haven",
+   "placeholder": false,
+   "kingdom": "kingdom:hamen",
+   "kingdom_basis": "canon (capital)",
+   "type": "capital",
+   "tier": "capital",
+   "xy_mi": [
+    1770,
+    632
+   ],
+   "elev_m": 1,
+   "ruler": "char:meret_amaranth",
+   "description": "Capital of Hamen on the River Flame floodplain: Erros the Founder's outer wall, inner defences and the stepped pyramid-palaces.",
+   "source": "output/places_resolved.json (position); The Histories\\Quadria\\The River Flame Chronicles\\Hamen Atlas Entry.md",
+   "population": null,
+   "continent": "Quadria",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:karn_ashur",
+   "name": "Karn Ashur",
+   "display": "Karn Ashur",
+   "placeholder": false,
+   "kingdom": "kingdom:karn_ashur",
+   "kingdom_basis": "canon (capital)",
+   "type": "holy",
+   "tier": "holy city",
+   "xy_mi": [
+    935,
+    232
+   ],
+   "elev_m": 3695,
+   "ruler": null,
+   "description": "The Temple of the First Flame: temple-city on the great peak, Al-Mirah's spring at its foot, a flame at the summit; seat of the Ashen Order and its Library.",
+   "source": "output/places_resolved.json (position); The Histories\\Quadria\\The Dune Sea Chronoicles\\Karn Ashur Atlas Entry.md",
+   "population": null,
+   "continent": "Quadria",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:marrukah",
+   "name": "Marrukah",
+   "display": "Marrukah†",
+   "placeholder": true,
+   "kingdom": "kingdom:coastal_sultanate",
+   "kingdom_basis": "PROVISIONAL territory map",
+   "type": "city",
+   "tier": "regional town",
+   "xy_mi": [
+    607.0,
+    745.0
+   ],
+   "elev_m": 203,
+   "ruler": null,
+   "description": "Placeholder town of the map data; no canon description yet.",
+   "source": "output/places_resolved.json (position); output/places_resolved.json",
+   "population": null,
+   "continent": "Quadria",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:sidrah",
+   "name": "Sidrah",
+   "display": "Sidrah†",
+   "placeholder": true,
+   "kingdom": "kingdom:coastal_sultanate",
+   "kingdom_basis": "PROVISIONAL territory map",
+   "type": "city",
+   "tier": "regional town",
+   "xy_mi": [
+    323.0,
+    659.0
+   ],
+   "elev_m": 267,
+   "ruler": null,
+   "description": "Placeholder town of the map data; no canon description yet.",
+   "source": "output/places_resolved.json (position); output/places_resolved.json",
+   "population": null,
+   "continent": "Quadria",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:qasr",
+   "name": "Qasr Samir",
+   "display": "Qasr Samir†",
+   "placeholder": true,
+   "kingdom": "kingdom:coastal_sultanate",
+   "kingdom_basis": "PROVISIONAL territory map",
+   "type": "city",
+   "tier": "regional town",
+   "xy_mi": [
+    957.0,
+    611.0
+   ],
+   "elev_m": 20,
+   "ruler": null,
+   "description": "Placeholder town of the map data; no canon description yet.",
+   "source": "output/places_resolved.json (position); output/places_resolved.json",
+   "population": null,
+   "continent": "Quadria",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:tarekah",
+   "name": "Tarekah",
+   "display": "Tarekah†",
+   "placeholder": true,
+   "kingdom": null,
+   "kingdom_basis": "PROVISIONAL territory map",
+   "type": "city",
+   "tier": "regional town",
+   "xy_mi": [
+    1323.0,
+    737.0
+   ],
+   "elev_m": 1,
+   "ruler": null,
+   "description": "Placeholder town of the map data; no canon description yet.",
+   "source": "output/places_resolved.json (position); output/places_resolved.json",
+   "population": null,
+   "continent": "Quadria",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:babazara",
+   "name": "Bab Azara",
+   "display": "Bab Azara†",
+   "placeholder": true,
+   "kingdom": "kingdom:hamen",
+   "kingdom_basis": "PROVISIONAL territory map",
+   "type": "city",
+   "tier": "regional town",
+   "xy_mi": [
+    1579.0,
+    815.0
+   ],
+   "elev_m": 155,
+   "ruler": null,
+   "description": "Placeholder town of the map data; no canon description yet.",
+   "source": "output/places_resolved.json (position); output/places_resolved.json",
+   "population": null,
+   "continent": "Quadria",
+   "continent_basis": "nearest spec landmass outline"
+  },
+  {
+   "id": "settlement:nahrun",
+   "name": "Nahrun",
+   "display": "Nahrun†",
+   "placeholder": true,
+   "kingdom": "kingdom:hamen",
+   "kingdom_basis": "PROVISIONAL territory map",
+   "type": "city",
+   "tier": "regional town",
+   "xy_mi": [
+    2039.0,
+    759.0
+   ],
+   "elev_m": 44,
+   "ruler": null,
+   "description": "Placeholder town of the map data; no canon description yet.",
+   "source": "output/places_resolved.json (position); output/places_resolved.json",
+   "population": null,
+   "continent": "Quadria",
+   "continent_basis": "nearest spec landmass outline"
+  },
+  {
+   "id": "settlement:oasis_league",
+   "name": "Oasis League",
+   "display": "Oasis League",
+   "placeholder": false,
+   "kingdom": "kingdom:oasis_league",
+   "kingdom_basis": "pipeline realm marker",
+   "type": "city",
+   "tier": "regional town",
+   "xy_mi": [
+    1320,
+    340
+   ],
+   "elev_m": -60,
+   "ruler": null,
+   "description": "Settlement from the map data; no canon description yet.",
+   "source": "output/places_resolved.json (position); output/places_resolved.json",
+   "population": null,
+   "continent": "Quadria",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:southern_salt_sultanate",
+   "name": "Southern Salt Sultanate",
+   "display": "Southern Salt Sultanate",
+   "placeholder": false,
+   "kingdom": "kingdom:southern_salt_sultanate",
+   "kingdom_basis": "pipeline realm marker",
+   "type": "city",
+   "tier": "regional town",
+   "xy_mi": [
+    880,
+    80
+   ],
+   "elev_m": 646,
+   "ruler": null,
+   "description": "Settlement from the map data; no canon description yet.",
+   "source": "output/places_resolved.json (position); output/places_resolved.json",
+   "population": null,
+   "continent": "Quadria",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:eastern_marches",
+   "name": "Eastern Marches",
+   "display": "Eastern Marches",
+   "placeholder": false,
+   "kingdom": "kingdom:eastern_marches",
+   "kingdom_basis": "pipeline realm marker",
+   "type": "city",
+   "tier": "regional town",
+   "xy_mi": [
+    1655,
+    170
+   ],
+   "elev_m": 1811,
+   "ruler": null,
+   "description": "Settlement from the map data; no canon description yet.",
+   "source": "output/places_resolved.json (position); output/places_resolved.json",
+   "population": null,
+   "continent": "Quadria",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:varduun_trial_seat",
+   "name": "Varduun (Trial-Seat)",
+   "display": "Varduun (Trial-Seat)",
+   "placeholder": false,
+   "kingdom": "kingdom:varduun",
+   "kingdom_basis": "canon (capital)",
+   "type": "capital",
+   "tier": "capital",
+   "xy_mi": [
+    2125,
+    248
+   ],
+   "elev_m": 2963,
+   "ruler": "char:vareth",
+   "description": "The Trial-Seat of the rebuilt Varduun, home of the Pit of Stone.",
+   "source": "output/places_resolved.json (position); The Histories\\Quadria\\Varduun Atlas Entry.md",
+   "population": null,
+   "continent": "Quadria",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:vesmara",
+   "name": "Vesmara",
+   "display": "Vesmara†",
+   "placeholder": true,
+   "kingdom": "kingdom:vesperra",
+   "kingdom_basis": "map (Vesperra)",
+   "type": "city",
+   "tier": "regional town",
+   "xy_mi": [
+    -719.0,
+    2237.0
+   ],
+   "elev_m": 1,
+   "ruler": null,
+   "description": "Placeholder town of the map data; no canon description yet.",
+   "source": "output/places_resolved.json (position); output/places_resolved.json",
+   "population": null,
+   "continent": "Vesperra†",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:occara",
+   "name": "Occara",
+   "display": "Occara†",
+   "placeholder": true,
+   "kingdom": "kingdom:vesperra",
+   "kingdom_basis": "map (Vesperra)",
+   "type": "city",
+   "tier": "regional town",
+   "xy_mi": [
+    -603.0,
+    1665.0
+   ],
+   "elev_m": 13,
+   "ruler": null,
+   "description": "Placeholder town of the map data; no canon description yet.",
+   "source": "output/places_resolved.json (position); output/places_resolved.json",
+   "population": null,
+   "continent": "Vesperra†",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:hespera",
+   "name": "Hespera",
+   "display": "Hespera†",
+   "placeholder": true,
+   "kingdom": "kingdom:vesperra",
+   "kingdom_basis": "map (Vesperra)",
+   "type": "city",
+   "tier": "regional town",
+   "xy_mi": [
+    -545.0,
+    1421.0
+   ],
+   "elev_m": 14,
+   "ruler": null,
+   "description": "Placeholder town of the map data; no canon description yet.",
+   "source": "output/places_resolved.json (position); output/places_resolved.json",
+   "population": null,
+   "continent": "Vesperra†",
+   "continent_basis": "nearest spec landmass outline"
+  },
+  {
+   "id": "settlement:serotina",
+   "name": "Serotina",
+   "display": "Serotina†",
+   "placeholder": true,
+   "kingdom": "kingdom:vesperra",
+   "kingdom_basis": "map (Vesperra)",
+   "type": "city",
+   "tier": "regional town",
+   "xy_mi": [
+    -727.0,
+    1199.0
+   ],
+   "elev_m": 90,
+   "ruler": null,
+   "description": "Placeholder town of the map data; no canon description yet.",
+   "source": "output/places_resolved.json (position); output/places_resolved.json",
+   "population": null,
+   "continent": "Vesperra†",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:calloway",
+   "name": "Calloway seat",
+   "display": "Calloway seat†",
+   "placeholder": true,
+   "kingdom": "kingdom:calderra",
+   "kingdom_basis": "author direction 2026-09-28",
+   "type": "city",
+   "tier": "great market city",
+   "xy_mi": [
+    918,
+    1563
+   ],
+   "elev_m": 1293,
+   "ruler": "char:dennet_calloway",
+   "description": "Ancestral seat of House Calloway: a great market city where the Salt Road from Salmara to Calderra crosses the old imperial road from Oravessa to Astera. The Calloways hold the Salt Road through Calderra and grow rich on its tolls. Name not yet given.",
+   "source": "Calderra Atlas Entry (House Calloway); author direction 2026-09-28 (site)",
+   "population": null,
+   "held_by": "house:calloway",
+   "continent": "Caelora",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:corivessa_port",
+   "name": "Corivessa port",
+   "display": "Corivessa port†",
+   "placeholder": true,
+   "kingdom": "kingdom:valdora",
+   "kingdom_basis": "author direction 2026-09-28",
+   "type": "city",
+   "tier": "port city",
+   "xy_mi": [
+    1337.0,
+    1603.0
+   ],
+   "elev_m": 46,
+   "ruler": null,
+   "description": "Valdora's sea port for Corivessa and the Great Gate, on the bay south-west of the city; the country between it and the Calderran border is bandit-ridden marsh and broken hills, with no army road to Calderra. Name not yet given.",
+   "source": "author direction 2026-09-28",
+   "population": null,
+   "continent": "Caelora",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:ossmere",
+   "name": "Ossmere port",
+   "display": "Ossmere port†",
+   "placeholder": true,
+   "kingdom": "kingdom:calderra",
+   "kingdom_basis": "author direction 2026-09-28",
+   "type": "city",
+   "tier": "great port city",
+   "xy_mi": [
+    1167.0,
+    1521.0
+   ],
+   "elev_m": 39,
+   "ruler": "char:serane_ossmere",
+   "description": "Seat of House Ossmere: the great port and trade city across the bay from Calderra, and the base of the rebuilt Calderran navy under Admiral Ossane Vayle. The Ossmeres grew rich and influential on the naval rebuilding. Name not yet given.",
+   "source": "Calderra Atlas Entry (House Ossmere, Admiral Vayle); author direction 2026-09-28 (site)",
+   "population": null,
+   "held_by": "house:ossmere",
+   "continent": "Caelora",
+   "continent_basis": "inside the spec landmass outline"
+  },
+  {
+   "id": "settlement:calla_vecchia",
+   "name": "Calla Vecchia",
+   "kingdom": "kingdom:salmara",
+   "type": "village",
+   "note": "Salmaran salt-pond village named in canon; no map position in the pipeline data, so it is not drawn.",
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md",
+   "placeholder": false,
+   "xy_mi": null,
+   "elev_m": null,
+   "ruler": null,
+   "tier": "village",
+   "display": "Calla Vecchia",
+   "kingdom_basis": "canon",
+   "description": "Named in canon; not placed on the map.",
+   "population": null
+  }
+ ],
+ "later_events": [
+  {
+   "id": "event:miriel_assassination",
+   "when": "during Book One (after M0)",
+   "text": "Miriel Corivane is assassinated by the Tithed at Astera; Varen kills the assassins.",
+   "affects": [
+    "char:miriel_corivane",
+    "char:varen_corivane",
+    "kingdom:valdora",
+    "kingdom:astera"
+   ],
+   "source": "The Histories\\Canon Decisions & Known Issues.md (Present-Day Snapshot Discipline)"
+  },
+  {
+   "id": "event:valdora_astera_war",
+   "when": "brewed in Book One; declared at Book Two's opening",
+   "text": "The Valdora-Astera war grows out of the assassination; Calderra sides with Astera.",
+   "affects": [
+    "kingdom:valdora",
+    "kingdom:astera",
+    "kingdom:calderra"
+   ],
+   "source": "The Histories\\Canon Decisions & Known Issues.md (Present-Day Snapshot Discipline)"
+  },
+  {
+   "id": "event:corwin_marries_selia",
+   "when": "~M2 (Ch.18)",
+   "text": "Corwin marries Selia Dravenne.",
+   "affects": [
+    "char:corwin_marcellus",
+    "char:selia_dravenne"
+   ],
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md"
+  },
+  {
+   "id": "event:tormund_born",
+   "when": "~M12",
+   "text": "Prince Tormund, Corwin and Selia's son, is born.",
+   "affects": [
+    "char:corwin_marcellus"
+   ],
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md"
+  },
+  {
+   "id": "event:ossian_dies",
+   "when": "~M14 (Ch.32)",
+   "text": "Ossian dies naturally at 61; Corwin is crowned facing out at ~M14-15, renews the warrants and leaves Master Sern standing (Ostred Vance becomes Doorward).",
+   "affects": [
+    "char:ossian_marcellus",
+    "char:corwin_marcellus",
+    "char:sern"
+   ],
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md"
+  },
+  {
+   "id": "event:corwin_killed",
+   "when": "~M24",
+   "text": "Corwin is killed in a staged accident; Halvard's regency for the infant Tormund.",
+   "affects": [
+    "char:corwin_marcellus",
+    "char:halvard_dravenne"
+   ],
+   "source": "The Histories\\Caelora\\Kervara\\Kervara Atlas Entry.md"
+  },
+  {
+   "id": "event:petrus_injured",
+   "when": "Ch.27",
+   "text": "Petrus Baro loses two fingers on Tarquin's second readiness trial.",
+   "affects": [
+    "char:petrus_baro",
+    "char:tarquin_salmara"
+   ],
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md ; The Histories\\Canon Decisions & Known Issues.md"
+  },
+  {
+   "id": "event:salmara_dredging",
+   "when": "~M20-M22 vote; works done ~M31",
+   "text": "The Council votes to dredge the bar; afterwards no Salmaran sailing is gated by tide.",
+   "affects": [
+    "kingdom:salmara"
+   ],
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md ; The Histories\\Canon Decisions & Known Issues.md"
+  },
+  {
+   "id": "event:salmara_fleet_rupture",
+   "when": "Ch.71",
+   "text": "Lucan and Tarquin take a minority of the fleet toward Dovehall without authorisation; Vassaro refuses; Varro's recall goes unanswered.",
+   "affects": [
+    "char:lucan_salmara",
+    "char:tarquin_salmara",
+    "char:aurelio_vassaro",
+    "char:varro_salmara"
+   ],
+   "source": "The Histories\\Caelora\\Salmara\\Salmara Atlas Entry.md ; The Histories\\Canon Decisions & Known Issues.md"
+  },
+  {
+   "id": "event:meret_fleet_strike",
+   "when": "a few chapters into Book One",
+   "text": "Queen Meret Amaranth's secret fleet destroys Talon's squadron, breaking three and a half centuries of tribute; Talon and Harrier survive the wreck and cross the Dune Sea coast.",
+   "affects": [
+    "char:talon_dove",
+    "char:harrier_dove",
+    "kingdom:hamen",
+    "kingdom:dovaran_crown"
+   ],
+   "source": "The Histories\\Caelora\\Dovaran Crown\\Dovaran Crown Atlas Entry.md"
+  }
+ ],
+ "geography": [
+  {
+   "id": "geo:mtn_veryan",
+   "name": "Veryan Range",
+   "placeholder": false,
+   "kind": "range",
+   "points": [
+    [
+     330,
+     1990
+    ],
+    [
+     520,
+     2060
+    ],
+    [
+     760,
+     2000
+    ],
+    [
+     980,
+     1960
+    ],
+    [
+     1200,
+     2010
+    ],
+    [
+     1420,
+     2080
+    ],
+    [
+     1640,
+     2040
+    ],
+    [
+     1860,
+     1980
+    ],
+    [
+     2080,
+     2030
+    ],
+    [
+     2300,
+     2090
+    ],
+    [
+     2420,
+     2110
+    ]
+   ],
+   "half_width_mi": 85.0,
+   "source": "pipeline/world_spec.json ranges + names/mtn_veryan"
+  },
+  {
+   "id": "geo:mtn_orthean",
+   "name": "Orthean Mountains",
+   "placeholder": false,
+   "kind": "range",
+   "points": [
+    [
+     420,
+     2380
+    ],
+    [
+     650,
+     2470
+    ],
+    [
+     900,
+     2430
+    ],
+    [
+     1150,
+     2480
+    ],
+    [
+     1400,
+     2420
+    ],
+    [
+     1650,
+     2470
+    ],
+    [
+     1900,
+     2430
+    ],
+    [
+     2150,
+     2480
+    ],
+    [
+     2380,
+     2400
+    ],
+    [
+     2560,
+     2330
+    ]
+   ],
+   "half_width_mi": 45.0,
+   "source": "pipeline/world_spec.json ranges + names/mtn_orthean"
+  },
+  {
+   "id": "geo:mtn_atlas",
+   "name": "Jebel Samir",
+   "placeholder": true,
+   "kind": "range",
+   "points": [
+    [
+     1150,
+     400
+    ],
+    [
+     1280,
+     500
+    ],
+    [
+     1400,
+     600
+    ],
+    [
+     1500,
+     680
+    ],
+    [
+     1590,
+     755
+    ]
+   ],
+   "half_width_mi": 50.0,
+   "source": "pipeline/world_spec.json ranges + names/mtn_atlas"
+  },
+  {
+   "id": "geo:mtn_pale",
+   "name": "Pale Mountains",
+   "placeholder": false,
+   "kind": "range",
+   "points": [
+    [
+     4250,
+     2720
+    ],
+    [
+     4300,
+     2300
+    ],
+    [
+     4250,
+     1900
+    ],
+    [
+     4400,
+     1650
+    ],
+    [
+     4650,
+     1600
+    ]
+   ],
+   "half_width_mi": 50.0,
+   "source": "pipeline/world_spec.json ranges + names/mtn_pale"
+  },
+  {
+   "id": "geo:pen_scutara",
+   "name": "Scutara Peninsula",
+   "placeholder": true,
+   "kind": "region",
+   "xy": [
+    1040,
+    1270
+   ],
+   "source": "pipeline/world_spec.json labels + names/pen_scutara"
+  },
+  {
+   "id": "geo:reg_rugged",
+   "name": "The Thrennish Crags",
+   "placeholder": true,
+   "kind": "region",
+   "xy": [
+    1800,
+    1430
+   ],
+   "source": "pipeline/world_spec.json labels + names/reg_rugged"
+  },
+  {
+   "id": "geo:reg_vaelwood",
+   "name": "The Vaelwood",
+   "placeholder": false,
+   "kind": "region",
+   "xy": [
+    1300,
+    2270
+   ],
+   "source": "pipeline/world_spec.json labels + names/reg_vaelwood"
+  },
+  {
+   "id": "geo:reg_oravian",
+   "name": "Oravian Expanse",
+   "placeholder": false,
+   "kind": "region",
+   "xy": [
+    760,
+    1760
+   ],
+   "source": "pipeline/world_spec.json labels + names/reg_oravian"
+  },
+  {
+   "id": "geo:reg_ventara",
+   "name": "Ventara",
+   "placeholder": false,
+   "kind": "region",
+   "xy": [
+    1515,
+    1772
+   ],
+   "source": "pipeline/world_spec.json labels + names/reg_ventara"
+  },
+  {
+   "id": "geo:reg_eastern",
+   "name": "Eastern Ranges",
+   "placeholder": true,
+   "kind": "region",
+   "xy": [
+    2000,
+    1640
+   ],
+   "source": "pipeline/world_spec.json labels + names/reg_eastern"
+  },
+  {
+   "id": "geo:reg_clearwater",
+   "name": "Clearwater Isles",
+   "placeholder": false,
+   "kind": "region",
+   "xy": [
+    1455,
+    1275
+   ],
+   "source": "pipeline/world_spec.json labels + names/reg_clearwater"
+  },
+  {
+   "id": "geo:reg_dunesea",
+   "name": "Great Dune Sea",
+   "placeholder": false,
+   "kind": "region",
+   "xy": [
+    450,
+    400
+   ],
+   "source": "pipeline/world_spec.json labels + names/reg_dunesea"
+  },
+  {
+   "id": "geo:reg_highdunes",
+   "name": "High Dunes",
+   "placeholder": false,
+   "kind": "region",
+   "xy": [
+    935,
+    380
+   ],
+   "source": "pipeline/world_spec.json labels + names/reg_highdunes"
+  },
+  {
+   "id": "geo:reg_varduun",
+   "name": "Varduun Highlands",
+   "placeholder": false,
+   "kind": "region",
+   "xy": [
+    2330,
+    420
+   ],
+   "source": "pipeline/world_spec.json labels + names/reg_varduun"
+  },
+  {
+   "id": "geo:reg_hamen",
+   "name": "Hamen",
+   "placeholder": false,
+   "kind": "region",
+   "xy": [
+    1870,
+    560
+   ],
+   "source": "pipeline/world_spec.json labels + names/reg_hamen"
+  },
+  {
+   "id": "geo:reg_marches",
+   "name": "Eastern Marches",
+   "placeholder": false,
+   "kind": "region",
+   "xy": [
+    1700,
+    80
+   ],
+   "source": "pipeline/world_spec.json labels + names/reg_marches"
+  },
+  {
+   "id": "geo:cont_caelora",
+   "name": "Caelora",
+   "placeholder": false,
+   "kind": "continent",
+   "xy": [
+    1650,
+    1540
+   ],
+   "source": "pipeline/world_spec.json labels + names/cont_caelora"
+  },
+  {
+   "id": "geo:cont_quadria",
+   "name": "Quadria",
+   "placeholder": false,
+   "kind": "continent",
+   "xy": [
+    1500,
+    -120
+   ],
+   "source": "pipeline/world_spec.json labels + names/cont_quadria"
+  },
+  {
+   "id": "geo:cont_thrasia",
+   "name": "Thrasia",
+   "placeholder": false,
+   "kind": "continent",
+   "xy": [
+    4480,
+    2150
+   ],
+   "source": "pipeline/world_spec.json labels + names/cont_thrasia"
+  },
+  {
+   "id": "geo:cont_west",
+   "name": "Vesperra",
+   "placeholder": true,
+   "kind": "continent",
+   "xy": [
+    -1350,
+    1500
+   ],
+   "source": "pipeline/world_spec.json labels + names/cont_west"
+  },
+  {
+   "id": "geo:isl_favilla",
+   "name": "Favillan Isles",
+   "placeholder": true,
+   "kind": "region",
+   "xy": [
+    3560,
+    2080
+   ],
+   "source": "pipeline/world_spec.json labels + names/isl_favilla"
+  },
+  {
+   "id": "geo:isl_stepping",
+   "name": "The Stepping Isles",
+   "placeholder": true,
+   "kind": "region",
+   "xy": [
+    -250,
+    1300
+   ],
+   "source": "pipeline/world_spec.json labels + names/isl_stepping"
+  },
+  {
+   "id": "geo:thr_silent",
+   "name": "The Silent Coast",
+   "placeholder": false,
+   "kind": "region",
+   "xy": [
+    4150,
+    2000
+   ],
+   "source": "pipeline/world_spec.json labels + names/thr_silent"
+  },
+  {
+   "id": "geo:thr_cape",
+   "name": "The Broken Cape",
+   "placeholder": false,
+   "kind": "region",
+   "xy": [
+    3860,
+    1730
+   ],
+   "source": "pipeline/world_spec.json labels + names/thr_cape"
+  },
+  {
+   "id": "geo:thr_interior",
+   "name": "The Interior Silence",
+   "placeholder": false,
+   "kind": "region",
+   "xy": [
+    4600,
+    1850
+   ],
+   "source": "pipeline/world_spec.json labels + names/thr_interior"
+  },
+  {
+   "id": "geo:reg_riven_hl",
+   "name": "Riven Highlands",
+   "placeholder": true,
+   "kind": "region",
+   "xy": [
+    2330,
+    1905
+   ],
+   "source": "pipeline/world_spec.json labels + names/reg_riven_hl"
+  },
+  {
+   "id": "region:oravian_expanse_contested",
+   "name": "Oravian Expanse",
+   "placeholder": false,
+   "kind": "region",
+   "provisional": true,
+   "xy": [
+    850,
+    1760
+   ],
+   "status": "Divided among Salmara, Astera and Calderra (author direction 2026-09-28; was contested)",
+   "description": "The rolling hill country of the Oravian Expanse between the Caeloran realms. The author has divided it among its neighbours, with the Border river as the boundary of Salmara against Astera and Calderra. Its division is part of the PROVISIONAL territory map.",
+   "source": "The Histories/World Atlas.md; author direction 2026-09-28"
+  }
+ ]
+}

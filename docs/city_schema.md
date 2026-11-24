@@ -11,7 +11,7 @@ Points are `[x, y, z]` unless the field says 2D (`[x, y]`).
 |---|---|---|
 | `id`, `name`, `version` (=1), `model_scale` | | 1 model metre = `model_scale` real metres |
 | `extent`, `sea_level` | | plinth bounds |
-| `world_map` | `{map, pin_uv:[u,v], lore?}` | pin on the world map, uv from the top-left |
+| `world_map` | `{map, pin_uv?:[u,v], settlement?, lore?}` | `pin_uv`: pin on the painted Caelora Geography map (`atlas/assets/map/Caelora_Geography.png`), uv from the top-left. `settlement`: id in `atlas/assets/map/known_world/known_world.json` (e.g. `settlement:calderra`); the Known World pin sits there, else at `pin_uv` carried over. At least one of the two; a city off Caelora has only `settlement` and no pin on the painted map. |
 | `sun` | `{latitude_deg, default_day_of_year, north_offset_deg, sunrise_h, sunset_h}` | defaults for the shared sun-arc (`generator/sunarc.py`) |
 | `files` | `{model, proxies, terrain_albedo, thumb}` | package file names |
 | `street_graph` | `{nodes:[[x,y,z]], edges:[[a,b,width]]}` | one connected walkable graph (streets, quays, gate passages, country roads) |

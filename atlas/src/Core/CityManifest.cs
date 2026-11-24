@@ -67,6 +67,8 @@ namespace Atlas.Core
     {
         [JsonPropertyName("map")] public string Map { get; set; }
         [JsonPropertyName("pin_uv")] public double[] PinUv { get; set; }
+        /// <summary>Optional settlement id on the Known World relief map (e.g. "settlement:calderra").</summary>
+        [JsonPropertyName("settlement")] public string Settlement { get; set; }
         [JsonPropertyName("lore")] public string Lore { get; set; }
     }
 

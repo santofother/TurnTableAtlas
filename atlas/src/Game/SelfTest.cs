@@ -1,6 +1,7 @@
 // --selftest: drives the app like the plan's Phase 4 acceptance check and prints [Selftest] PASS/FAIL lines.
 // Open a city, scrub dawn to night, change the latitude and see the arc change, fly to a landmark, press
-// Chariot Race (run 25x faster) and see the stands fill and the race start, go back to the map, reopen.
+// Chariot Race (run 25x faster) and see the stands fill and the race start, go back to the 3D map, switch it to the
+// Known World relief and back (the camera stays on the same spot), reopen the city.
 using System;
 using System.Linq;
 using Atlas.Core;
@@ -12,10 +13,21 @@ namespace Atlas
     {
         static int _step;
         static string _city;
-        static Vector3 _expectCam;
+        static Vector3 _expectCam, _mapTarget;
         static int _fails;
         static string _event, _venueType, _landmark;
         static readonly string[] Preferred = { "chariot_race", "gladiator_games", "theatre_play" };
+
+        static T Find<T>(Node n) where T : Node
+        {
+            foreach (var c in n.GetChildren())
+            {
+                if (c is T t) return t;
+                var r = Find<T>(c);
+                if (r != null) return r;
+            }
+            return null;
+        }
 
         static void Check(bool ok, string what)
         {
@@ -75,14 +87,42 @@ namespace Atlas
                     Check(showOn, $"show running: {v.Events.Status}");
                     Check(v.Life.Crowd.W.Count(w => w.Active) > 100, $"{v.Life.Crowd.W.Count(w => w.Active)} people walking");
                     Check(v.Life.Traffic.Ships.Count(s => s.Visible) > 2, $"{v.Life.Traffic.Ships.Count(s => s.Visible)} ships under way");
+                    var panel = Find<WeatherPanel>(root);
+                    panel?.KindButton(WeatherKind.Rain).EmitSignal(BaseButton.SignalName.Pressed);
+                    Check(panel != null && root.Weather.Kind == WeatherKind.Rain && root.Weather.Target.Rain > 0.5,
+                          $"weather panel in the city: Rain chosen ({root.Weather.Target.Rain:0.00} rain)");
                     root.ShowMap();
                     _step++; break;
                 }
                 case 4 when t > 6.8:
-                    Check(root.Map != null && root.City == null, "back to the world map");
+                {
+                    var map = root.Map;
+                    Check(map != null && root.City == null, "back to the world map");
+                    Check(map.Pins.Count == root.Cities.Count && map.Weather?.Clouds != null && map.Rig.Cam.Current,
+                          $"3D map ({map.Mode}): {map.Pins.Count} pins, clouds, orbit camera");
+                    Check(map.WeatherControls != null && map.WeatherControls.W == root.Weather && root.Weather.Kind == WeatherKind.Rain,
+                          $"the map shares the city's weather ({root.Weather.Kind}, cloud {root.Weather.Current.Coverage:0.00})");
+                    map.WeatherControls.KindButton(WeatherKind.Fair).EmitSignal(BaseButton.SignalName.Pressed);
+                    _mapTarget = map.Rig.Target;
+                    map.SetMode(MapMode.KnownWorld);
+                    _step++; break;
+                }
+                case 5 when t > 7.6:
+                {
+                    var map = root.Map;
+                    var pin = map.Pins.First(p => p.M.Id == _city);
+                    var b = map.Kw.BoundsXy;
+                    bool inside = pin.Position.X > b[0] && pin.Position.X < b[2] && -pin.Position.Z > b[1] && -pin.Position.Z < b[3] && pin.Position.Y >= 0;
+                    Check(map.Mode == MapMode.KnownWorld && map.KnownWorldLoaded && WorldMap.ReliefMax is > 6f and < 9f,
+                          $"Known World relief from KnownWorld.blend: peak {WorldMap.ReliefMax:0.0} units at {map.Kw.Exaggeration:0}x, {map.Kw.Cameras.Count} blend views");
+                    Check(inside, $"{_city} pin on the relief at ({pin.Position.X:0.0}, {pin.Position.Y:0.00}, {pin.Position.Z:0.0})");
+                    map.SetMode(MapMode.Geography);
+                    var d = new Vector2(map.Rig.Target.X - _mapTarget.X, map.Rig.Target.Z - _mapTarget.Z).Length();
+                    Check(map.Mode == MapMode.Geography && d < 1.0f, $"camera carried Geography→Known World→Geography ({d:0.000} units off)");
                     root.OpenCity(_city);
                     _step++; break;
-                case 5 when t > 7.6:
+                }
+                case 6 when t > 8.4:
                     Check(root.City != null && root.City.M.Id == _city, "reopened the city from the map");
                     GD.Print(_fails == 0 ? "[Selftest] PASS" : $"[Selftest] SELFTEST FAIL ({_fails} checks)");
                     _step++;

@@ -35,14 +35,17 @@ Rendered shots land in `blender/renders/<shot>/<shot>.mp4`.
 | id | what | latitude |
 |---|---|---|
 | `fantasy_capital` | crescent harbour capital: palace headland, colosseum, hippodrome, theatre, baths, aqueduct | 38°N |
-| `thalassa_minor` | whitewashed island port: acropolis, theatre, amphitheatre, lighthouse moles | 31°N |
 
 Names and map pins are `LORE?` placeholders (see `docs/DECISIONS.md`).
 
 ## Adding a city
-1. Copy `generator/cities/thalassa_minor.json` to `generator/cities/<id>.json` and edit it: `layout` (coast, walls,
-   gates, avenues, landmarks list, terrain hills, palette, ships), `spawn_zones`, `ship_lanes`, `routes`,
-   `landmarks` (camera presets), `events`, `sun`, `world_map.pin_uv`.
+Write a brief and let an agent build it: `tools/new_city.py init <id> "Name"`, drop reference images into
+`briefs/<id>/refs/`, fill in `briefs/<id>/brief.md`, then start a session with `/new-city <id>` (or tell any agent
+"Read docs/new_city/README.md and build the city in briefs/<id>/"). By hand, the steps are:
+
+1. Write `generator/cities/<id>.json` (every `layout` key is in `docs/new_city/example_layout.json`): `layout`
+   (coast, walls, gates, avenues, landmarks list, terrain hills, palette, ships), `spawn_zones`, `ship_lanes`,
+   `routes`, `landmarks` (camera presets), `events`, `sun`, `world_map` (`pin_uv`, `settlement`).
 2. `tools/build_city.sh <id>` (about 15-30 s): writes `blender/<id>.blend` and `cities/<id>/`.
    `$BLENDER -b --factory-startup --python tools/debug/anchor_map.py -- <id> out.png` draws streets, lanes,
    zones and routes over the walk grid while you tune the layout.

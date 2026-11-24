@@ -31,8 +31,12 @@ class ManifestTests(unittest.TestCase):
             self.assertEqual(m['version'], 1)
             self.assertEqual(os.path.basename(os.path.dirname(p)), m['id'])
             self.assertTrue(set(m['events']) <= EVENTS, m['events'])
-            u, v = m['world_map']['pin_uv']
-            self.assertTrue(0 <= u <= 1 and 0 <= v <= 1)
+            wm = m['world_map']
+            # a pin on the painted Caelora map, or (for cities off Caelora) just a Known World settlement
+            self.assertTrue('pin_uv' in wm or wm.get('settlement', '').startswith('settlement:'), p)
+            if 'pin_uv' in wm:
+                u, v = wm['pin_uv']
+                self.assertTrue(0 <= u <= 1 and 0 <= v <= 1)
             s = m['sun']
             self.assertTrue(-90 <= s['latitude_deg'] <= 90 and 1 <= s['default_day_of_year'] <= 365)
 

@@ -1,5 +1,7 @@
-// Turntable camera: orbit (left drag), pan (right/middle drag), eased zoom (wheel), auto-rotate (R),
-// free-fly (F: WASD + QE, right drag to look), smooth landmark jumps. Never clips into the proxies.
+// Turntable camera: orbit (left drag), pan (right/middle drag), eased zoom (wheel / trackpad scroll / pinch / Q E),
+// W S raise and lower the camera, A D orbit, auto-rotate (R), free-fly (F: W S up/down, A D strafe,
+// Q E forward/back, right drag to look), smooth landmark jumps. Never clips into the proxies.
+// macOS sends trackpad and Magic Mouse scrolling as InputEventPanGesture, not wheel buttons, so that zooms too.
 using System;
 using Atlas.Core;
 using Godot;
@@ -20,6 +22,8 @@ namespace Atlas
         (Vector3 T, float Y, float P, float D) _flyFrom, _flyTo;
         double _flyT = 1.0, _flyDur = 1.6;
         public Rect2 Bounds = new(-60, -60, 120, 120);
+        /// <summary>Multiplies free-fly speed (the world map is far bigger than a city).</summary>
+        public float FlySpeed = 1f;
 
         public override void _Ready()
         {
@@ -81,7 +85,14 @@ namespace Atlas
                 if (mb.Pressed) _flyT = 1.0;
             }
             else if (e is InputEventMagnifyGesture mg) Zoom(1f / mg.Factor);
-            else if (e is InputEventPanGesture pg) { _tYaw -= pg.Delta.X * 2f; _tPitch = Math.Clamp(_tPitch + pg.Delta.Y * 1.5f, MinPitch, MaxPitch); }
+            else if (e is InputEventPanGesture pg)
+            {
+                // two-finger scroll: vertical zooms (like a wheel), horizontal orbits
+                if (FreeFly) _flyPos += -Cam.GlobalBasis.Z * (-pg.Delta.Y * 0.6f);
+                else Zoom(Mathf.Pow(1.06f, pg.Delta.Y));
+                _tYaw -= pg.Delta.X * 2f;
+                _flyT = 1.0;
+            }
             else if (e is InputEventMouseMotion mm)
             {
                 if (FreeFly && (_looking || _orbiting))
@@ -111,6 +122,14 @@ namespace Atlas
             }
         }
 
+        /// <summary>+1 while only <paramref name="pos"/> is held, -1 while only <paramref name="neg"/> is, else 0.
+        /// Ignored while a text field has focus.</summary>
+        float Axis(Key pos, Key neg)
+        {
+            if (GetViewport()?.GuiGetFocusOwner() is LineEdit or TextEdit) return 0f;
+            return (Input.IsKeyPressed(pos) ? 1f : 0f) - (Input.IsKeyPressed(neg) ? 1f : 0f);
+        }
+
         void Zoom(float f) => _tDist = Math.Clamp(_tDist * f, MinDist, MaxDist);
 
         public override void _Process(double delta)
@@ -118,16 +137,12 @@ namespace Atlas
             float dt = (float)delta;
             if (FreeFly)
             {
-                var move = Vector3.Zero;
-                if (Input.IsKeyPressed(Key.W)) move.Z -= 1;
-                if (Input.IsKeyPressed(Key.S)) move.Z += 1;
-                if (Input.IsKeyPressed(Key.A)) move.X -= 1;
-                if (Input.IsKeyPressed(Key.D)) move.X += 1;
-                if (Input.IsKeyPressed(Key.E)) move.Y += 1;
-                if (Input.IsKeyPressed(Key.Q)) move.Y -= 1;
-                float sp = (Input.IsKeyPressed(Key.Shift) ? 24f : 7f) * dt;
+                float sp = (Input.IsKeyPressed(Key.Shift) ? 24f : 7f) * FlySpeed * dt;
                 var basis = Basis.FromEuler(new Vector3(_flyPitch, _flyYaw, 0));
-                _flyPos += basis * move * sp;
+                var right = basis.X; right.Y = 0; right = right.Normalized();
+                // W S straight up/down, A D strafe, Q E forward/back along the view (the free-fly "zoom")
+                var move = Vector3.Up * Axis(Key.W, Key.S) + right * Axis(Key.D, Key.A) + (-basis.Z) * Axis(Key.Q, Key.E);
+                _flyPos += move * sp;
                 _flyPos.Y = Math.Max(_flyPos.Y, GroundAt(_flyPos) + 0.25f);
                 Cam.GlobalTransform = new Transform3D(basis, _flyPos);
                 return;
@@ -143,6 +158,12 @@ namespace Atlas
                 _tDist = Mathf.Lerp(_flyFrom.D, _flyTo.D, s) * (1f + 0.35f * Mathf.Sin(Mathf.Pi * s) * Mathf.Clamp(_flyFrom.T.DistanceTo(_flyTo.T) / 40f, 0f, 1f));
             }
             if (AutoRotate) _tYaw += 5f * dt;
+            float fast = Input.IsKeyPressed(Key.Shift) ? 2.5f : 1f;
+            float qe = Axis(Key.Q, Key.E), ws = Axis(Key.W, Key.S), ad = Axis(Key.D, Key.A);
+            if (qe != 0 || ws != 0 || ad != 0) _flyT = 1.0;
+            if (qe != 0) Zoom(Mathf.Exp(-qe * 1.4f * fast * dt));                       // Q in, E out
+            if (ws != 0) _tPitch = Math.Clamp(_tPitch + ws * 45f * fast * dt, MinPitch, MaxPitch); // W up, S down
+            if (ad != 0) _tYaw += ad * 60f * fast * dt;
             float a = 1f - Mathf.Exp(-dt * 7f);
             Target = Target.Lerp(_tTarget, a);
             Yaw = Mathf.Lerp(Yaw, _tYaw, a);

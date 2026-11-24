@@ -1,4 +1,4 @@
-// The side panel: time and playback speed, sun-arc controls (latitude, season, north), places, events,
+// The side panel: time and playback speed, weather (WeatherPanel), sun-arc controls (latitude, season, north), places, events,
 // layers, screenshot and back-to-map. Built in code (no editor scenes to maintain).
 using System;
 using System.Collections.Generic;
@@ -59,6 +59,11 @@ namespace Atlas
                 _speedButtons.Add(b);
             }
 
+            Section(col, "Weather");
+            var weather = new WeatherPanel { Name = "Weather" };
+            col.AddChild(weather);
+            weather.Build(v.Weather.W);
+
             Section(col, "Sun arc");
             _sunL = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
             col.AddChild(_sunL);
@@ -115,7 +120,7 @@ namespace Atlas
                 col.AddChild(cb);
             }
 
-            var hint = new Label { Text = "Drag: orbit · Right-drag: pan · Wheel: zoom · Double-click: focus · R: auto-rotate · F: free-fly (WASD QE)" };
+            var hint = new Label { Text = "Drag: orbit · Right-drag: pan · Scroll / Q E: zoom · W S: up/down · A D: orbit · Double-click: focus · R: auto-rotate · F: free-fly" };
             hint.AddThemeFontSizeOverride("font_size", 13);
             hint.AddThemeColorOverride("font_color", new Color(1, 1, 1, 0.75f));
             hint.SetAnchorsPreset(Control.LayoutPreset.BottomLeft);

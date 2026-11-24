@@ -19,6 +19,8 @@ Both read the same per-city manifest `cities/<id>/city.json`. Neither side hand-
 | `cities/<id>/` | city package: `city.glb`, `terrain_albedo.png`, `city.json`, `thumb.png` | generated |
 | `atlas/` | Godot project; pure logic in `atlas/src/Core` (no Godot refs), tests in `atlas/tests` | S7–S9 |
 | `tests/` | Python tests (sun arc, manifest schema) | S2 |
+| `briefs/<id>/` | a new city's brief and reference images (the user's) | |
+| `docs/new_city/` | **the new-city startup prompt** (`README.md`), brief template, full layout example | |
 
 ## Coordinates (contract)
 - Generator / Blender / `city.json`: metres, **+X east, +Y north, +Z up**, sea level Z = 0, model spans [-50, 50].
@@ -50,6 +52,9 @@ export BLENDER=/Applications/Blender.app/Contents/MacOS/Blender
 - Edit `.py`, `.cs`, `.tscn`, `.json`, `.gdshader` as text. Never open the Godot editor GUI.
 - Prove things with tests and logs; screenshots only for visual cards, few and small.
 - Stuck after ~3 attempts on the same problem: stop and write `status: PARTIAL` in the handoff.
+
+## New cities
+Building a city from a brief? Read `docs/new_city/README.md` first (Claude Code: `/new-city <id>`).
 
 ## Lore
 Cities sit in the Caelora world (`~/PersonalProjects/FOMSMap`). If a card needs a name or fact that
