@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="820" viewBox="0 0 1200 820">
+  <title>Haven proposed city plan, not canonical geography</title>
+  <rect width="1200" height="820" fill="#f5efdc"/>
+  <path d="M305 0 C230 120 330 220 270 340 S300 580 245 820" fill="none" stroke="#ad5750" stroke-width="155" opacity=".8"/>
+  <path d="M305 0 C230 120 330 220 270 340 S300 580 245 820" fill="none" stroke="#d98678" stroke-width="105"/>
+  <path d="M470 88 L905 75 L1080 180 L1090 670 L955 755 L480 720 L395 590 L408 230 Z" fill="#e9dcae" stroke="#7a6655" stroke-width="20" stroke-linejoin="round"/>
+  <path d="M470 88 L905 75 L1080 180 L1090 670 L955 755 L480 720 L395 590 L408 230 Z" fill="none" stroke="#b99e75" stroke-width="5" stroke-dasharray="12 28"/>
+  <g fill="#cbbd80" stroke="#b2a56d" stroke-width="2">
+    <path d="M490 140 H690 V300 H490z"/><path d="M735 135 H965 V300 H735z"/>
+    <path d="M470 525 H660 V675 H470z"/><path d="M710 535 H1005 V685 H710z"/>
+    <path d="M900 335 H1030 V495 H900z"/>
+  </g>
+  <g stroke="#6d9d94" stroke-width="7" fill="none">
+    <path d="M420 185 H1040"/><path d="M425 315 H1055"/><path d="M440 510 H1040"/><path d="M545 130 V700"/><path d="M850 120 V705"/>
+  </g>
+  <path d="M505 345 L630 300 L800 333 L877 420 L825 525 L625 545 L500 475 Z" fill="#d8b898" stroke="#785c50" stroke-width="12"/>
+  <path d="M570 355 L650 337 L760 360 L812 420 L775 482 L630 500 L565 455 Z" fill="#e7c9a9" stroke="#785c50" stroke-width="5"/>
+  <g fill="#947b67" stroke="#574f4a" stroke-width="4">
+    <path d="M640 363 L705 363 L725 417 L620 417 Z"/><path d="M710 427 L765 427 L778 474 L695 474 Z"/>
+  </g>
+  <path d="M425 410 L525 410" stroke="#847263" stroke-width="22"/>
+  <path d="M195 410 L425 410" stroke="#cab595" stroke-width="20"/>
+  <rect x="75" y="345" width="100" height="145" rx="8" fill="#d8b898" stroke="#785c50" stroke-width="7"/>
+  <g fill="#3d302d" font-family="Avenir,Arial,sans-serif">
+    <text x="40" y="55" font-size="32" font-weight="bold">HAVEN — CONCEPT WIRE FRAME</text>
+    <text x="42" y="83" font-size="17">Top-down zoning study • north up • layout proposed, not canon • no fixed scale</text>
+    <text x="470" y="112" font-size="19" font-weight="bold">ANCIENT OUTER WALL</text>
+    <text x="525" y="240" font-size="21">protected grain fields</text>
+    <text x="760" y="235" font-size="21">canal-fed fields</text>
+    <text x="898" y="460" font-size="18">sluices</text>
+    <text x="530" y="333" font-size="18" font-weight="bold">INNER WALL</text>
+    <text x="628" y="398" font-size="18" fill="#fff">pyramid-palaces</text>
+    <text x="610" y="454" font-size="16">plaza / civic core</text>
+    <text x="425" y="387" font-size="17">quays</text>
+    <text x="25" y="340" font-size="17">west-bank landing?</text>
+    <text x="100" y="545" font-size="20" fill="#7e3939">RIVER FLAME</text>
+    <text x="540" y="622" font-size="18">granaries</text>
+    <text x="765" y="622" font-size="18">enclosed agriculture</text>
+    <text x="50" y="760" font-size="18">south / downstream toward coast</text>
+    <text x="1070" y="70" font-size="22" font-weight="bold">N ↑</text>
+  </g>
+</svg>

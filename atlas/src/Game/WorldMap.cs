@@ -19,6 +19,9 @@ namespace Atlas
         static float[] _kwH;
         static int _hw, _hh;
         static KnownWorldMap _kw;
+        static KarnAshurSite _karnSite;
+        // the relief mesh's quads (its PlaneMesh subdivisions + 1); hero patches meet its triangles at their edges
+        const int ReliefQuadsX = 1024, ReliefQuadsY = 534;
 
         const string KwJson = "res://assets/map/known_world/known_world.json";
         static readonly Color Accent = new(0.95f, 0.72f, 0.38f);
@@ -33,6 +36,9 @@ namespace Atlas
         public readonly List<MapPin3D> Pins = new();
 
         public MapTable Table { get; private set; }
+        /// <summary>Karn Ashur's hero patch and city miniature (W5).</summary>
+        public KarnAshur Karn { get; private set; }
+        MeshInstance3D _karnGlow;
         public WorldShipping Shipping { get; private set; }
         ShaderMaterial _reliefMat;
         ShaderMaterial _fogMat;
@@ -84,7 +90,7 @@ namespace Atlas
             Weather.Setup(root.Weather, Tod,
                 new CloudScale { Base = 9, Top = 21, Center = new Vector2(cx, -cy), Half = new Vector2((float)_kw.Width / 2, (float)_kw.Depth / 2)   /* W1: clouds stay over the map, not the table */,
                                  Cell = 230, Shape = 20, Detail = 5.5f, NearFade = 1.5f, Edge = 45, FlashR = 30 },
-                new[] { _reliefMat }, false, () => Rig.Target,
+                new[] { _reliefMat }.Concat(Karn?.WeatherMaterials ?? new List<ShaderMaterial>()), false, () => Rig.Target,
                 () => Math.Clamp(Math.Abs(Tod.Speed) * 60, 1.0, 20.0));
 
             foreach (var m in root.Cities)
@@ -100,6 +106,7 @@ namespace Atlas
             Shipping = new WorldShipping();
             AddChild(Shipping);
             Shipping.Build(this);
+            if (_karnSite != null && !_kw.Cameras.Any(c => c.Id == KarnAshur.ViewId)) _kw.Cameras.Add(KarnAshur.View(_karnSite));
             BuildOverlay();
             FillViews();
             if (_lastCamera is { } last) Rig.Snap(last.Target, last.Yaw, last.Pitch, last.Distance);
@@ -107,6 +114,11 @@ namespace Atlas
                 Rig.Snap(Geo.V(overview.Target), (float)overview.Yaw, (float)overview.Pitch, (float)overview.Dist);
             else Rig.Snap(new Vector3(cx, 0, -cy), -90f, 58f, bounds.Size.X);
             if (Args.Has("view")) FlyToView(Args.Get("view"), 0.01);
+            if (Args.Get("orbit") is { } orbit)   // --orbit=x,y,z,yaw,pitch,dist (blend xy, height in units): a fixed shot
+            {
+                var o = orbit.Split(',').Select(t => double.Parse(t, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+                Rig.Snap(Geo.V(new[] { o[0], o[1], o[2] }), (float)o[3], (float)o[4], (float)o[5]);
+            }
         }
 
         void BuildRegionalFog(Rect2 bounds)
@@ -136,6 +148,13 @@ namespace Atlas
             ulong t0 = Time.GetTicksMsec();
             _kwTex ??= LoadTexture(Path.Combine(_kw.Directory, _kw.Albedo));
             if (_kwH == null) LoadHeights();
+            if (Args.Get("karn-ashur") != "off")   // --karn-ashur=off shows the baked relief alone (before/after shots)
+                _karnSite ??= KarnAshur.MakeSite(_kw, new ReliefSampler(_kwH, _hw, _hh, _kw.BoundsXy, ReliefQuadsX, ReliefQuadsY));
+            if (_karnSite != null)
+            {
+                var (u0, v0, u1, v1) = _karnSite.HoleUv;   // the patch covers these vertices: sink them out of sight
+                _reliefMat.SetShaderParameter("hole", new Vector4((float)u0, (float)v0, (float)u1, (float)v1));
+            }
             _reliefMat.SetShaderParameter("albedo_tex", _kwTex);
             _reliefMat.SetShaderParameter("height_tex", _kwHeightTex);
             _reliefMat.SetShaderParameter("size", new Vector2((float)_kw.Width, (float)_kw.Depth));
@@ -145,16 +164,29 @@ namespace Atlas
             AddChild(relief);
             float cx = (float)(_kw.BoundsXy[0] + _kw.Width / 2), cy = (float)(_kw.BoundsXy[1] + _kw.Depth / 2);
             var at = new Vector3(cx, 0, -cy);
-            var mesh = new PlaneMesh { Size = new Vector2((float)_kw.Width, (float)_kw.Depth), SubdivideWidth = 1023, SubdivideDepth = 533 };
+            var mesh = new PlaneMesh { Size = new Vector2((float)_kw.Width, (float)_kw.Depth), SubdivideWidth = ReliefQuadsX - 1, SubdivideDepth = ReliefQuadsY - 1 };
             mesh.CustomAabb = new Aabb(new Vector3(-(float)_kw.Width / 2, -1, -(float)_kw.Depth / 2), new Vector3((float)_kw.Width, 12, (float)_kw.Depth));
             relief.AddChild(new MeshInstance3D { Name = "Relief", Mesh = mesh, Position = at, MaterialOverride = _reliefMat });
+            if (_karnSite != null)
+            {
+                Karn = new KarnAshur();
+                AddChild(Karn);
+                Karn.Build(_karnSite, _kw, _kwTex);
+            }
 
             // collision at one sample per unit: keeps the camera above the mountains, double-click focus
             int cols = (int)Math.Round(_kw.Width) + 1, rows = (int)Math.Round(_kw.Depth) + 1;
             var data = new float[cols * rows];
             for (int r = 0; r < rows; r++)
                 for (int c = 0; c < cols; c++)
-                    data[r * cols + c] = Math.Max(0f, HeightUv(c / (double)(cols - 1), r / (double)(rows - 1)));
+                {
+                    double u = c / (double)(cols - 1), v = r / (double)(rows - 1);
+                    float h = Math.Max(0f, HeightUv(u, v));
+                    var (x, y) = _kw.UvToXy(u, v);
+                    if (_karnSite != null && _karnSite.Contains(x, y))   // Karn Ashur's own collision lies on top here
+                        h = Math.Max(Math.Abs(x - _karnSite.Cx), Math.Abs(y - _karnSite.Cy)) < KarnAshurSite.PatchHalf - 1.0 ? -1f : Math.Min(h, (float)_karnSite.MeshUnits(x, y)) - 0.05f;
+                    data[r * cols + c] = h;
+                }
             var body = new StaticBody3D { Name = "KwCollision", CollisionLayer = CityLoader.CollisionLayer, CollisionMask = 0 };
             body.AddChild(new CollisionShape3D
             {
@@ -185,6 +217,7 @@ namespace Atlas
                                              Position = p + Vector3.Up * 0.15f, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, Visible = false };
                 relief.AddChild(g);
                 _lights.Add((g, mat, capital ? 1f : 0.6f));
+                if (s.Id == KarnAshurSite.SettlementId) _karnGlow = g;
                 if (pinned.Contains(s.Id)) continue;
                 var l = NameLabel(s.Name, capital ? 26 : 22, new Color(1f, 0.95f, 0.86f));
                 l.Position = p + Vector3.Up * 0.4f;
@@ -252,7 +285,8 @@ namespace Atlas
         public Vector3 KwPoint(double u, double v)
         {
             var (x, y) = _kw.UvToXy(u, v);
-            return new Vector3((float)x, Math.Max(0f, HeightUv(u, v)), -(float)y);
+            float h = _karnSite != null && _karnSite.Contains(x, y) ? (float)_karnSite.MeshUnits(x, y) : HeightUv(u, v);
+            return new Vector3((float)x, Math.Max(0f, h), -(float)y);
         }
 
         public void FlyToView(string id, double seconds = 1.6)
@@ -308,9 +342,12 @@ namespace Atlas
             float glow = (float)Math.Clamp(Tod.LampLevel * (1.0 - 0.4 * Tod.Wx.Darkness), 0, 1);
             foreach (var (g, mat, strength) in _lights)
             {
-                g.Visible = glow > 0.01f;
-                mat.AlbedoColor = new Color(1f, 0.62f, 0.28f, Math.Min(1f, glow * strength * 1.4f));
+                // Karn Ashur lights its own windows and fires close up: its map glow fades out as the camera comes in
+                float near = g == _karnGlow ? Mathf.SmoothStep(5f, 16f, Rig.Dist) : 1f;
+                g.Visible = glow * near > 0.01f;
+                mat.AlbedoColor = new Color(1f, 0.62f, 0.28f, Math.Min(1f, glow * strength * near * 1.4f));
             }
+            Karn?.Tick((float)Tod.LampLevel, (float)Tod.Daylight);
             Declutter(cam);
             if (!_syncing && _time != null && Tod.Speed != 0) { _syncing = true; _time.Value = Tod.Hour; _syncing = false; }
             if (_clock != null) _clock.Text = TimeOfDay.Clock(Tod.Hour);

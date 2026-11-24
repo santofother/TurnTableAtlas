@@ -121,6 +121,12 @@ namespace Atlas
                           $"{map.Shipping.VesselCount} ships across {map.Shipping.RouteCount} port routes");
                     Check(map.GetNodeOrNull<MeshInstance3D>("RegionalFog")?.MaterialOverride is ShaderMaterial,
                           "the Known World has terrain-following fog");
+                    var karn = map.Karn;   // FIX(W5): Karn Ashur's hero patch and city on the map
+                    var karnUv = map.Kw.Settlement(KarnAshurSite.SettlementId)?.Uv;
+                    float karnY = karnUv != null ? map.KwPoint(karnUv[0], karnUv[1]).Y : -1f;
+                    Check(karn != null && karn.S.Buildings.Count > 2500 && karn.FallCount == 6 && karn.FlameCount >= 10
+                          && map.Kw.Cameras.Any(c => c.Id == KarnAshur.ViewId) && Math.Abs(karnY - karn.S.Units(KarnAshurSite.IslandM)) < 0.05f,
+                          $"Karn Ashur: {karn?.S.Buildings.Count} buildings, {karn?.FallCount} falls, {karn?.FlameCount} fires, settlement on the island at {karnY:0.00}");
                     _mapBoats = map.Shipping.GetChildren().OfType<Node3D>().Select(b => b.Position).ToArray();
                     _step++; break;
                 }
