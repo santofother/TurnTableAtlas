@@ -1,5 +1,15 @@
 # Landric's villa — first wireframe
 
+## Blender visual references
+
+![Aerial concept of the villa](landrics_villa_aerial.png)
+
+![Overhead cutaway concept of the villa](landrics_villa_overhead.png)
+
+The [SVG wireframe](landrics_villa_wireframe.svg) is the layout reference. The two generated images show a consistent **painted miniature** interpretation for massing, roofs, light, vineyards and garden. Use them as concept art: small objects and room divisions in the overhead image are illustrative, not fixed canon. In particular, the image's visible bedroom placement and the precise lake shore and bathhouse shapes were invented for legibility. Match the chapter's route and room relationships below when constructing the model. The [generation prompts](landrics_villa_image_prompts.md) are recorded for later variants.
+
+**Suggested first Blender pass:** block out the wall, gate, arrival court, stable, two-storey main ring, open peristyle, gallery wing, kitchen garden, detached bathhouse, vineyard rows and lake edge as separate named masses. Make one dusk three-quarter camera that reads like the aerial image and one orthographic overhead camera for checking the layout. Keep the whole site smaller than Calderra's city plinth; final real-world dimensions and map coordinates wait for site selection.
+
 ![Top-down estate and ground-floor wireframe](landrics_villa_wireframe.svg)
 
 This is a **layout proposal**, not a settled map location or a production building plan. The diagram uses north-up and puts the lake on the right solely to make the route readable; rotate or mirror the entire estate when its site is chosen. Rectangles show relationships, not measured footprints.
