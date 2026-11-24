@@ -12,7 +12,7 @@ Both read the same per-city manifest `cities/<id>/city.json`. Neither side hand-
 ## Layout
 | Path | What | Owner card |
 |---|---|---|
-| `generator/` | `fantasy_capital.py` (the builder), `citycfg.py`, `sunarc.py`, `anchors.py`, `cities/<id>.json` configs | S1, S2, S10 |
+| `generator/` | `fantasy_capital.py` (the builder; `apply_config()` loads a city's layout), `anchors.py`, `sunarc.py`, `figures.py`, `build_city.py`, `cities/<id>.json` configs | S1, S2, S10 |
 | `blender/cinematic/` | shot scripts driven by `city.json` | S3–S5 |
 | `blender/renders/<shot>/` | encoded shots (`.mp4`) and stills; frame sequences are gitignored | S5 |
 | `tools/` | `build_city.sh`, `export_city.py`, `render_shot.sh`, `run_tests.sh` | S2, S6 |

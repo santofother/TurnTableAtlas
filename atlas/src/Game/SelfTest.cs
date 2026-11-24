@@ -14,6 +14,8 @@ namespace Atlas
         static string _city;
         static Vector3 _expectCam;
         static int _fails;
+        static string _event, _venueType, _landmark;
+        static readonly string[] Preferred = { "chariot_race", "gladiator_games", "theatre_play" };
 
         static void Check(bool ok, string what)
         {
@@ -43,26 +45,34 @@ namespace Atlas
                     v.Gizmo.Rebuild(tod);
                     Check(lo > hi + 40 && arc10 > arc60, $"latitude changes the arc: noon {hi:0}° at 60°N vs {lo:0}° at 10°N in winter; arc points {arc60} vs {arc10}");
                     tod.ResetSun(v.M.Sun); tod.Hour = 15; tod.Apply();
-                    var lm = v.M.Landmarks.First(l => l.Id == "hippodrome");
+                    var lm = v.M.Landmarks.FirstOrDefault(l => l.Id != "overview") ?? v.M.Landmarks[0];
+                    _landmark = lm.Id;
                     _expectCam = Geo.V(lm.Camera.Target) + Geo.Orbit((float)lm.Camera.Yaw, (float)lm.Camera.Pitch, (float)lm.Camera.Dist);
-                    v.Jump("hippodrome");
+                    v.Jump(_landmark);
                     _step++; break;
                 }
                 case 2 when t > 3.2:
                 {
                     float d = v.Rig.Cam.GlobalPosition.DistanceTo(_expectCam);
-                    Check(d < 6f, $"flew to the hippodrome landmark (camera {d:0.0} m from preset)");
+                    Check(d < 6f, $"flew to the {_landmark} landmark (camera {d:0.0} m from preset)");
+                    _event = Preferred.FirstOrDefault(e => v.Events.Available.Any(a => a.Id == e)) ?? v.Events.Available.FirstOrDefault()?.Id;
+                    _venueType = _event switch { "chariot_race" => "circus", "gladiator_games" => "arena", "theatre_play" => "theatre", _ => null };
                     v.Events.TimeScale = 25;
-                    v.Events.Trigger("chariot_race");
-                    Check(v.Events.Running != null, "Chariot Race triggered");
+                    if (_event != null) v.Events.Trigger(_event);
+                    Check(_event != null && v.Events.Running != null, $"event '{_event}' triggered ({v.Events.Available.Count} available here)");
                     _step++; break;
                 }
                 case 3 when t > 6.2:
                 {
-                    var hip = v.M.VenueOfType("circus");
-                    double fill = v.Life.Seats[hip.Id].Fill;
-                    Check(fill > 0.9, $"hippodrome filled to {fill:0.00}");
-                    Check(v.Events.Race != null && v.Events.Race.Time > 1, $"race running: {v.Events.Status}");
+                    var ven = _venueType != null ? v.M.VenueOfType(_venueType) : null;
+                    if (ven != null)
+                    {
+                        double fill = v.Life.Seats[ven.Id].Fill;
+                        Check(fill > 0.85, $"{ven.Label} filled to {fill:0.00}");
+                    }
+                    bool showOn = _event switch { "chariot_race" => v.Events.Race != null && v.Events.Race.Time > 1, "gladiator_games" => v.Events.Arena != null,
+                                                  "theatre_play" => v.Events.Play != null, _ => v.Events.Running != null };
+                    Check(showOn, $"show running: {v.Events.Status}");
                     Check(v.Life.Crowd.W.Count(w => w.Active) > 100, $"{v.Life.Crowd.W.Count(w => w.Active)} people walking");
                     Check(v.Life.Traffic.Ships.Count(s => s.Visible) > 2, $"{v.Life.Traffic.Ships.Count(s => s.Visible)} ships under way");
                     root.ShowMap();

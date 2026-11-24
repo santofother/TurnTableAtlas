@@ -21,13 +21,29 @@ import sunarc  # noqa: E402
 FPS = 24
 
 
+CITY_ID = None
+
+
 def load_manifest(city_id):
+    global CITY_ID
+    CITY_ID = city_id
     with open(os.path.join(ROOT, "cities", city_id, "city.json")) as f:
         return json.load(f)
 
 
+_applied = None
+
+
 def generator():
+    """The generator module, with the current city's layout applied (harbour, ship scale, ...)."""
+    global _applied
     import fantasy_capital
+    if CITY_ID and _applied != CITY_ID:
+        cfg_path = os.path.join(ROOT, "generator", "cities", CITY_ID + ".json")
+        if os.path.exists(cfg_path):
+            with open(cfg_path) as f:
+                fantasy_capital.apply_config(json.load(f))
+        _applied = CITY_ID
     return fantasy_capital
 
 
