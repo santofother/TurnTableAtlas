@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <title>Haven regional zoning wireframe v2, provisional geography</title>
+  <defs>
+    <pattern id="farm" width="92" height="64" patternUnits="userSpaceOnUse"><rect width="92" height="64" fill="#c6ca78"/><path d="M0 15H92M0 31H92M0 47H92M23 0V64M48 0V64M71 0V64" stroke="#7e9b58" stroke-width="2"/></pattern>
+    <pattern id="city" width="34" height="28" patternUnits="userSpaceOnUse"><rect width="34" height="28" fill="#dcc0a2"/><path d="M3 3h12v9H3zM18 3h13v10H18zM3 16h17v9H3zM23 17h8v8h-8z" fill="#997c67"/></pattern>
+  </defs>
+  <rect width="1600" height="900" fill="#ddbf8a"/>
+  <path d="M0 110H1600V805H0Z" fill="url(#farm)"/>
+  <path d="M490 -15C465 90 555 160 490 250S470 390 515 480 475 640 515 745 455 850 480 930" fill="none" stroke="#b56459" stroke-width="142"/>
+  <path d="M490 -15C465 90 555 160 490 250S470 390 515 480 475 640 515 745 455 850 480 930" fill="none" stroke="#cf8877" stroke-width="117"/>
+  <path d="M96 128L358 97M600 105L1430 98 1530 215 1530 724 1420 806 617 812M370 799L96 770 55 670 55 248Z" fill="none" stroke="#766754" stroke-width="15" stroke-linejoin="round"/>
+  <path d="M90 290H353M89 515H371M105 705H368M668 200H1490M653 690H1500M764 116V785M1070 115V790M1335 116V780" stroke="#6c9c95" stroke-width="9" fill="none"/>
+  <path d="M635 277L1115 245 1365 332 1430 548 1270 670 770 661 635 540Z" fill="url(#city)" stroke="#78675d" stroke-width="18" stroke-linejoin="round"/>
+  <path d="M840 350L1080 328 1195 390 1198 540 1105 590 858 585 785 506Z" fill="url(#city)" stroke="#695c55" stroke-width="8"/>
+  <path d="M962 393L1020 385 1044 444 945 444Z M1042 460L1097 458 1112 521 1022 521Z" fill="#9a806a" stroke="#574c46" stroke-width="5"/>
+  <path d="M560 450L632 450" stroke="#d1b497" stroke-width="21"/>
+  <g fill="#302d2a" font-family="Arial,sans-serif">
+    <text x="48" y="55" font-size="31" font-weight="bold">HAVEN • REGIONAL WIREFRAME V2</text>
+    <text x="49" y="81" font-size="18">Concept zoning • north up • not surveyed geography or final scale</text>
+    <text x="107" y="177" font-size="24">west-bank farmland</text>
+    <text x="670" y="155" font-size="24">irrigated fields inside outer wall</text>
+    <text x="1192" y="196" font-size="19">outer agricultural wall</text>
+    <text x="685" y="309" font-size="22" font-weight="bold">vast inner wall</text>
+    <text x="685" y="383" font-size="19">dense housing, markets, granaries</text>
+    <text x="925" y="473" font-size="20" fill="#fff">pyramid-palaces</text>
+    <text x="827" y="562" font-size="19">civic core</text>
+    <text x="595" y="425" font-size="19">quays</text>
+    <text x="205" y="466" font-size="21" fill="#703b37">RIVER FLAME</text>
+    <text x="45" y="862" font-size="18">Farmland continues beyond frame along both banks • proposed bridge and bank plan</text>
+    <text x="1505" y="68" font-size="28" font-weight="bold">N ↑</text>
+  </g>
+</svg>

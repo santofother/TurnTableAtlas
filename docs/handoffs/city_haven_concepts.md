@@ -7,3 +7,5 @@ status: CONCEPT
 - `tools/run_tests.sh`: all green (16 Python, 22 C#, Atlas build and headless smoke test).
 - LORE?: exact Haven bank layout, bridge count, palace count/form, roof palette, and where Meret's fleet is hidden.
 - Generator gaps: stepped pyramid-palaces, large protected agricultural outer wall, canal/sluice network, and landscape scale beyond the current city plinth.
+- Revision: user specified Nile/Egypt-inspired extensive two-bank farmland and Haven as a 400,000–600,000-person metropolis. Added far-zoomed regional v2, denser aerial v2, and revised plan v2; original images retained for comparison.
+- After revision, `tools/run_tests.sh` passed (16 Python, 27 C#, Atlas build and smoke test).
