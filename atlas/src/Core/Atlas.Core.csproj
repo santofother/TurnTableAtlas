@@ -1,0 +1,11 @@
+<!-- Atlas.Core: city manifest, sun arc, crowds, ships, races, events. Pure C#, no Godot reference. -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Atlas.Core</RootNamespace>
+    <AssemblyName>Atlas.Core</AssemblyName>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+</Project>

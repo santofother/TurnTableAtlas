@@ -1,0 +1,29 @@
+; Engine configuration file. Edited as text (see AGENTS.md): never open the editor GUI from an agent.
+
+config_version=5
+
+[application]
+
+config/name="Turntable Atlas"
+run/main_scene="res://scenes/AtlasRoot.tscn"
+config/features=PackedStringArray("4.7", "C#", "Forward Plus")
+
+[display]
+
+window/size/viewport_width=1600
+window/size/viewport_height=900
+window/vsync/vsync_mode=1
+
+[dotnet]
+
+project/assembly_name="Atlas"
+
+[input]
+
+[rendering]
+
+anti_aliasing/quality/msaa_3d=2
+lights_and_shadows/directional_shadow/size=4096
+lights_and_shadows/directional_shadow/soft_shadow_filter_quality=3
+scaling_3d/mode=1
+scaling_3d/scale=0.7

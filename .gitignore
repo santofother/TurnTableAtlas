@@ -19,3 +19,4 @@ atlas/perf_results/*.import
 blender/renders/*/preview/
 blender/renders/*.log
 blender/renders/scratch/
+atlas/perf_results/
