@@ -2565,7 +2565,7 @@ def square_sail(mb, x, z_top, z_bot, w_top, w_bot, bulge, col, nu=5, nv=4):
             mb.face((grid[j] + i, grid[j + 1] + i, grid[j + 1] + i + 1, grid[j] + i + 1), col)
 
 
-def ship_mesh(kind):
+def ship_mesh(kind, oars=True, name=None):
     mb = MB()
     HULL = (0.30, 0.18, 0.10)
     DECK = (0.58, 0.43, 0.27)
@@ -2582,7 +2582,7 @@ def ship_mesh(kind):
         mb.beam((0.1, 0, 0.12), (0.1, 0, 1.5), 0.04, WOOD_D)
         mb.beam((0.13, -0.66, 1.4), (0.13, 0.66, 1.4), 0.03, WOOD_D)
         square_sail(mb, 0.15, 1.38, 0.55, 1.3, 1.15, 0.14, SAIL_RED)
-        for k in range(13):
+        for k in range(13 if oars else 0):
             x = -1.05 + k * 0.17
             for sgn in (-1, 1):
                 mb.beam((x, sgn * 0.27, 0.12), (x - 0.12, sgn * 0.85, -0.02), 0.018, WOOD)
@@ -2631,7 +2631,19 @@ def ship_mesh(kind):
         mb.beam((0.12, 0, 0.06), (0.12, 0, 0.6), 0.02, WOOD_D)
         mb.beam((-0.3, 0.02, 0.18), (0.45, 0.02, 0.78), 0.015, WOOD_D)
         mb.poly([(-0.27, 0.03, 0.2), (0.42, 0.03, 0.75), (0.25, 0.03, 0.1)], SAIL)
-    return mb.to_mesh("CAP_Ship_" + kind)
+    return mb.to_mesh(name or ("CAP_Ship_" + kind))
+
+
+def galley_oar_bank(stroke):
+    """Both oar banks of a galley at a stroke pose (0 = blades aft and down, 1 = forward and raised).
+    Same topology for any stroke, so poses can be shape keys."""
+    mb = MB()
+    a = -0.12 + 0.24 * stroke
+    for k in range(13):
+        x = -1.05 + k * 0.17
+        for sgn in (-1, 1):
+            mb.beam((x, sgn * 0.27, 0.12), (x + a, sgn * 0.85, -0.02 + 0.07 * stroke), 0.018, WOOD)
+    return mb
 
 
 SHIP_SCALE = 1.35

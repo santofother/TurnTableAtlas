@@ -66,6 +66,49 @@ def tod_stills(o):
         print("[Cine] still", h, scene.render.filepath)
 
 
+def life_stills(o):
+    """S4 check: ships on lanes + bobbing, walkers/idlers, a venue filling; stills from several cameras."""
+    import crowds
+    import ships
+    import sky
+    import venues
+    scene = bpy.context.scene
+    man = cine.load_manifest(o['city'])
+    setup_render(scene, o.get('res', '960x540'), o.get('samples', 16))
+    f0, f1 = 1, int(o.get('frames', 480))
+    scene.frame_start, scene.frame_end = f0, f1
+    tod = sky.TimeOfDay(scene, man)
+    hour = float(o.get('hour', 11.0))
+    tod.animate(lambda f: hour, f0, f1, step=f1)
+    sh = ships.Ships(man, f0, f1)
+    sh.traffic()
+    n = sh.bob_all()
+    c = crowds.Crowds(man)
+    c.add_walkers(int(o.get('walkers', 1400)))
+    c.add_idlers()
+    c.key_density(f0, hour)
+    vl = venues.VenueLife(c, man, o.get('venue', 'colosseum'))
+    vl.schedule(f0 + 24, f1 - 48)
+    print("[Cine] ships moving", len(sh.moving), "bobbing", n)
+    os.makedirs(o['out'], exist_ok=True)
+    cams = o.get('cams', 'CAP_Cam_Harbour').split(',')
+    for fr in [int(x) for x in o.get('at', '240').split(',')]:
+        scene.frame_set(fr)
+        for cam in cams:
+            ob = bpy.data.objects.get(cam)
+            if ob is None:
+                ob = _landmark_cam(man, cam)
+            scene.camera = ob
+            scene.render.filepath = os.path.join(o['out'], "life_%s_f%04d.png" % (cam, fr))
+            bpy.ops.render.render(write_still=True)
+            print("[Cine] still", scene.render.filepath)
+
+
+def _landmark_cam(man, lm_id, lens=35):
+    import anchors_cam
+    return anchors_cam.camera_for(man, lm_id, lens)
+
+
 def main():
     argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
     o = opts(argv)
@@ -73,6 +116,8 @@ def main():
     o.setdefault('out', os.path.join(cine.ROOT, 'blender', 'renders', 'scratch'))
     if o['cmd'] == 'tod_stills':
         tod_stills(o)
+    elif o['cmd'] == 'life_stills':
+        life_stills(o)
     elif o['cmd'] in ('shot', 'list'):
         import shots
         shots.main(o)

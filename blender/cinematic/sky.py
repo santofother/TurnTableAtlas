@@ -195,7 +195,7 @@ class TimeOfDay:
         warm = cine.smoothstep(2.0, 35.0, el)
         return dict(el=el, az=az, dir=d, moon=md, day=day, dusk=dusk, night=1.0 - cine.smoothstep(-10.0, 1.0, el),
                     win=sunarc.window_level(el, hour), lamp=sunarc.night_level(el),
-                    sun_energy=4.6 * cine.smoothstep(-3.0, 9.0, el),
+                    sun_energy=3.9 * cine.smoothstep(-3.0, 9.0, el),
                     sun_color=(1.0, 0.55 + 0.38 * warm, 0.30 + 0.55 * warm),
                     moon_energy=0.2 * (1.0 - cine.smoothstep(-8.0, 2.0, el)) * cine.smoothstep(-0.05, 0.25, md[2]))
 
