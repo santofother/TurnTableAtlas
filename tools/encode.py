@@ -13,7 +13,7 @@ if not files:
     raise SystemExit("[Encode] no frames in %s" % src)
 sc = bpy.context.scene
 se = sc.sequence_editor_create()
-coll = getattr(se, 'strips', None) or se.sequences
+coll = se.strips if hasattr(se, 'strips') else se.sequences
 st = coll.new_image(name="frames", filepath=os.path.join(src, files[0]), channel=1, frame_start=1)
 for f in files[1:]:
     st.elements.append(f)
@@ -23,6 +23,8 @@ sc.render.resolution_percentage = 100
 sc.frame_start, sc.frame_end = 1, len(files)
 sc.render.fps = fps
 r = sc.render
+if hasattr(r.image_settings, 'media_type'):          # Blender 5: pick the video media type first
+    r.image_settings.media_type = 'VIDEO'
 r.image_settings.file_format = 'FFMPEG'
 r.ffmpeg.format = 'MPEG4'
 r.ffmpeg.codec = 'H264'
