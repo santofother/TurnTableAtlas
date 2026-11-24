@@ -79,7 +79,10 @@ namespace Atlas
                     _venueType = _event switch { "chariot_race" => "circus", "gladiator_games" => "arena", "theatre_play" => "theatre", _ => null };
                     v.Events.TimeScale = v.M.IsEstate ? 5 : 25;   // FIX(villa): a scene walks at people's pace
                     if (_event != null) v.Events.Trigger(_event);
-                    if (v.M.IsEstate)   // FIX(villa): an estate's events are its chapter scenes, staged on its anchors
+                    if (v.M.IsMetropolis)   // FIX(karn_ashur): a metropolis has no shows; its houses and trees are instanced
+                        Check(v.City.InstanceCount > 50000 && v.City.Instances.CountOf("house") > 30000,
+                              $"metropolis: {v.City.InstanceCount} instances ({v.City.Instances.CountOf("house")} houses, {v.City.Instances.CountOf("palm")} palms), no shows ({v.Events.Available.Count})");
+                    else if (v.M.IsEstate)   // FIX(villa): an estate's events are its chapter scenes, staged on its anchors
                         Check(v.Events.Available.Count == 4 && v.Events.Running != null && v.M.Anchors.Count >= 10,
                               $"estate scene '{_event}' started ({v.Events.Available.Count} scenes, {v.M.Anchors.Count} staging anchors)");
                     else
@@ -115,6 +118,13 @@ namespace Atlas
                         Check(st.Actors.Count >= 11 && toGate < 4.0 && st["h_escort"]?.Mount == null && st["escort"]?.Mount == "h_escort",
                               $"Return to the Villa: {st.Actors.Count} actors, Landric's horse {toGate:0.0} m from the gate stop, the escort still mounted");
                     }
+                    else if (v.M.IsMetropolis)
+                    {
+                        int walking = v.Life.Crowd.W.Count(w => w.Active);
+                        Check(walking > 100 && Swarm.FigureScale < 1f, $"{walking} people on the metropolis's streets, figures x{Swarm.FigureScale:0.00}");
+                        var flame = v.M.NightLights.FirstOrDefault(l => l.Kind == "lighthouse");
+                        Check(flame != null && flame.Pos[2] > 25, $"the First Flame burns on the summit (z {flame?.Pos[2]:0.0})");
+                    }
                     else
                     {
                         Check(showOn, $"show running: {v.Events.Status}");
@@ -148,12 +158,20 @@ namespace Atlas
                           $"{map.Shipping.VesselCount} ships across {map.Shipping.RouteCount} port routes");
                     Check(map.GetNodeOrNull<MeshInstance3D>("RegionalFog")?.MaterialOverride is ShaderMaterial,
                           "the Known World has terrain-following fog");
-                    var karn = map.Karn;   // FIX(W5): Karn Ashur's hero patch and city on the map
-                    var karnUv = map.Kw.Settlement(KarnAshurSite.SettlementId)?.Uv;
-                    float karnY = karnUv != null ? map.KwPoint(karnUv[0], karnUv[1]).Y : -1f;
-                    Check(karn != null && karn.S.Buildings.Count > 2500 && karn.FallCount == 6 && karn.FlameCount >= 10
-                          && map.Kw.Cameras.Any(c => c.Id == KarnAshur.ViewId) && Math.Abs(karnY - karn.S.Units(KarnAshurSite.IslandM)) < 0.05f,
-                          $"Karn Ashur: {karn?.S.Buildings.Count} buildings, {karn?.FallCount} falls, {karn?.FlameCount} fires, settlement on the island at {karnY:0.00}");
+                    foreach (var m in root.Cities.Where(c => c.IsMetropolis))   // FIX(karn_ashur): the basin from its own package
+                    {
+                        var bas = map.Basins.FirstOrDefault(b => b.M.Id == m.Id);
+                        var pinB = map.Pins.FirstOrDefault(p => p.M.Id == m.Id);
+                        float onPatch = bas != null && pinB != null ? Math.Abs(pinB.Position.Y - (bas.HeightAt(bas.S.Cx, bas.S.Cy) ?? -9f)) : 9f;
+                        Check(bas != null && bas.InstanceCount > 50000 && bas.RiverRibbons >= 5 && onPatch < 0.002f && map.Kw.Cameras.Any(c => c.Id == Basin.ViewId)
+                              && bas.FlamePosition.Y > bas.S.Units(3500),
+                              $"{m.Name} on the Known World: {bas?.InstanceCount} instances, {bas?.RiverRibbons} water ribbons, plinth {bas?.S.Half * 2:0.00} units, the First Flame at {bas?.S.Metres(bas.FlamePosition.Y):0} m, pin on its patch");
+                    }
+                    var hd = map.Dunes;
+                    bool graded = hd != null && hd.R.Rivers.All(r => r.BedM.Zip(r.BedM.Skip(1), (a, b) => b <= a + 1e-6).All(x => x));
+                    Check(hd != null && graded && hd.R.Rivers.Count >= 4 && hd.VillageCount > 150 && hd.TownCount >= 5 && hd.RouteSegments > 50 && hd.SeaLeg != null
+                          && map.Kw.Cameras.Any(c => c.Id == WorldMap.HighDunesViewId),
+                          $"High Dunes: {hd?.R.Rivers.Count} rivers graded downhill, {hd?.VillageCount} villages, {hd?.TownCount} market towns (~{hd?.R.Population / 1000}k people), grain route {hd?.RouteSegments} segments");
                     foreach (var m in root.Cities.Where(c => c.IsEstate))   // FIX(villa): an estate stands on the map as its miniature
                     {
                         var est = map.Estates.FirstOrDefault(e => e.M.Id == m.Id);

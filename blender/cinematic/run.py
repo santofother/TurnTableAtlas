@@ -4,6 +4,7 @@
 
 Commands
     tod_stills  --hours 6,12,19,22 [--cam CAP_Cam_Hero]          stills at several times of day (S3 check)
+    landmark_stills --ids a,b,c [--hour 16] [--lens 30]          stills from the manifest's landmark presets
     shot <name> [--preview] [--frames a:b]                       render one shot from shots.SHOTS (S5)
     list                                                         list the shots
 Common options: --city <id> (default: from the .blend name), --out <dir>, --res WxH, --samples N
@@ -104,6 +105,29 @@ def life_stills(o):
             print("[Cine] still", scene.render.filepath)
 
 
+def landmark_stills(o):
+    """Stills from the manifest's landmark cameras (the same presets the Atlas flies to), no crowds or ships."""
+    import anchors_cam
+    import clouds
+    import sky
+    scene = bpy.context.scene
+    man = cine.load_manifest(o['city'])
+    setup_render(scene, o.get('res', '1600x800'), o.get('samples', 24))
+    tod = sky.TimeOfDay(scene, man)
+    tod.animate(lambda f: float(o.get('hour', 16.0)), 1, 2, step=1)
+    if o.get('clouds'):
+        clouds.setup_clouds(man, 1, 2, count=int(o['clouds']), height=(60.0, 70.0))
+    scene.frame_set(1)
+    ids = o.get('ids', ','.join(l['id'] for l in man['landmarks'])).split(',')
+    os.makedirs(o['out'], exist_ok=True)
+    for lid in ids:
+        scene.camera = anchors_cam.camera_for(man, lid, float(o.get('lens', 30)))
+        scene.camera.data.clip_end = 2000.0
+        scene.render.filepath = os.path.join(o['out'], "%s_%s.png" % (o['city'], lid))
+        bpy.ops.render.render(write_still=True)
+        print("[Cine] still", scene.render.filepath, flush=True)
+
+
 def _landmark_cam(man, lm_id, lens=35):
     import anchors_cam
     return anchors_cam.camera_for(man, lm_id, lens)
@@ -118,6 +142,8 @@ def main():
         tod_stills(o)
     elif o['cmd'] == 'life_stills':
         life_stills(o)
+    elif o['cmd'] == 'landmark_stills':
+        landmark_stills(o)
     elif o['cmd'] in ('shot', 'list'):
         import shots
         shots.main(o)

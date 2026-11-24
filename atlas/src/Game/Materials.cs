@@ -5,7 +5,7 @@ namespace Atlas
 {
     public sealed class Materials
     {
-        public readonly ShaderMaterial Painted, Terrain, Water, Fire, Glow, Figure, Cloud;
+        public readonly ShaderMaterial Painted, Terrain, Water, Fire, Glow, Figure, Cloud, Instanced;
 
         public Materials(string terrainAlbedoPath)
         {
@@ -16,6 +16,7 @@ namespace Atlas
             Glow = Make("res://shaders/glow.gdshader");
             Figure = Make("res://shaders/figure.gdshader");
             Cloud = Make("res://shaders/cloud.gdshader");
+            Instanced = Make("res://shaders/instanced.gdshader");   // FIX(karn_ashur): instanced houses and trees
             if (terrainAlbedoPath != null && System.IO.File.Exists(terrainAlbedoPath))
             {
                 var img = Image.LoadFromFile(terrainAlbedoPath);
@@ -42,6 +43,7 @@ namespace Atlas
         public void SetNight(float windowLevel, float lampLevel)
         {
             Painted.SetShaderParameter("night_level", windowLevel);
+            Instanced.SetShaderParameter("night_level", windowLevel);
             Figure.SetShaderParameter("night_level", 0.0f);
             Glow.SetShaderParameter("window_level", windowLevel);
             Glow.SetShaderParameter("lamp_level", lampLevel);

@@ -54,8 +54,10 @@ namespace Atlas
             AddChild(Weather);
             var mats = City.Mats;
             Weather.Setup(SharedWeather ?? new Atlas.Core.Weather(), Tod,
-                new CloudScale { Base = 30, Top = 56, DeckBase = 100, DeckTop = 150, Half = new Vector2(320, 320), Cell = 140, Shape = 24, Detail = 7, NearFade = 4, FlashR = 60 },
-                new[] { mats.Painted, mats.Terrain, mats.Water }, true, () => Rig.Target,
+                M.IsMetropolis   // FIX(karn_ashur): 1:200 with peaks 30 model metres high: the clouds float above them
+                    ? new CloudScale { Base = 96, Top = 128, DeckBase = 140, DeckTop = 185, Half = new Vector2(340, 340), Cell = 190, Shape = 34, Detail = 7, NearFade = 8, FlashR = 70 }
+                    : new CloudScale { Base = 30, Top = 56, DeckBase = 100, DeckTop = 150, Half = new Vector2(320, 320), Cell = 140, Shape = 24, Detail = 7, NearFade = 4, FlashR = 60 },
+                new[] { mats.Painted, mats.Terrain, mats.Water, mats.Instanced }, true, () => Rig.Target,
                 () => System.Math.Clamp(System.Math.Abs(Tod.Speed) * 60, 1.0, 20.0));
             Tod.Changed += OnTimeChanged;
             Tod.Apply();

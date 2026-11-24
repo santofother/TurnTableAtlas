@@ -143,7 +143,8 @@ namespace Atlas
             _peopleRoot = Add("People"); _shipsRoot = Add("Ships"); _cloudsRoot = Add("Clouds"); _ambientRoot = Add("SteamBirds"); _labelsRoot = Add("Labels");
             _labelsRoot.Visible = false;
             var g = new StreetGraph(_m.StreetGraph);
-            float k = _m.ModelScale > 0 ? (float)Math.Clamp(15.0 / _m.ModelScale, 1.0, 8.0) : 1f;
+            // FIX(karn_ashur): a 1:200 metropolis draws its people about 4x true size (still small dots on its streets)
+            float k = _m.ModelScale > 0 ? (float)Math.Clamp(15.0 / _m.ModelScale, _m.IsMetropolis ? 0.3 : 1.0, 8.0) : 1f;
             Swarm.FigureScale = k;
             // an estate is private: a handful of household people, not a city's crowd
             Crowd = new Crowd(g, _m.IsEstate ? 9 : Math.Min(1400, g.Nodes.Length / 2 + 200), 1, k);

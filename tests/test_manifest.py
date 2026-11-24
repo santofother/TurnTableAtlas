@@ -66,7 +66,7 @@ class ManifestTests(unittest.TestCase):
     def test_venues(self):
         for p, m in self.manifests():
             types = {v['type'] for v in m['venues']}
-            self.assertTrue(types or m.get('kind') == 'estate', p)   # an estate has no public venues
+            self.assertTrue(types or m.get('kind') in ('estate', 'metropolis'), p)   # estates and Karn Ashur hold no shows
             for v in m['venues']:
                 self.assertTrue(v['seat_tiers'], v['id'])
                 for t in v['seat_tiers']:
@@ -129,6 +129,54 @@ class ManifestTests(unittest.TestCase):
             self.assertTrue(min(g['z']) < 0 < max(g['z']), "the lake lies below 0, the land above")
             for rid in ('peristyle_loop', 'lagoon_riding_loop', 'garden_to_bath'):
                 self.assertIn(rid, m['routes'])
+
+    def test_metropolis_extras(self):
+        """A metropolis (Karn Ashur, kind 'metropolis'): its instance table, its true-metre ground for the Known World,
+        the basin layout the map patch draws, and the views and routes the brief asks for."""
+        import struct
+        for p, m in self.manifests():
+            if m.get('kind') != 'metropolis':
+                continue
+            d = os.path.dirname(p)
+            self.assertEqual(m['world_map']['settlement'], 'settlement:' + m['id'])
+            ins = m['instances']
+            size = os.path.getsize(os.path.join(d, ins['file']))
+            self.assertEqual(size, ins['count'] * ins['stride'] * 4, "instances.bin length")
+            covered = sorted((g[0], g[1]) for g in ins['groups'].values())
+            self.assertEqual(sum(c for _, c in covered), ins['count'])
+            self.assertEqual(covered[0][0], 0)
+            for (a0, c0), (a1, _) in zip(covered, covered[1:]):
+                self.assertEqual(a0 + c0, a1, "groups are contiguous runs of one kind")
+            self.assertGreater(ins['groups']['house'][1], 40000, "an ocean of roofs")
+            for kind in ('house', 'tower', 'terrace', 'warehouse', 'awning', 'camel', 'palm'):
+                self.assertIn(kind, ins['protos'])
+                self.assertIn(kind, ins['groups'])
+            with open(os.path.join(d, ins['file']), 'rb') as f:              # the first and last records' kinds
+                first = struct.unpack('<11f', f.read(44))
+                f.seek(size - 44)
+                last = struct.unpack('<11f', f.read(44))
+            self.assertLessEqual(first[10], last[10])
+            self.assertTrue(-50 <= first[0] <= 50 and -50 <= first[1] <= 50)
+            th = m['terrain_height']
+            self.assertTrue(os.path.exists(os.path.join(d, th['file'])))
+            self.assertTrue(900 < th['min_m'] < 1100 and 3650 < th['max_m'] < 3800, "basin floor and the First Flame's summit")
+            site = m['site']
+            self.assertEqual(len(site['peaks']), 2)
+            west, east = site['peaks']
+            self.assertGreater(west['top_m'], east['top_m'], "the higher western peak carries the First Flame")
+            self.assertEqual(len(site['districts']), 4)
+            for rid in ('western_snowmelt', 'eastern_snowmelt', 'southern_outlet'):
+                beds = [q[2] for q in site['rivers'][rid]]
+                self.assertTrue(all(b <= a for a, b in zip(beds, beds[1:])), rid + " runs downhill")
+            ids = {lm['id'] for lm in m['landmarks']}
+            self.assertTrue({'caravan_arrival', 'terraces', 'downstream', 'al_mirah', 'first_flame', 'library'} <= ids)
+            pil = m['routes']['pilgrimage']
+            flame = m['anchors']['first_flame']
+            self.assertLess(math.dist(pil[-1][:2], flame[:2]), 1.0, "the pilgrims' route ends at the First Flame")
+            self.assertGreater(pil[-1][2] - pil[0][2], 10, "it climbs")
+            self.assertTrue(any(l['kind'] == 'lighthouse' for l in m['night_lights']), "the flame burns at night")
+            pop = m['stats']['population_estimate']
+            self.assertTrue(400000 < pop < 650000, pop)
 
     def test_calderra_boat_voyages(self):
         for _, m in self.manifests():

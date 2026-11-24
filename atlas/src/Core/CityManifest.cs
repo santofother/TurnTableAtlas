@@ -40,6 +40,14 @@ namespace Atlas.Core
         /// <summary>Estates: the ground as an n x n height grid over the extent (model metres, row 0 = south).</summary>
         [JsonPropertyName("terrain_grid")] public TerrainGrid Terrain { get; set; }
         [JsonIgnore] public bool IsEstate => Kind == "estate";
+        /// <summary>"metropolis": an inland terraced city at regional scale (generator/metropolis.py, Karn Ashur).</summary>
+        [JsonIgnore] public bool IsMetropolis => Kind == "metropolis";
+        /// <summary>Instanced buildings and trees (instances.bin), drawn with GPU instancing.</summary>
+        [JsonPropertyName("instances")] public InstanceSpec Instances { get; set; }
+        /// <summary>The ground in true metres (16 bit in R/G of a PNG, row 0 to the north), for the Known World patch.</summary>
+        [JsonPropertyName("terrain_height")] public TerrainHeightSpec TerrainHeight { get; set; }
+        /// <summary>A metropolis's basin layout in kilometres from its settlement (the Known World draws the same basin).</summary>
+        [JsonPropertyName("site")] public SiteData Site { get; set; }
 
         [JsonIgnore] public string Directory { get; set; }
 
@@ -89,11 +97,58 @@ namespace Atlas.Core
         }
     }
 
+    public class TerrainHeightSpec
+    {
+        [JsonPropertyName("file")] public string File { get; set; }
+        [JsonPropertyName("n")] public int N { get; set; }
+        [JsonPropertyName("min_m")] public double MinM { get; set; }
+        [JsonPropertyName("max_m")] public double MaxM { get; set; }
+        /// <summary>The model's ground is drawn this much higher about the datum (the diorama's relief); the PNG is true.</summary>
+        [JsonPropertyName("model_vertical_exaggeration")] public double ModelVex { get; set; } = 1;
+        [JsonPropertyName("model_datum_m")] public double ModelDatumM { get; set; }
+    }
+
+    public class SitePlace
+    {
+        [JsonPropertyName("at")] public double[] At { get; set; }
+        [JsonPropertyName("label")] public string Label { get; set; }
+    }
+
+    public class SitePeak
+    {
+        [JsonPropertyName("id")] public string Id { get; set; }
+        [JsonPropertyName("label")] public string Label { get; set; }
+        [JsonPropertyName("at")] public double[] At { get; set; }
+        [JsonPropertyName("top_m")] public double TopM { get; set; }
+    }
+
+    /// <summary>The basin layout (kilometres from the settlement, +x east, +y north; rivers carry a bed height in metres).</summary>
+    public class SiteData
+    {
+        [JsonPropertyName("anchor")] public string Anchor { get; set; }
+        [JsonPropertyName("plinth_half_km")] public double PlinthHalfKm { get; set; }
+        [JsonPropertyName("peaks")] public List<SitePeak> Peaks { get; set; } = new();
+        [JsonPropertyName("cliff_zones")] public Dictionary<string, double[][]> CliffZones { get; set; } = new();
+        [JsonPropertyName("sand_aprons")] public Dictionary<string, double[][]> SandAprons { get; set; } = new();
+        [JsonPropertyName("districts")] public Dictionary<string, double[][]> Districts { get; set; } = new();
+        [JsonPropertyName("fields")] public Dictionary<string, double[][]> Fields { get; set; } = new();
+        [JsonPropertyName("rivers")] public Dictionary<string, double[][]> Rivers { get; set; } = new();
+        [JsonPropertyName("canals")] public Dictionary<string, double[][]> Canals { get; set; } = new();
+        [JsonPropertyName("roads")] public Dictionary<string, double[][]> Roads { get; set; } = new();
+        [JsonPropertyName("pilgrimage_climb")] public double[][] PilgrimageClimb { get; set; }
+        [JsonPropertyName("places")] public Dictionary<string, SitePlace> Places { get; set; } = new();
+        [JsonPropertyName("villages")] public double[][] Villages { get; set; }
+        [JsonPropertyName("freight_entry_km")] public double[] FreightEntryKm { get; set; }
+        [JsonPropertyName("outlet_km")] public double[] OutletKm { get; set; }
+    }
+
     /// <summary>How an estate stands on the Known World: its miniature's size (x its true size) and its hills.</summary>
     public class MapMiniature
     {
         [JsonPropertyName("exaggeration")] public double Exaggeration { get; set; } = 12;
         [JsonPropertyName("hills_radius_units")] public double HillsRadius { get; set; } = 0.55;
+        /// <summary>A metropolis's basin patch: half size in blend units (the patch replaces the relief out to here).</summary>
+        [JsonPropertyName("patch_half_units")] public double PatchHalf { get; set; } = 3.6;
     }
 
     public class WorldMapPin

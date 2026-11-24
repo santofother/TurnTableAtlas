@@ -87,9 +87,12 @@ namespace Atlas.Core.Tests
                 Assert.True(File.Exists(m.FilePath("model")), "model missing for " + m.Id);
                 if (m.IsEstate)   // FIX(villa): a country estate has no venues, but a ground grid for the Known World
                     Assert.True(m.Venues.Count == 0 && m.Terrain.Z.Length == m.Terrain.N * m.Terrain.N && m.Anchors.Count >= 10);
+                else if (m.IsMetropolis)   // FIX(karn_ashur): no venues; instances, its true ground and the basin's layout
+                    Assert.True(m.Venues.Count == 0 && m.Instances.Count > 50000 && m.TerrainHeight != null && m.Site.Districts.Count == 4);
                 else
                     Assert.True(m.Venues.Sum(v => v.Capacity) > 500);
-                Assert.InRange(m.WorldMap.PinUv[0], 0, 1);
+                if (m.WorldMap.PinUv != null) Assert.InRange(m.WorldMap.PinUv[0], 0, 1);
+                else Assert.StartsWith("settlement:", m.WorldMap.Settlement);   // a city off the painted Caelora map
             }
         }
 

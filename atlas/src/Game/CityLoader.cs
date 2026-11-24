@@ -15,6 +15,9 @@ namespace Atlas
         public readonly Dictionary<string, Mesh> ShipMeshes = new();
         public readonly Dictionary<string, MeshInstance3D> ByName = new();
         public int MeshCount, Triangles;
+        /// <summary>A metropolis's instance table (houses, terraces, trees...), drawn with instancing.</summary>
+        public InstanceTable Instances;
+        public int InstanceCount;
     }
 
     public static class CityLoader
@@ -47,8 +50,19 @@ namespace Atlas
                     if (!city.ShipMeshes.ContainsKey(kind)) city.ShipMeshes[kind] = mesh;
                 }
             }
+            if (m.Instances != null && m.Files.ContainsKey("instances"))   // FIX(karn_ashur): instanced buildings and trees
+            {
+                city.Instances = InstanceTable.Load(m.Directory, m.Instances);
+                var c = m.Anchors.TryGetValue("great_market", out var mk) ? mk : new double[] { 0, 0 };
+                var node = new Node3D { Name = "Instances" };
+                city.Model.AddChild(node);
+                var (count, tris) = Atlas.Instances.Build(node, city.Instances, city.Mats.Instanced, c[0], c[1]);
+                city.InstanceCount = count;
+                city.MeshCount += node.GetChildCount();
+                city.Triangles += (int)Math.Min(tris, int.MaxValue);
+            }
             city.Collision = BuildCollision(m.FilePath("proxies"));
-            GD.Print($"[Atlas] loaded {m.Id}: {city.MeshCount} meshes, {city.Triangles / 1000}k tris, ships {string.Join(",", city.ShipMeshes.Keys)} in {Time.GetTicksMsec() - t0} ms");
+            GD.Print($"[Atlas] loaded {m.Id}: {city.MeshCount} meshes, {city.Triangles / 1000}k tris, {city.InstanceCount} instances, ships {string.Join(",", city.ShipMeshes.Keys)} in {Time.GetTicksMsec() - t0} ms");
             return city;
         }
 

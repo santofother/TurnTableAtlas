@@ -172,7 +172,7 @@ def export(city_id, out_dir, man, root_name=None):
     root = bpy.data.collections.get(root_name or fc.ROOT_NAME)   # FIX(villa): estates have their own root
     ter = prepare_sea_and_terrain()
     # city.glb: every render mesh except anchors, proxies, steam volumes
-    skip_colls = {"Anchors", "Proxies"}
+    skip_colls = {"Anchors", "Proxies", "Instanced"}   # FIX(karn_ashur): instanced meshes ship as instances.bin
     objs = []
     for c in [root] + list(root.children_recursive):
         if c.name in skip_colls or any(c.name in [p.name for p in pc.children_recursive] for pc in []):
@@ -187,7 +187,9 @@ def export(city_id, out_dir, man, root_name=None):
     for n in ("Proxies", "Anchors"):
         if bpy.data.collections.get(n):
             bpy.data.collections[n].hide_viewport = bpy.data.collections[n].hide_render = True
-    if ter is not None:
+    if ter is not None and ter.get("albedo_png") and os.path.exists(ter["albedo_png"]):
+        log("terrain albedo painted by the generator:", os.path.relpath(ter["albedo_png"], ROOT))   # FIX(karn_ashur)
+    elif ter is not None:
         bake_terrain(ter, os.path.join(out_dir, "terrain_albedo.png"))
     render_thumb(os.path.join(out_dir, "thumb.png"), man)
     export_props()

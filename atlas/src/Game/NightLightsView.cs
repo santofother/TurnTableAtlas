@@ -21,12 +21,13 @@ namespace Atlas
                 var l = m.NightLights[i];
                 float kind = l.Kind switch { "window" => 0, "lamp" => 1, "torch" => 2, _ => 3 };
                 float size = l.Kind switch { "window" => 0.22f, "lamp" => 0.32f, "torch" => 0.5f, _ => 1.6f };
+                if (m.IsMetropolis && l.Kind != "lighthouse") size *= 0.45f;   // FIX(karn_ashur): 1:200, many lamps
                 mm.SetInstanceTransform(i, new Transform3D(Basis.Identity.Scaled(Vector3.One * size), Geo.V(l.Pos)));
                 mm.SetInstanceCustomData(i, new Color(kind, (float)l.Order, (float)Math.Max(0.35, l.Strength), 0));
                 if (l.Kind == "lighthouse" || (l.Kind == "torch" && l.Strength >= 0.8 && _omni.Count < 10))
                 {
                     float e = l.Kind == "lighthouse" ? 3.0f : 0.7f;
-                    var o = new OmniLight3D { Position = Geo.V(l.Pos), LightColor = new Color(1f, 0.58f, 0.25f), OmniRange = l.Kind == "lighthouse" ? 9f : 3f,
+                    var o = new OmniLight3D { Position = Geo.V(l.Pos), LightColor = new Color(1f, 0.58f, 0.25f), OmniRange = l.Kind == "lighthouse" ? 9f : (m.IsMetropolis ? 1.2f : 3f),
                                               OmniAttenuation = 1.4f, ShadowEnabled = false, LightEnergy = 0 };
                     AddChild(o);
                     _omni.Add((o, e));

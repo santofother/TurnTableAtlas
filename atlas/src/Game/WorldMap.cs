@@ -16,11 +16,16 @@ namespace Atlas
         static double _lastHour = 16.5;
         static Texture2D _kwTex;
         static ImageTexture _kwHeightTex;
+        /// <summary>The relief's heights with each basin's own ground written in under its patch: the terrain-following fog
+        /// measures from this (else it would fill a basin that stands above the baked relief).</summary>
+        static ImageTexture _fogHeightTex;
         static float[] _kwH;
         static int _hw, _hh;
         static KnownWorldMap _kw;
-        static KarnAshurSite _karnSite;
         static ReliefSampler _sampler;
+        /// <summary>Metropolis basins (Karn Ashur) by package id, and the High Dunes round them; kept between visits.</summary>
+        static readonly Dictionary<string, BasinSite> _basinSites = new();
+        static HighDunesRegion _highDunes;
         /// <summary>Country estates' hero patches (Landric's villa), by city id; kept between visits.</summary>
         static readonly Dictionary<string, EstateSite> _estateSites = new();
         // the relief mesh's quads (its PlaneMesh subdivisions + 1); hero patches meet its triangles at their edges
@@ -39,11 +44,14 @@ namespace Atlas
         public readonly List<MapPin3D> Pins = new();
 
         public MapTable Table { get; private set; }
-        /// <summary>Karn Ashur's hero patch and city miniature (W5).</summary>
-        public KarnAshur Karn { get; private set; }
+        /// <summary>Metropolis basins on the map (Karn Ashur): the package's own ground and city as a miniature.</summary>
+        public readonly List<Basin> Basins = new();
+        /// <summary>The High Dunes round Karn Ashur: rivers, villages, market towns, the grain route.</summary>
+        public HighDunes Dunes { get; private set; }
+        public static HighDunesRegion Region => _highDunes;
         /// <summary>Estates standing on the map as miniatures of their packages.</summary>
         public readonly List<Estate> Estates = new();
-        MeshInstance3D _karnGlow;
+        readonly HashSet<MeshInstance3D> _basinGlows = new();
         public WorldShipping Shipping { get; private set; }
         ShaderMaterial _reliefMat;
         ShaderMaterial _fogMat;
@@ -95,7 +103,8 @@ namespace Atlas
             Weather.Setup(root.Weather, Tod,
                 new CloudScale { Base = 9, Top = 21, Center = new Vector2(cx, -cy), Half = new Vector2((float)_kw.Width / 2, (float)_kw.Depth / 2)   /* W1: clouds stay over the map, not the table */,
                                  Cell = 230, Shape = 20, Detail = 5.5f, NearFade = 1.5f, Edge = 45, FlashR = 30 },
-                new[] { _reliefMat }.Concat(Karn?.WeatherMaterials ?? new List<ShaderMaterial>()).Concat(Estates.SelectMany(e => e.WeatherMaterials)), false, () => Rig.Target,
+                new[] { _reliefMat }.Concat(Basins.SelectMany(b => b.WeatherMaterials)).Concat(Dunes?.WeatherMaterials ?? new List<ShaderMaterial>())
+                    .Concat(Estates.SelectMany(e => e.WeatherMaterials)), false, () => Rig.Target,
                 () => Math.Clamp(Math.Abs(Tod.Speed) * 60, 1.0, 20.0));
 
             foreach (var m in root.Cities)
@@ -111,7 +120,10 @@ namespace Atlas
             Shipping = new WorldShipping();
             AddChild(Shipping);
             Shipping.Build(this);
-            if (_karnSite != null && !_kw.Cameras.Any(c => c.Id == KarnAshur.ViewId)) _kw.Cameras.Add(KarnAshur.View(_karnSite));
+            foreach (var b in Basins)   // FIX(karn_ashur): the basin's view, and the High Dunes round it
+                if (!_kw.Cameras.Any(c => c.Id == Basin.ViewId)) _kw.Cameras.Add(Basin.View(b.S));
+            if (Dunes != null && !_kw.Cameras.Any(c => c.Id == HighDunesViewId))
+                _kw.Cameras.Add(new KnownWorldMap.View { Id = HighDunesViewId, Name = "The High Dunes", Target = new[] { 94.0, 31.0, 0.5 }, Yaw = -98, Pitch = 40, Dist = 62 });
             foreach (var e in Estates)
                 if (!_kw.Cameras.Any(c => c.Id == e.ViewId)) _kw.Cameras.Add(e.View());
             BuildOverlay();
@@ -137,7 +149,7 @@ namespace Atlas
                 Shader = ResourceLoader.Load<Shader>("res://shaders/regional_fog.gdshader"),
                 RenderPriority = 8, // Below the cloud layer and the Calderra pin label.
             };
-            _fogMat.SetShaderParameter("height_tex", _kwHeightTex);
+            _fogMat.SetShaderParameter("height_tex", _fogHeightTex ?? _kwHeightTex);   // FIX(karn_ashur)
             _fogMat.SetShaderParameter("noise_tex", CloudLayer.WeatherTexture);
             _fogMat.SetShaderParameter("box_min", new Vector3(bounds.Position.X, bottom, bounds.Position.Y));
             _fogMat.SetShaderParameter("box_max", new Vector3(bounds.End.X, top, bounds.End.Y));
@@ -150,14 +162,65 @@ namespace Atlas
             });
         }
 
+        public const string HighDunesViewId = "CAM_HighDunes";
+
         void BuildRelief()
         {
             ulong t0 = Time.GetTicksMsec();
-            _kwTex ??= LoadTexture(Path.Combine(_kw.Directory, _kw.Albedo));
-            if (_kwH == null) LoadHeights();
+            // --karn-ashur=off shows the baked relief alone where a basin stands; --high-dunes=off leaves the region as baked
+            var metros = Args.Get("karn-ashur") == "off" ? new List<CityManifest>() : _root.Cities.Where(c => c.IsMetropolis).ToList();
+            if (_kwH == null)
+            {
+                LoadHeights();
+                // FIX(karn_ashur): the High Dunes' rivers are graded and carved, its other summits capped, before the relief
+                // texture and the sampler are made (a basin's ring eases onto the carved relief)
+                var raw = new ReliefSampler(_kwH, _hw, _hh, _kw.BoundsXy, ReliefQuadsX, ReliefQuadsY);
+                var pre = metros.Select(m => Basin.MakeSite(m, _kw, raw)).Where(b => b != null).ToList();
+                var hd = Path.Combine(_kw.Directory, "high_dunes.json");
+                if (pre.Count > 0 && Args.Get("high-dunes") != "off" && File.Exists(hd))
+                {
+                    _highDunes = new HighDunesRegion(HighDunesData.Load(hd), _kw.UnitM, _kw.Exaggeration);
+                    _highDunes.LinkOutlet(pre[0].OutletEnd);
+                    _highDunes.LinkRoad(pre[0].RoadEnd, pre[0].Contains);
+                    _highDunes.EditHeights(_kwH, _hw, _hh, _kw.BoundsXy, (x, y) => pre.Any(b => b.Contains(x, y)));
+                }
+                MakeHeightTexture();
+            }
             _sampler ??= new ReliefSampler(_kwH, _hw, _hh, _kw.BoundsXy, ReliefQuadsX, ReliefQuadsY);
-            if (Args.Get("karn-ashur") != "off")   // --karn-ashur=off shows the baked relief alone (before/after shots)
-                _karnSite ??= KarnAshur.MakeSite(_kw, _sampler);
+            foreach (var m in metros.Where(c => !_basinSites.ContainsKey(c.Id)))
+                if (Basin.MakeSite(m, _kw, _sampler) is { } bs)
+                {
+                    if (_highDunes?.TributaryEntry is { } te && bs.Contains(te.X, te.Y)) bs.SetTributary(te);
+                    _basinSites[m.Id] = bs;
+                }
+            var basinSites = metros.Where(m => _basinSites.ContainsKey(m.Id)).Select(m => _basinSites[m.Id]).ToList();
+            if (_fogHeightTex == null && basinSites.Count > 0)
+            {
+                var fh = (float[])_kwH.Clone();
+                double x0 = _kw.BoundsXy[0], y1 = _kw.BoundsXy[3], px = _kw.Width / (_hw - 1), py = _kw.Depth / (_hh - 1);
+                foreach (var bs in basinSites)
+                    for (int j = Math.Max(0, (int)((y1 - bs.YMax) / py)); j <= Math.Min(_hh - 1, (int)((y1 - bs.YMin) / py) + 1); j++)
+                        for (int i = Math.Max(0, (int)((bs.XMin - x0) / px)); i <= Math.Min(_hw - 1, (int)((bs.XMax - x0) / px) + 1); i++)
+                        {
+                            double x = x0 + i * px, y = y1 - j * py;
+                            if (bs.Contains(x, y)) fh[j * _hw + i] = (float)bs.MeshUnits(x, y);
+                        }
+                _fogHeightTex = ImageTexture.CreateFromImage(Image.CreateFromData(_hw, _hh, false, Image.Format.Rf, MemoryMarshal.AsBytes(fh.AsSpan()).ToArray()));
+            }
+            if (_kwTex == null)
+            {
+                var img = LoadImage(Path.Combine(_kw.Directory, _kw.Albedo));
+                if (img != null && _highDunes != null)
+                {
+                    bool InBasin(double x, double y) => basinSites.Any(b => b.Contains(x, y));
+                    _highDunes.PlaceSettlements((x, y) => _highDunes.M(_sampler.Fine(x, y)), InBasin);
+                    img.Convert(Image.Format.Rgba8);
+                    var px = img.GetData();
+                    _highDunes.PaintAlbedo(px, img.GetWidth(), img.GetHeight(), _kw.BoundsXy, (x, y) => _highDunes.M(_sampler.Fine(x, y)), InBasin);
+                    img = Image.CreateFromData(img.GetWidth(), img.GetHeight(), false, Image.Format.Rgba8, px);
+                }
+                if (img != null) { img.GenerateMipmaps(); _kwTex = ImageTexture.CreateFromImage(img); }
+            }
             if (Args.Get("estates") != "off")      // --estates=off: the relief alone where an estate stands
                 foreach (var m in _root.Cities.Where(c => c.IsEstate && !_estateSites.ContainsKey(c.Id)))
                     if (Estate.MakeSite(m, _kw, _sampler) is { } es) _estateSites[m.Id] = es;
@@ -168,9 +231,9 @@ namespace Atlas
                 var (a0, b0, a1, b1) = estateSites[0].HoleUv;
                 _reliefMat.SetShaderParameter("hole2", new Vector4((float)a0, (float)b0, (float)a1, (float)b1));
             }
-            if (_karnSite != null)
+            if (basinSites.Count > 0)
             {
-                var (u0, v0, u1, v1) = _karnSite.HoleUv;   // the patch covers these vertices: sink them out of sight
+                var (u0, v0, u1, v1) = basinSites[0].HoleUv;   // the patch covers these vertices: sink them out of sight
                 _reliefMat.SetShaderParameter("hole", new Vector4((float)u0, (float)v0, (float)u1, (float)v1));
             }
             _reliefMat.SetShaderParameter("albedo_tex", _kwTex);
@@ -185,11 +248,20 @@ namespace Atlas
             var mesh = new PlaneMesh { Size = new Vector2((float)_kw.Width, (float)_kw.Depth), SubdivideWidth = ReliefQuadsX - 1, SubdivideDepth = ReliefQuadsY - 1 };
             mesh.CustomAabb = new Aabb(new Vector3(-(float)_kw.Width / 2, -1, -(float)_kw.Depth / 2), new Vector3((float)_kw.Width, 12, (float)_kw.Depth));
             relief.AddChild(new MeshInstance3D { Name = "Relief", Mesh = mesh, Position = at, MaterialOverride = _reliefMat });
-            if (_karnSite != null)
+            foreach (var bs in basinSites)
             {
-                Karn = new KarnAshur();
-                AddChild(Karn);
-                Karn.Build(_karnSite, _kw, _kwTex);
+                var b = new Basin();
+                AddChild(b);
+                b.Build(bs, _root.Cities.First(c => c.Id == bs.Id), _kw, _kwTex);
+                Basins.Add(b);
+            }
+            if (_highDunes != null)
+            {
+                Dunes = new HighDunes();
+                AddChild(Dunes);
+                var metro = _root.Cities.FirstOrDefault(c => c.IsMetropolis);
+                double f = metro?.WorldMap?.Miniature?.Exaggeration ?? 4;
+                Dunes.Build(_highDunes, _kw, (x, y) => GroundAt(x, y), metro?.Instances, f / _kw.UnitM);
             }
             foreach (var es in estateSites)
             {
@@ -208,8 +280,9 @@ namespace Atlas
                     double u = c / (double)(cols - 1), v = r / (double)(rows - 1);
                     float h = Math.Max(0f, HeightUv(u, v));
                     var (x, y) = _kw.UvToXy(u, v);
-                    if (_karnSite != null && _karnSite.Contains(x, y))   // Karn Ashur's own collision lies on top here
-                        h = Math.Max(Math.Abs(x - _karnSite.Cx), Math.Abs(y - _karnSite.Cy)) < KarnAshurSite.PatchHalf - 1.0 ? -1f : Math.Min(h, (float)_karnSite.MeshUnits(x, y)) - 0.05f;
+                    foreach (var bs in basinSites)                       // a basin's own collision lies on top here
+                        if (bs.Contains(x, y))
+                            h = Math.Max(Math.Abs(x - bs.Cx), Math.Abs(y - bs.Cy)) < bs.PatchHalf - 1.0 ? -1f : Math.Min(h, (float)bs.MeshUnits(x, y)) - 0.05f;
                     foreach (var es in estateSites)       // an estate's own collision lies on top here
                         if (es.Contains(x, y)) h = Math.Min(h, (float)es.MeshUnits(x, y)) - 0.05f;
                     data[r * cols + c] = h;
@@ -244,7 +317,7 @@ namespace Atlas
                                              Position = p + Vector3.Up * 0.15f, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, Visible = false };
                 relief.AddChild(g);
                 _lights.Add((g, mat, capital ? 1f : 0.6f));
-                if (s.Id == KarnAshurSite.SettlementId) _karnGlow = g;
+                if (basinSites.Any(b => b.Site.Anchor == s.Id)) _basinGlows.Add(g);
                 if (pinned.Contains(s.Id)) continue;
                 var l = NameLabel(s.Name, capital ? 26 : 22, new Color(1f, 0.95f, 0.86f));
                 l.Position = p + Vector3.Up * 0.4f;
@@ -261,6 +334,7 @@ namespace Atlas
                 relief.AddChild(l);
                 _names.Add((l, true));
             }
+            if (Dunes != null) foreach (var l in Dunes.Labels) _names.Add((l, false));   // the High Dunes' market towns
             GD.Print($"[Atlas] known world loaded: {_hw}x{_hh} heights, {_kw.Settlements.Count} settlements, {_kw.Cameras.Count} views in {Time.GetTicksMsec() - t0} ms");
         }
 
@@ -280,9 +354,27 @@ namespace Atlas
             _kwH = new float[_hw * _hh];
             for (int i = 0; i < _kwH.Length; i++)
                 _kwH[i] = (float)_kw.Units(_kw.Metres(px[i * 4], px[i * 4 + 1]));
+        }
+
+        static void MakeHeightTexture()
+        {
             var bytes = MemoryMarshal.AsBytes(_kwH.AsSpan()).ToArray();
             ReliefMax = _kwH.Max();
             _kwHeightTex = ImageTexture.CreateFromImage(Image.CreateFromData(_hw, _hh, false, Image.Format.Rf, bytes));
+        }
+
+        static Image LoadImage(string path)
+        {
+            if (!File.Exists(path)) { GD.PushWarning($"[Atlas] missing map texture {path}"); return null; }
+            return Image.LoadFromFile(path);
+        }
+
+        /// <summary>The ground (blend units) at a world point: a basin's or an estate's patch, else the relief.</summary>
+        public float GroundAt(double x, double y)
+        {
+            foreach (var b in Basins) if (b.HeightAt(x, y) is { } bh) return bh;
+            foreach (var e in Estates) if (e.HeightAt(x, y) is { } eh) return eh;
+            return Math.Max(0f, HeightUv((x - _kw.BoundsXy[0]) / _kw.Width, (_kw.BoundsXy[3] - y) / _kw.Depth));
         }
 
         static Texture2D LoadTexture(string pathOrRes)
@@ -312,7 +404,9 @@ namespace Atlas
         public Vector3 KwPoint(double u, double v)
         {
             var (x, y) = _kw.UvToXy(u, v);
-            float h = _karnSite != null && _karnSite.Contains(x, y) ? (float)_karnSite.MeshUnits(x, y) : HeightUv(u, v);
+            float h = HeightUv(u, v);
+            foreach (var b in Basins)
+                if (b.HeightAt(x, y) is { } bh) h = bh;
             foreach (var e in Estates)
                 if (e.HeightAt(x, y) is { } eh) h = eh;
             return new Vector3((float)x, Math.Max(0f, h), -(float)y);
@@ -346,7 +440,8 @@ namespace Atlas
             Table.Tick(dt, night);
             foreach (var e in Estates) e.SetNight((float)Tod.WindowLevel, night);
             // close to an estate the camera may come down to its miniature
-            Rig.MinDist = Estates.Any(e => new Vector2(Rig.Target.X - (float)e.S.Cx, -Rig.Target.Z - (float)e.S.Cy).Length() < 1.2f) ? 0.12f : 0.8f;
+            Rig.MinDist = Estates.Any(e => new Vector2(Rig.Target.X - (float)e.S.Cx, -Rig.Target.Z - (float)e.S.Cy).Length() < 1.2f) ? 0.12f
+                        : Basins.Any(b => b.S.OnPlinth(Rig.Target.X, -Rig.Target.Z)) ? 0.25f : 0.8f;   // FIX(karn_ashur): down to the houses
             _fogMat.SetShaderParameter("daylight", (float)Tod.Daylight);
             _fogMat.SetShaderParameter("weather_fog", (float)_root.Weather.Current.Fog);
             float k = Math.Clamp(Rig.Dist * 0.024f, 0.03f, 16f);
@@ -375,11 +470,12 @@ namespace Atlas
             foreach (var (g, mat, strength) in _lights)
             {
                 // Karn Ashur lights its own windows and fires close up: its map glow fades out as the camera comes in
-                float near = g == _karnGlow ? Mathf.SmoothStep(5f, 16f, Rig.Dist) : 1f;
+                float near = _basinGlows.Contains(g) ? Mathf.SmoothStep(5f, 16f, Rig.Dist) : 1f;
                 g.Visible = glow * near > 0.01f;
                 mat.AlbedoColor = new Color(1f, 0.62f, 0.28f, Math.Min(1f, glow * strength * near * 1.4f));
             }
-            Karn?.Tick((float)Tod.LampLevel, (float)Tod.Daylight);
+            foreach (var b in Basins) b.Tick((float)Tod.WindowLevel, night);
+            Dunes?.Tick(delta, Rig.Dist, (float)Tod.WindowLevel, night);
             Declutter(cam);
             if (!_syncing && _time != null && Tod.Speed != 0) { _syncing = true; _time.Value = Tod.Hour; _syncing = false; }
             if (_clock != null) _clock.Text = TimeOfDay.Clock(Tod.Hour);

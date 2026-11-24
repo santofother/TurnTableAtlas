@@ -27,6 +27,8 @@ def main(argv):
     t0 = time.time()
     if cfg.get('kind') == 'estate':     # FIX(villa): a country estate has its own builder (generator/villa.py)
         return build_estate(city_id, cfg, argv, t0)
+    if cfg.get('kind') == 'metropolis':  # an inland terraced metropolis (generator/metropolis.py)
+        return build_metropolis(city_id, cfg, argv, t0)
     if hasattr(m, "apply_config"):
         m.apply_config(cfg)
     stats = m.build_all()
@@ -83,6 +85,36 @@ def build_estate(city_id, cfg, argv, t0):
     if "--export" in argv:
         import export_city
         export_city.export(city_id, out_dir, man, root_name=villa.ROOT_NAME)
+    print("[Build] OK in %.1f s" % (time.time() - t0))
+
+
+def build_metropolis(city_id, cfg, argv, t0):
+    import bpy
+    import metropolis
+    import anchors
+    metropolis.apply_config(cfg)
+    out_dir = os.path.join(ROOT, "cities", city_id)
+    stats = metropolis.build_all(out_dir)
+    print("[Build] metropolis", json.dumps(stats))
+    report = {'generator': stats}
+    man = metropolis.build_manifest(cfg, report)
+    root = metropolis.ANCHORS['_root']
+    anchors.write_blend_anchors(metropolis, man, root)
+    metropolis.write_proxies(root)
+    with open(os.path.join(out_dir, "city.json"), "w") as f:
+        json.dump(man, f, separators=(",", ":"))
+    print("[Build] anchors", json.dumps(report.get('routes')), json.dumps(report.get('instances')))
+    print("[Build] manifest %s: %d nodes, %d edges, %d zones, %d lights, %d landmarks, %d instances (%.0f KB)" % (
+        city_id, len(man['street_graph']['nodes']), len(man['street_graph']['edges']), len(man['spawn_zones']),
+        len(man['night_lights']), len(man['landmarks']), man['instances']['count'],
+        os.path.getsize(os.path.join(out_dir, "city.json")) / 1024))
+    if "--no-save" not in argv:
+        path = os.path.join(ROOT, "blender", city_id + ".blend")
+        bpy.ops.wm.save_as_mainfile(filepath=path, compress=True)
+        print("[Build] saved", path)
+    if "--export" in argv:
+        import export_city
+        export_city.export(city_id, out_dir, man, root_name=metropolis.ROOT_NAME)
     print("[Build] OK in %.1f s" % (time.time() - t0))
 
 
