@@ -35,6 +35,7 @@ namespace Atlas
         public MapTable Table { get; private set; }
         public WorldShipping Shipping { get; private set; }
         ShaderMaterial _reliefMat;
+        ShaderMaterial _fogMat;
         readonly List<(MeshInstance3D Glow, StandardMaterial3D Mat, float K)> _lights = new();
         readonly List<(Label3D L, bool Realm)> _names = new();
         bool _showNames = true;
@@ -71,6 +72,7 @@ namespace Atlas
             Table.Build(bounds);
             _reliefMat = new ShaderMaterial { Shader = ResourceLoader.Load<Shader>("res://shaders/relief.gdshader") };
             BuildRelief();
+            BuildRegionalFog(bounds);
 
             Rig = new TurntableCamera { Name = "Rig", MinDist = 0.8f, MaxDist = 950f, MinPitch = 5f, FlySpeed = 4f, Bounds = bounds };
             AddChild(Rig);
@@ -105,6 +107,28 @@ namespace Atlas
                 Rig.Snap(Geo.V(overview.Target), (float)overview.Yaw, (float)overview.Pitch, (float)overview.Dist);
             else Rig.Snap(new Vector3(cx, 0, -cy), -90f, 58f, bounds.Size.X);
             if (Args.Has("view")) FlyToView(Args.Get("view"), 0.01);
+        }
+
+        void BuildRegionalFog(Rect2 bounds)
+        {
+            const float bottom = -0.5f;
+            float top = ReliefMax + 7f;
+            _fogMat = new ShaderMaterial
+            {
+                Shader = ResourceLoader.Load<Shader>("res://shaders/regional_fog.gdshader"),
+                RenderPriority = 8, // Below the cloud layer and the Calderra pin label.
+            };
+            _fogMat.SetShaderParameter("height_tex", _kwHeightTex);
+            _fogMat.SetShaderParameter("noise_tex", CloudLayer.WeatherTexture);
+            _fogMat.SetShaderParameter("box_min", new Vector3(bounds.Position.X, bottom, bounds.Position.Y));
+            _fogMat.SetShaderParameter("box_max", new Vector3(bounds.End.X, top, bounds.End.Y));
+            var center = bounds.GetCenter();
+            AddChild(new MeshInstance3D
+            {
+                Name = "RegionalFog", Position = new Vector3(center.X, (bottom + top) / 2, center.Y),
+                Mesh = new BoxMesh { Size = new Vector3(bounds.Size.X, top - bottom, bounds.Size.Y) },
+                MaterialOverride = _fogMat, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            });
         }
 
         void BuildRelief()
@@ -257,6 +281,8 @@ namespace Atlas
             _lastHour = Tod.Hour;
             float night = (float)Tod.LampLevel;
             Table.Tick(dt, night);
+            _fogMat.SetShaderParameter("daylight", (float)Tod.Daylight);
+            _fogMat.SetShaderParameter("weather_fog", (float)_root.Weather.Current.Fog);
             float k = Math.Clamp(Rig.Dist * 0.024f, 0.03f, 16f);
             var mouse = GetViewport().GetMousePosition();
             MapPin3D hover = null;

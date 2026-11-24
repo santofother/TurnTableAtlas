@@ -117,8 +117,10 @@ namespace Atlas
                     map.WeatherControls.KindButton(WeatherKind.Fair).EmitSignal(BaseButton.SignalName.Pressed);
                     Check(map.GetNodeOrNull("Geography") == null && map.GetNodeOrNull("MapTable/GeographyFrame") == null,
                           "the world map uses the Known World relief");
-                    Check(map.Shipping.RouteCount == 5 && map.Shipping.VesselCount >= 10,
+                    Check(map.Shipping.RouteCount == 20 && map.Shipping.VesselCount >= 40,
                           $"{map.Shipping.VesselCount} ships across {map.Shipping.RouteCount} port routes");
+                    Check(map.GetNodeOrNull<MeshInstance3D>("RegionalFog")?.MaterialOverride is ShaderMaterial,
+                          "the Known World has terrain-following fog");
                     _mapBoats = map.Shipping.GetChildren().OfType<Node3D>().Select(b => b.Position).ToArray();
                     _step++; break;
                 }
