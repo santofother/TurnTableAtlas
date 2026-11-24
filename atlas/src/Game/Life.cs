@@ -70,6 +70,20 @@ namespace Atlas
             Count++;
         }
 
+        /// <summary>A figure leaning forward by `tilt` radians (a bow) and lowered by `sink` (into water).</summary>
+        public void AddTilted(Vector3 p, float heading, float tilt, float scale, Color custom)
+        {
+            if (Count >= Capacity) return;
+            scale *= FigureScale;
+            var b = new Basis(Vector3.Up, heading) * new Basis(new Vector3(0, 0, 1), -tilt);
+            int o = Count * 16;
+            _buf[o + 0] = b.X.X * scale; _buf[o + 1] = b.Y.X * scale; _buf[o + 2] = b.Z.X * scale; _buf[o + 3] = p.X;
+            _buf[o + 4] = b.X.Y * scale; _buf[o + 5] = b.Y.Y * scale; _buf[o + 6] = b.Z.Y * scale; _buf[o + 7] = p.Y;
+            _buf[o + 8] = b.X.Z * scale; _buf[o + 9] = b.Y.Z * scale; _buf[o + 10] = b.Z.Z * scale; _buf[o + 11] = p.Z;
+            _buf[o + 12] = custom.R; _buf[o + 13] = custom.G; _buf[o + 14] = custom.B; _buf[o + 15] = custom.A;
+            Count++;
+        }
+
         public void End()
         {
             MM.Buffer = _buf;

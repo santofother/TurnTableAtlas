@@ -10,6 +10,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REQUIRED = ['id', 'name', 'version', 'model_scale', 'extent', 'world_map', 'sun', 'files', 'street_graph',
             'spawn_zones', 'ship_lanes', 'moorings', 'venues', 'routes', 'night_lights', 'landmarks', 'events']
 EVENTS = {'gladiator_games', 'chariot_race', 'theatre_play', 'fleet_arrival', 'festival_night'}
+ESTATE_EVENTS = {'villa_return', 'villa_supper', 'villa_aegis', 'villa_cold_spring'}   # the villa's Chapter 1 scenes
 
 
 def is_pt(p, n=3):
@@ -30,7 +31,7 @@ class ManifestTests(unittest.TestCase):
                 self.assertIn(k, m, "%s: missing %s" % (p, k))
             self.assertEqual(m['version'], 1)
             self.assertEqual(os.path.basename(os.path.dirname(p)), m['id'])
-            self.assertTrue(set(m['events']) <= EVENTS, m['events'])
+            self.assertTrue(set(m['events']) <= (ESTATE_EVENTS if m.get('kind') == 'estate' else EVENTS), m['events'])
             wm = m['world_map']
             # a pin on the painted Caelora map, or (for cities off Caelora) just a Known World settlement
             self.assertTrue('pin_uv' in wm or wm.get('settlement', '').startswith('settlement:'), p)
@@ -115,7 +116,9 @@ class ManifestTests(unittest.TestCase):
         for p, m in self.manifests():
             if m.get('kind') != 'estate':
                 continue
-            self.assertFalse(m['events'], p)
+            self.assertTrue(m['events'], p)
+            for ev in m['events']:                    # every scene has its timeline in the Atlas
+                self.assertTrue(os.path.exists(os.path.join(ROOT, 'atlas', 'events', ev + '.json')), ev)
             for k, q in m['anchors'].items():
                 self.assertTrue(is_pt(q), k)
             for k in ('gate_stop', 'private_dining', 'aegis_painting', 'cold_pool', 'heated_pool'):

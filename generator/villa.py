@@ -1400,7 +1400,7 @@ def build_manifest(cfg, report):
         'night_lights': lights,
         'landmarks': landmarks,
         'steam_vents': [P(p) for p in ANCHORS['_steam']],
-        'events': [],
+        'events': cfg.get('events', []),
         'anchors': anchors,
         'cutaway': {'roofs': ['CAP_V_Roof_'], 'upper': ['CAP_V_Upper']},
         'terrain_grid': {'n': n, 'z': grid.ravel().tolist()},

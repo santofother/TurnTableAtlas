@@ -17,7 +17,7 @@ namespace Atlas
         static Vector3[] _mapBoats;
         static int _fails;
         static string _event, _venueType, _landmark;
-        static readonly string[] Preferred = { "chariot_race", "gladiator_games", "theatre_play" };
+        static readonly string[] Preferred = { "chariot_race", "gladiator_games", "theatre_play", "villa_return" };
 
         static T Find<T>(Node n) where T : Node
         {
@@ -77,11 +77,11 @@ namespace Atlas
                     Check(d < 6f, $"flew to the {_landmark} landmark (camera {d:0.0} m from preset)");
                     _event = Preferred.FirstOrDefault(e => v.Events.Available.Any(a => a.Id == e)) ?? v.Events.Available.FirstOrDefault()?.Id;
                     _venueType = _event switch { "chariot_race" => "circus", "gladiator_games" => "arena", "theatre_play" => "theatre", _ => null };
-                    v.Events.TimeScale = 25;
+                    v.Events.TimeScale = v.M.IsEstate ? 5 : 25;   // FIX(villa): a scene walks at people's pace
                     if (_event != null) v.Events.Trigger(_event);
-                    if (v.M.IsEstate)   // FIX(villa): an estate has no public events, but named staging anchors
-                        Check(v.Events.Available.Count == 0 && v.M.Anchors.Count >= 10 && v.M.Routes.ContainsKey("peristyle_loop"),
-                              $"estate: no public events, {v.M.Anchors.Count} staging anchors, {v.M.Routes.Count} routes");
+                    if (v.M.IsEstate)   // FIX(villa): an estate's events are its chapter scenes, staged on its anchors
+                        Check(v.Events.Available.Count == 4 && v.Events.Running != null && v.M.Anchors.Count >= 10,
+                              $"estate scene '{_event}' started ({v.Events.Available.Count} scenes, {v.M.Anchors.Count} staging anchors)");
                     else
                         Check(_event != null && v.Events.Running != null, $"event '{_event}' triggered ({v.Events.Available.Count} available here)");
                     _step++; break;
@@ -109,6 +109,11 @@ namespace Atlas
                             layers["Roofs"].Item3(true); layers["Upper floor"].Item3(true);
                         }
                         Check(cut, "cutaway: roofs and the upper floor lift off");
+                        var st = v.Events.Stage;
+                        var gate = v.M.Anchors.TryGetValue("gate_stop", out var g) ? Polyline.V(g) : new Vec3(0, 0, 0);
+                        double toGate = st["h_landric"] is { } hl ? (hl.Pos - gate).Length2D : 99;
+                        Check(st.Actors.Count >= 11 && toGate < 4.0 && st["h_escort"]?.Mount == null && st["escort"]?.Mount == "h_escort",
+                              $"Return to the Villa: {st.Actors.Count} actors, Landric's horse {toGate:0.0} m from the gate stop, the escort still mounted");
                     }
                     else
                     {

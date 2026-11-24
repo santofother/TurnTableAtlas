@@ -1,0 +1,34 @@
+{
+  "id": "villa_aegis", "label": "The Peristyle and the Aegis",
+  "description": "Chapter 1: after supper Landric and Radgar walk the marble peristyle past the Oravessan statues into Landric's gallery and stop before the candle-lit Duel Before The Walls.",
+  "steps": [
+    {"at": 0, "do": "clock", "hour": 20.6, "speed": 0},
+    {"at": 0, "do": "cutaway", "roofs": false, "upper": false},
+    {"at": 0, "do": "status", "text": "After supper Landric and Radgar leave the table for the peristyle"},
+    {"at": 0, "do": "cast", "actors": [
+      {"id": "landric", "kind": "citizen", "color": [0.62, 0.14, 0.10], "at": {"route": "gallery_walk", "from_end_m": 62}},
+      {"id": "radgar", "kind": "citizen", "color": [0.24, 0.24, 0.27], "at": {"route": "gallery_walk", "from_end_m": 64}}
+    ]},
+    {"at": 0, "do": "follow", "actor": "landric", "dist_m": 16, "yaw": -70, "pitch": 34, "over": 1.5},
+    {"at": 0.3, "do": "walk", "actor": "landric", "route": "gallery_walk", "from_end_m": 62, "then": {"anchor": "aegis_painting", "off": [3.2, -1.0, -2.4]}, "speed": 1.5},
+    {"at": 0.3, "do": "lead", "actor": "radgar", "leader": "landric", "gap": 1.4},
+    {"at": 10, "do": "status", "text": "Past the Oravessan statues along the marble walk"},
+    {"at": 24, "do": "status", "text": "Into Landric's gallery, at the end of the peristyle"},
+    {"wait": "idle:landric"},
+    {"at": 0, "do": "release", "actor": "radgar"},
+    {"at": 0, "do": "approach", "actor": "radgar", "to": {"anchor": "aegis_painting", "off": [3.0, 1.2, -2.4]}, "gap": 0, "speed": 1.0},
+    {"at": 0, "do": "camera", "target": {"anchor": "aegis_painting", "off": [1.5, 0, -0.6]}, "dist_m": 9, "yaw": -8, "pitch": 20, "over": 4},
+    {"at": 0.2, "do": "status", "text": "Duel Before The Walls: Landric shows Radgar the Aegis"},
+    {"at": 1.5, "do": "face", "actors": ["landric", "radgar"], "to": {"anchor": "aegis_painting"}},
+    {"at": 2.5, "do": "face", "actor": "landric", "to": {"actor": "radgar"}},
+    {"at": 2.6, "do": "tilt", "actor": "landric", "deg": -8, "over": 0.6},
+    {"at": 4.0, "do": "tilt", "actor": "landric", "deg": 0, "over": 0.6},
+    {"at": 4.2, "do": "face", "actor": "landric", "to": {"anchor": "aegis_painting"}},
+    {"at": 5.0, "do": "status", "text": "Radgar studies the painted fighters"},
+    {"at": 5.0, "do": "tilt", "actor": "radgar", "deg": 6, "over": 1.2},
+    {"at": 9.0, "do": "status", "text": "A quieter pause before they part"},
+    {"at": 9.0, "do": "tilt", "actor": "radgar", "deg": 0, "over": 1.0},
+    {"at": 10.5, "do": "face", "actors": ["landric", "radgar"], "to": {"anchor": "gallery_entry"}},
+    {"at": 13, "do": "end"}
+  ]
+}

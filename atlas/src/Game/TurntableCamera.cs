@@ -51,6 +51,13 @@ namespace Atlas
             _flyDur = seconds;
         }
 
+        /// <summary>Keep looking at a moving point (an actor in a scene): the orbit's target eases after it.</summary>
+        public void Track(Vector3 p)
+        {
+            if (_flyT < 1.0) _flyTo = (p, _flyTo.Y, _flyTo.P, _flyTo.D);
+            else _tTarget = p;
+        }
+
         public void ToggleFreeFly()
         {
             FreeFly = !FreeFly;

@@ -149,7 +149,8 @@ namespace Atlas.Core.Tests
         [Fact]
         public void ShippedEventsParseAndFitTheCity()
         {
-            var defs = EventDef.LoadDir(Path.Combine(Repo.Root, "atlas", "events"));
+            // FIX(villa): the villa's chapter scenes (villa_*) live beside the five city events
+            var defs = EventDef.LoadDir(Path.Combine(Repo.Root, "atlas", "events")).Where(d => !d.Id.StartsWith("villa_")).ToList();
             Assert.Equal(5, defs.Count);
             var m = Fc;
             Assert.All(defs, d => Assert.True(d.AvailableIn(m), d.Id + " not available"));

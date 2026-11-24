@@ -36,6 +36,15 @@ namespace Atlas
         bool _procOn;
         double _lastHour = -1;
         Node3D _staticChariots;
+        // scripted scenes (the villa's chapter events): actors on a stage, a camera that can follow one, the cutaway
+        public Stage Stage { get; private set; }
+        readonly Dictionary<string, Swarm> _actorSwarms = new();
+        string _follow;
+        Dictionary<string, bool> _cutawaySaved;
+        Swarm _flare;
+        OmniLight3D _flareLight;
+        double _flareLeft;
+        Vector3 _flareAt;
 
         public void Setup(CityView v)
         {
@@ -62,6 +71,12 @@ namespace Atlas
                 _procLights.Add(l);
             }
             if (_m.Routes.TryGetValue("procession", out var r) && r.Length > 1) _route = new Polyline(Polyline.FromArray(r));
+            Stage = new Stage(v.Life.Crowd.G, _m.ModelScale > 0 ? _m.ModelScale : 15);
+            foreach (var k in new[] { "citizen", "robed", "seated", "horse", "rider" })
+                if (Props.Get(k) is { } mesh) _actorSwarms[k] = Make("Actors_" + k, mesh, fig, 24, true);
+            _flare = Make("Flare", new QuadMesh { Size = Vector2.One }, glow, 4, false);
+            _flareLight = new OmniLight3D { LightColor = new Color(1f, 0.55f, 0.2f), OmniRange = 4f, LightEnergy = 0, Visible = false };
+            AddChild(_flareLight);
         }
 
         Swarm Make(string name, Mesh mesh, Material mat, int cap, bool shadows)
@@ -90,6 +105,17 @@ namespace Atlas
             foreach (var l in _procLights) l.Visible = false;
             if (_staticChariots != null) _staticChariots.Visible = true;
             foreach (var z in _v.Life.ZoneOverride.Keys.ToList()) _v.Life.ZoneOverride.Remove(z);
+            Stage?.Clear();
+            foreach (var sw in _actorSwarms.Values) { sw.Begin(); sw.End(); }
+            _follow = null;
+            _flareLeft = 0; _flare?.Begin(); _flare?.End();
+            if (_flareLight != null) _flareLight.Visible = false;
+            if (_cutawaySaved != null)
+            {
+                var layers = _v.Life.Layers().ToDictionary(l => l.Item1);
+                foreach (var (k, on) in _cutawaySaved) if (layers.TryGetValue(k, out var l)) l.Item3(on);
+                _cutawaySaved = null;
+            }
             Running = null;
         }
 
@@ -109,6 +135,7 @@ namespace Atlas
             if (Arena != null) StepArena(dt);
             if (Play != null) StepPlay(dt);
             if (_procOn) StepProcession(dt);
+            if (Stage != null && Stage.Actors.Count > 0) StepStage(dt);
         }
 
         void AutoSchedule()
@@ -188,6 +215,84 @@ namespace Atlas
                 case "procession":
                     if (_route != null) { _procOn = true; _procRows = s.Num("rows", 24); _procSpeed = s.Num("speed", 0.35); _procHead = 0; }
                     break;
+                case "clock":
+                    _v.Tod.Hour = s.Num("hour", _v.Tod.Hour);
+                    if (s.Args.ContainsKey("speed")) _v.Tod.Speed = s.Num("speed", 0);
+                    _v.Tod.Apply();
+                    break;
+                case "cutaway":
+                {
+                    var layers = _v.Life.Layers().ToDictionary(l => l.Item1);
+                    foreach (var (key, name) in new[] { ("roofs", "Roofs"), ("upper", "Upper floor") })
+                        if (s.Args.TryGetValue(key, out var onv) && layers.TryGetValue(name, out var l))
+                        {
+                            _cutawaySaved ??= new();
+                            if (!_cutawaySaved.ContainsKey(name)) _cutawaySaved[name] = l.Item2();
+                            l.Item3(onv.GetBoolean());
+                        }
+                    break;
+                }
+                case "camera":
+                    _follow = null;
+                    if (Place(s, "target") is { } ct)
+                        _v.Rig.FlyTo(new CameraPreset { Target = new[] { ct.X, ct.Y, ct.Z }, Dist = s.Num("dist_m", 30) * Stage.Scale, Yaw = s.Num("yaw", -90), Pitch = s.Num("pitch", 30) }, s.Num("over", 2));
+                    break;
+                case "follow":
+                    _follow = s.Str("actor");
+                    if (_follow != null && Stage[_follow] is { } fa)
+                        _v.Rig.FlyTo(new CameraPreset { Target = new[] { fa.Pos.X, fa.Pos.Y, fa.Pos.Z }, Dist = s.Num("dist_m", 30) * Stage.Scale, Yaw = s.Num("yaw", -90), Pitch = s.Num("pitch", 30) }, s.Num("over", 2));
+                    break;
+                case "cast":
+                    if (s.Args.TryGetValue("actors", out var arr))
+                        foreach (var e in arr.EnumerateArray()) CastOne(e);
+                    break;
+                case "walk":
+                    foreach (var id in Ids(s))
+                    {
+                        double sp = s.Num("speed", 1.3);
+                        if (s.Str("route") is { } rid && _m.Routes.TryGetValue(rid, out var rp))
+                        {
+                            var pl = new Polyline(Polyline.FromArray(rp));
+                            double from = Math.Max(0, pl.Length - s.Num("from_end_m", 1e9) * Stage.Scale), to = pl.Length - s.Num("to_end_m", 0) * Stage.Scale;
+                            var pts = new List<Vec3>();
+                            for (double a = from; a < to; a += 0.25) pts.Add(pl.At(a).Pos);
+                            pts.Add(pl.At(to).Pos);
+                            if (Place(s, "then") is { } th) pts.Add(th);
+                            Stage.WalkPath(id, pts, sp);
+                        }
+                        else if (s.Args.TryGetValue("via", out var via))
+                            Stage.WalkPath(id, via.EnumerateArray().Select(PlaceOf).Where(p => p.HasValue).Select(p => p.Value), sp);
+                        else if (Place(s, "to") is { } tp)
+                            Stage.WalkTo(id, tp, sp);
+                    }
+                    break;
+                case "approach":
+                    foreach (var id in Ids(s))
+                        if (Place(s, "to") is { } ap) Stage.Approach(id, ap, s.Num("gap", 0.6), s.Num("speed", 1.2));
+                    break;
+                case "lead":
+                    foreach (var id in Ids(s)) Stage.Lead(id, s.Str("leader"), s.Num("gap", 2.6));
+                    break;
+                case "release": foreach (var id in Ids(s)) Stage.Release(id); break;
+                case "mount": foreach (var id in Ids(s)) Stage.Mount(id, s.Str("horse")); break;
+                case "dismount": foreach (var id in Ids(s)) Stage.Dismount(id, (int)s.Num("side", 1)); break;
+                case "face":
+                    foreach (var id in Ids(s)) if (Place(s, "to") is { } fp) Stage.Face(id, fp);
+                    break;
+                case "tilt": foreach (var id in Ids(s)) Stage.Tilt(id, s.Num("deg", 15), s.Num("over", 1)); break;
+                case "sink": foreach (var id in Ids(s)) Stage.Sink(id, s.Num("depth", 1), s.Num("over", 1.5)); break;
+                case "kind":
+                    foreach (var id in Ids(s))
+                        if (Stage[id] is { } ka)
+                        {
+                            if (s.Str("kind") is { } kk) { ka.Kind = kk; ka.FootKind = kk; }
+                            if (s.Args.TryGetValue("color", out var kc)) { var c = kc.EnumerateArray().Select(x => x.GetDouble()).ToArray(); (ka.R, ka.G, ka.B) = (c[0], c[1], c[2]); }
+                        }
+                    break;
+                case "exit": foreach (var id in Ids(s)) Stage.Actors.Remove(id); break;
+                case "flare":
+                    if (Place(s, "target") is { } fl) { _flareAt = Geo.V(fl) + Vector3.Up * 0.12f; _flareLeft = s.Num("for", 4); }
+                    break;
                 case "end": break;
                 default: GD.PushWarning($"[Atlas] unknown event step '{s.Do}'"); break;
             }
@@ -200,6 +305,8 @@ namespace Atlas
             "play_over" => Play == null || Play.Time >= _playDur,
             "fleet_moored" => _fleet.Count == 0 || _fleet.All(f => f.Done || f.Script == null || (Time() - f.Born) > _fleetDone),
             "procession_done" => !_procOn || _route == null || _procHead - _procRows * 0.17 >= _route.Length,
+            "all_idle" => Stage.AllIdle,
+            _ when c.StartsWith("idle:") => c[5..].Split(',').All(id => Stage.Idle(id.Trim())),
             _ => true,
         };
 
@@ -359,6 +466,76 @@ namespace Atlas
                 _procLights[i].Visible = _procHead - i * rows * 0.17 / _procLights.Count > 0;
             }
             if (_procHead - rows * 0.17 >= _route.Length + 25) { _procOn = false; _torches.Begin(); _torches.End(); _flames.Begin(); _flames.End(); foreach (var l in _procLights) l.Visible = false; }
+        }
+
+        // ------------------------------------------------------------------ scripted scenes (Stage)
+        static IEnumerable<string> Ids(EventStep s)
+        {
+            if (s.Str("actor") is { } one) return new[] { one };
+            return s.List("actors");
+        }
+
+        Vec3? Place(EventStep s, string key) => s.Args.TryGetValue(key, out var e) ? PlaceOf(e) : null;
+
+        /// <summary>A place in a step: {"anchor"|"actor"|"landmark": id, "off": [x, y] real metres} or {"route": id, "from_end_m": m}.</summary>
+        Vec3? PlaceOf(System.Text.Json.JsonElement e)
+        {
+            if (e.ValueKind != System.Text.Json.JsonValueKind.Object) return null;
+            Vec3? p = null;
+            if (e.TryGetProperty("anchor", out var an) && _m.Anchors.TryGetValue(an.GetString(), out var ap)) p = Polyline.V(ap);
+            else if (e.TryGetProperty("actor", out var ac) && Stage[ac.GetString()] is { } act) p = act.Pos;
+            else if (e.TryGetProperty("landmark", out var lm) && _m.Landmarks.FirstOrDefault(l => l.Id == lm.GetString()) is { } l) p = Polyline.V(l.Camera.Target);
+            else if (e.TryGetProperty("route", out var ro) && _m.Routes.TryGetValue(ro.GetString(), out var rp))
+            {
+                var pl = new Polyline(Polyline.FromArray(rp));
+                double fe = e.TryGetProperty("from_end_m", out var f) ? f.GetDouble() * Stage.Scale : 0;
+                p = pl.At(pl.Length - fe).Pos;
+            }
+            if (p is { } q && e.TryGetProperty("off", out var off))
+            {
+                var o = off.EnumerateArray().Select(x => x.GetDouble()).ToArray();
+                p = new Vec3(q.X + o[0] * Stage.Scale, q.Y + o[1] * Stage.Scale, q.Z + (o.Length > 2 ? o[2] * Stage.Scale : 0));
+            }
+            return p;
+        }
+
+        void CastOne(System.Text.Json.JsonElement e)
+        {
+            string id = e.GetProperty("id").GetString();
+            string kind = e.TryGetProperty("kind", out var k) ? k.GetString() : "citizen";
+            var col = e.TryGetProperty("color", out var c) ? c.EnumerateArray().Select(x => x.GetDouble()).ToArray() : new[] { 0.8, 0.75, 0.65 };
+            var pos = e.TryGetProperty("at", out var at) ? PlaceOf(at) ?? new Vec3(0, 0, 0) : new Vec3(0, 0, 0);
+            double hd = e.TryGetProperty("heading_deg", out var h) ? h.GetDouble() * Math.PI / 180 : 0;
+            var a = Stage.Cast(id, kind, (col[0], col[1], col[2]), pos, hd);
+            if (e.TryGetProperty("face", out var f) && PlaceOf(f) is { } fp) Stage.Face(id, fp);
+            if (e.TryGetProperty("mount", out var m)) Stage.Mount(id, m.GetString());
+        }
+
+        void StepStage(double dt)
+        {
+            Stage.Step(dt);
+            foreach (var sw in _actorSwarms.Values) sw.Begin();
+            foreach (var a in Stage.Actors.Values)
+            {
+                if (!a.Visible || !_actorSwarms.TryGetValue(a.Kind, out var sw)) continue;
+                var col = new Color((float)a.R, (float)a.G, (float)a.B).SrgbToLinear();
+                var p = Geo.V(a.Pos) + Vector3.Down * (float)a.Sink;
+                sw.AddTilted(p, (float)a.Heading, (float)a.Tilt, 1f, new Color(col.R, col.G, col.B, a.Walking && a.Kind != "horse" ? 1 : 0));
+            }
+            foreach (var sw in _actorSwarms.Values) sw.End();
+            if (_follow != null && Stage[_follow] is { } fa) _v.Rig.Track(Geo.V(fa.Pos) + Vector3.Up * 0.3f);
+            _flare.Begin();
+            if (_flareLeft > 0)
+            {
+                _flareLeft -= dt;
+                float k = (float)Math.Clamp(_flareLeft, 0, 1) * (0.8f + 0.2f * Mathf.Sin((float)Stage.Time * 9f));
+                _flare.Add(_flareAt, 0, 0.5f * k, new Color(2, 0, 1, 0));
+                _flareLight.Position = _flareAt + Vector3.Up * 0.2f;
+                _flareLight.LightEnergy = 3f * k;
+                _flareLight.Visible = true;
+            }
+            else _flareLight.Visible = false;
+            _flare.End();
         }
     }
 }

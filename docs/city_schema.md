@@ -24,7 +24,7 @@ Points are `[x, y, z]` unless the field says 2D (`[x, y]`).
 | `night_lights[]` | `{pos, kind: window/lamp/torch/lighthouse, strength, order?}` | glow points; `window.order` = light-up order (see below) |
 | `landmarks[]` | `{id, label, camera:{target, dist, yaw, pitch}}` | camera presets: camera = target + dist·(cos p cos y, cos p sin y, sin p) |
 | `steam_vents[]` | `[x,y,z]` | bath steam sources |
-| `events[]` | names | events this city supports |
+| `events[]` | names | events this city supports (an estate lists its own scenes, e.g. `villa_return`; their timelines are `atlas/events/<name>.json`) |
 | `kind` | `"city"` (default) or `"estate"` | an estate is a country house with its grounds (`generator/villa.py`): no venues or ships, a handful of people, no lighthouse |
 | `anchors` (estate) | `{id: [x,y,z]}` | named staging points for the estate's scenes (`gate_stop`, `private_dining`, `hearth_offer`, `aegis_painting`, `cold_pool`, `heated_pool`, `bath_fire`…) |
 | `cutaway` (estate) | `{roofs:[prefix], upper:[prefix]}` | object-name prefixes the Atlas hides to look inside (Layers → Roofs, Upper floor) |

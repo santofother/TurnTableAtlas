@@ -140,7 +140,40 @@ def torch_bearer():
     return p.out()
 
 
-PROPS = {'citizen': citizen, 'robed': robed, 'seated': seated, 'gladiator': gladiator, 'beast': beast,
+def horse():
+    """A saddled horse at 1:15 (withers ~0.107 = 1.6 m), facing +X. The coat is the tint slot; mane, tail, hooves fixed."""
+    p = P()
+    mane = (0.12, 0.09, 0.07)
+    p.box(0.0, 0.0, 0.062, 0.120, 0.036, 0.040, TINT, tint=True, taper=0.92)              # barrel
+    p.box(0.052, 0.0, 0.070, 0.040, 0.034, 0.036, TINT, tint=True)                          # chest
+    for x in (-0.046, 0.046):
+        for y in (-0.011, 0.011):
+            p.box(x, y, 0.0, 0.010, 0.010, 0.066, TINT, tint=True)
+            p.box(x, y, 0.0, 0.012, 0.012, 0.006, mane)                                     # hooves
+    p.box(0.078, 0.0, 0.092, 0.024, 0.018, 0.040, TINT, tint=True, rot=0.0, taper=0.8)      # neck
+    p.box(0.094, 0.0, 0.128, 0.040, 0.016, 0.016, TINT, tint=True)                          # head
+    p.box(0.070, 0.0, 0.110, 0.022, 0.006, 0.026, mane)                                     # mane
+    p.box(-0.066, 0.0, 0.050, 0.008, 0.008, 0.050, mane)                                    # tail
+    p.box(-0.004, 0.0, 0.100, 0.036, 0.040, 0.006, (0.36, 0.20, 0.10))                      # saddle
+    return p.out()
+
+
+def rider():
+    """A rider astride, origin on the ground under the horse's back (sits at 0.106): clothes are the tint slot."""
+    p = P()
+    for s in (-1, 1):
+        p.box(0.004, s * 0.022, 0.072, 0.012, 0.008, 0.036, TINT, tint=True)               # legs down the flanks
+        p.box(0.008, s * 0.022, 0.066, 0.016, 0.010, 0.008, HAIR)                          # boots
+    p.box(-0.002, 0.0, 0.104, 0.024, 0.040, 0.010, TINT, tint=True)
+    p.box(-0.002, 0.0, 0.112, 0.024, 0.030, 0.044, TINT, tint=True, taper=0.85)
+    for s in (-1, 1):
+        p.box(0.010, s * 0.017, 0.126, 0.020, 0.008, 0.008, TINT, tint=True)                 # arms to the reins
+    p.ball(0.0, 0.0, 0.168, 0.0105, SKIN)
+    p.box(-0.002, 0.0, 0.171, 0.018, 0.020, 0.008, HAIR)
+    return p.out()
+
+
+PROPS = {'horse': horse, 'rider': rider, 'citizen': citizen, 'robed': robed, 'seated': seated, 'gladiator': gladiator, 'beast': beast,
          'chariot': chariot, 'torch_bearer': torch_bearer}
 
 # clothing palette for tints (sRGB): earthy wool, linen, ochre, madder red, woad blue, a few whites

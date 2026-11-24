@@ -1,0 +1,34 @@
+{
+  "id": "villa_cold_spring", "label": "The Cold Spring",
+  "description": "Chapter 1: Radgar leaves the gallery, crosses the peristyle and the kitchen garden, passes between the bathhouse statues, sets his clothes aside and goes under the spring-fed cold pool, twice, in silent prayer. The heated pool stays empty.",
+  "steps": [
+    {"at": 0, "do": "clock", "hour": 22.0, "speed": 0},
+    {"at": 0, "do": "cutaway", "roofs": false, "upper": false},
+    {"at": 0, "do": "status", "text": "Radgar leaves the gallery and crosses the peristyle"},
+    {"at": 0, "do": "cast", "actors": [
+      {"id": "radgar", "kind": "citizen", "color": [0.24, 0.24, 0.27], "at": {"route": "garden_to_bath", "from_end_m": 88}}
+    ]},
+    {"at": 0, "do": "follow", "actor": "radgar", "dist_m": 22, "yaw": -75, "pitch": 40, "over": 1.5},
+    {"at": 0.3, "do": "walk", "actor": "radgar", "route": "garden_to_bath", "from_end_m": 88, "speed": 1.9},
+    {"at": 12, "do": "status", "text": "Through the kitchen door and out across the kitchen garden"},
+    {"at": 32, "do": "status", "text": "Between the two statues at the bathhouse"},
+    {"wait": "idle:radgar"},
+    {"at": 0, "do": "camera", "target": {"anchor": "cold_pool", "off": [3.0, 0.5]}, "dist_m": 14, "yaw": -45, "pitch": 40, "over": 4},
+    {"at": 0.3, "do": "status", "text": "He sets aside his clothes and gloves"},
+    {"at": 0.3, "do": "walk", "actor": "radgar", "via": [{"anchor": "cold_pool", "off": [4.6, 4.2]}], "speed": 1.0},
+    {"wait": "idle:radgar"},
+    {"at": 0.4, "do": "face", "actor": "radgar", "to": {"anchor": "cold_pool"}},
+    {"at": 1.0, "do": "kind", "actor": "radgar", "color": [0.80, 0.60, 0.46]},
+    {"at": 1.8, "do": "approach", "actor": "radgar", "to": {"anchor": "cold_pool", "off": [0, 0.4]}, "gap": 0, "speed": 0.7},
+    {"wait": "idle:radgar"},
+    {"at": 0.2, "do": "status", "text": "Into the spring-fed cold pool: under,"},
+    {"at": 0.2, "do": "sink", "actor": "radgar", "depth": 1.95, "over": 1.4},
+    {"at": 3.4, "do": "status", "text": "up once,"},
+    {"at": 3.4, "do": "sink", "actor": "radgar", "depth": 1.2, "over": 0.8},
+    {"at": 5.2, "do": "status", "text": "and under again, in silent prayer. The heated pool stays empty."},
+    {"at": 5.2, "do": "sink", "actor": "radgar", "depth": 1.95, "over": 1.4},
+    {"at": 5.2, "do": "camera", "target": {"anchor": "cold_pool", "off": [2.0, 0.5]}, "dist_m": 9, "yaw": -35, "pitch": 34, "over": 5},
+    {"at": 12, "do": "sink", "actor": "radgar", "depth": 1.2, "over": 1.0},
+    {"at": 15, "do": "end"}
+  ]
+}

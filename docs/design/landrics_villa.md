@@ -12,8 +12,6 @@ The [SVG wireframe](landrics_villa_wireframe.svg) is the layout reference. The t
 
 The [animation and event brief](landrics_villa_motion.md) gives ambient loops, four chapter-based sequences, optional vignettes and proposed route anchors for the Blender/Atlas build.
 
-The [Calderra distance-ring map](landrics_villa_distance_rings.md) shows straight-line 30- and 35-mile radii on a captured Atlas map. It narrows the search area but does not choose the villa's site.
-
 ![Top-down estate and ground-floor wireframe](landrics_villa_wireframe.svg)
 
 This is a **layout proposal**, not a settled map location or a production building plan. The diagram uses north-up and puts the lake on the right solely to make the route readable; rotate or mirror the entire estate when its site is chosen. Rectangles show relationships, not measured footprints.
