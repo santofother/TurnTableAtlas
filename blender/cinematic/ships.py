@@ -115,6 +115,7 @@ class Ships:
         return nxt.at(s2)
 
     def traffic(self, density=1.0, step=4, only=None):
+        self._placed_boats(step)
         dur = self.sec(self.f1)
         for lid, lane in self.lanes.items():
             if only and lid not in only:
@@ -132,6 +133,43 @@ class Ships:
             while t0 < dur:
                 self._lane_ship(lane, t0, step)
                 t0 += every * self.rng.uniform(0.75, 1.25)
+
+    def _placed_boats(self, step):
+        frames = sorted(set(range(self.f0, self.f1 + 1, step)) | {self.f1})
+        for key in ('moorings', 'anchored_ships', 'boats'):
+            for ship in self.man.get(key, []):
+                v = ship.get('voyage')
+                ob = bpy.data.objects.get(ship['object'])
+                if not v or ob is None:
+                    continue
+                dwell = v['dwell_s']
+                points = np.asarray(v['points'], float)
+                if not dwell:
+                    points = np.vstack((points, points[0]))
+                arcs = cine.arclen(points)
+                period = dwell + arcs[-1] / v['speed']
+                berth_heading = math.radians(ship['heading_deg'])
+                for frame in frames:
+                    elapsed = (self.sec(frame) + v['phase_s']) % period
+                    p, heading = points[0], berth_heading
+                    if elapsed >= dwell:
+                        dist = (elapsed - dwell) * v['speed']
+                        p, heading = cine.at_arc(points, arcs, dist, closed=not dwell)
+                        ahead, _ = cine.at_arc(points, arcs, dist + 0.35, closed=not dwell)
+                        behind, _ = cine.at_arc(points, arcs, dist - 0.35, closed=not dwell)
+                        delta = ahead - behind
+                        if np.linalg.norm(delta) > 1e-6:
+                            heading = math.atan2(delta[1], delta[0])
+                        if dwell:
+                            blend = min(1.0, min(dist, arcs[-1] - dist) / 1.5)
+                            heading = berth_heading + math.remainder(heading - berth_heading, math.tau) * blend
+                    ob.location = (*p, ship['pos'][2])
+                    ob.rotation_euler = (0.0, 0.0, heading)
+                    ob.keyframe_insert('location', frame=frame)
+                    ob.keyframe_insert('rotation_euler', frame=frame)
+                _unwrap_heading(ob)
+                cine.set_interp(ob)
+                self.moving.append(ob)
 
     def _lane_ship(self, lane, t0, step, kind=None, speed=None):
         ln = lane.ln

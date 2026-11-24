@@ -11,13 +11,13 @@ Points are `[x, y, z]` unless the field says 2D (`[x, y]`).
 |---|---|---|
 | `id`, `name`, `version` (=1), `model_scale` | | 1 model metre = `model_scale` real metres |
 | `extent`, `sea_level` | | plinth bounds |
-| `world_map` | `{map, pin_uv?:[u,v], settlement?, lore?}` | `pin_uv`: pin on the painted Caelora Geography map (`atlas/assets/map/Caelora_Geography.png`), uv from the top-left. `settlement`: id in `atlas/assets/map/known_world/known_world.json` (e.g. `settlement:calderra`); the Known World pin sits there, else at `pin_uv` carried over. At least one of the two; a city off Caelora has only `settlement` and no pin on the painted map. |
+| `world_map` | `{map, pin_uv?:[u,v], settlement?, lore?}` | The pin uses a settlement ID from `atlas/assets/map/known_world/known_world.json` (e.g. `settlement:calderra`). Older packages can supply `pin_uv` in painted Caelora coordinates, which the Atlas converts to Known World coordinates. |
 | `sun` | `{latitude_deg, default_day_of_year, north_offset_deg, sunrise_h, sunset_h}` | defaults for the shared sun-arc (`generator/sunarc.py`) |
 | `files` | `{model, proxies, terrain_albedo, thumb}` | package file names |
 | `street_graph` | `{nodes:[[x,y,z]], edges:[[a,b,width]]}` | one connected walkable graph (streets, quays, gate passages, country roads) |
 | `spawn_zones[]` | `{id, poly:[[x,y]], density, points:[[x,y,z]]}` | places people idle; `points` are pre-sampled walkable spots |
 | `ship_lanes[]` | `{id, points:[[x,y]], loop, kinds[], speed, every_s, dwell_s, then}` | sea paths; `then` = lane continued after `dwell_s` (arrive, wait, leave) |
-| `moorings[]`, `anchored_ships[]`, `boats[]` | `{object, kind, pos, heading_deg, scale}` | the generator's static ships (they bob) |
+| `moorings[]`, `anchored_ships[]`, `boats[]` | `{object, kind, pos, heading_deg, scale, voyage?}` | Placed ships bob and follow their voyage when present. |
 | `berths[]` | `[[x,y]]` | free water spots off the quays for arriving fleets, nearest the harbour centre first |
 | `venues[]` | see below | seats, floors, tracks, entrances |
 | `routes` | `{id: [[x,y,z]]}` | walkable polylines along the graph (`procession`) |
@@ -25,6 +25,8 @@ Points are `[x, y, z]` unless the field says 2D (`[x, y]`).
 | `landmarks[]` | `{id, label, camera:{target, dist, yaw, pitch}}` | camera presets: camera = target + dist·(cos p cos y, cos p sin y, sin p) |
 | `steam_vents[]` | `[x,y,z]` | bath steam sources |
 | `events[]` | names | events this city supports |
+
+**Boat voyages.** `voyage` contains `points:[[x,y]]`, `speed` in model metres per second, `dwell_s`, and a start offset `phase_s` in seconds. A voyage with no dwell closes from the last point back to the first. A docked voyage starts and ends at the berth and waits there for `dwell_s` each cycle. Blender and the Atlas use the same path and timing.
 
 **Venues**, common: `id, type, label, center[x,y], heading_deg, seat_tiers:[{ring:[[x,y,z]], capacity}], entrances`.
 - `arena` (colosseum): `floor_poly[[x,y]]`, `floor_z`, `beast_gates`.

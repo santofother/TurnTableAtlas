@@ -12,6 +12,28 @@ namespace Atlas.Core.Tests
         static CityManifest Fc => CityManifest.Load(Path.Combine(Repo.Cities, "fantasy_capital", "city.json"));
 
         [Fact]
+        public void PlacedBoatDocksDepartsAndReturns()
+        {
+            var voyage = new BoatVoyage(new ShipPlacement
+            {
+                HeadingDeg = 90,
+                Voyage = new BoatVoyageData
+                {
+                    Points = new[] { new[] { 0d, 0d }, new[] { 3d, 0d }, new[] { 3d, 4d }, new[] { 0d, 0d } },
+                    Speed = 1,
+                    DwellS = 60,
+                    PhaseS = 10,
+                },
+            });
+
+            Assert.Equal(0, voyage.At(49).Pos.Length2D);
+            Assert.Equal(System.Math.PI / 2, voyage.At(50).Heading, 6);
+            Assert.True(voyage.At(55).Pos.Length2D > 3);
+            Assert.Equal(0, voyage.At(voyage.Period - 10).Pos.Length2D);
+            Assert.Equal(0, voyage.At(voyage.Period + 49).Pos.Length2D);
+        }
+
+        [Fact]
         public void WalkersStayOnTheGraphAndThinOutAtNight()
         {
             var m = Fc;

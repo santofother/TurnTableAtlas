@@ -23,6 +23,40 @@ namespace Atlas.Core
         }
     }
 
+    public sealed class BoatVoyage
+    {
+        readonly BoatVoyageData _data;
+        readonly Polyline _path;
+        readonly double _berthHeading;
+
+        public BoatVoyage(ShipPlacement placement)
+        {
+            _data = placement.Voyage;
+            _path = new Polyline(Polyline.FromArray(_data.Points), _data.DwellS == 0);
+            _berthHeading = placement.HeadingDeg * Math.PI / 180;
+        }
+
+        public double Period => _data.DwellS + _path.Length / _data.Speed;
+
+        public (Vec3 Pos, double Heading) At(double time)
+        {
+            double elapsed = (time + _data.PhaseS) % Period;
+            if (elapsed < _data.DwellS) return (_path.P[0], _berthHeading);
+
+            double distance = (elapsed - _data.DwellS) * _data.Speed;
+            var (p, heading) = _path.At(distance);
+            var tangent = _path.At(distance + 0.35).Pos - _path.At(distance - 0.35).Pos;
+            if (tangent.Length2D > 1e-6) heading = Math.Atan2(tangent.Y, tangent.X);
+            if (_data.DwellS > 0)
+            {
+                double blend = Math.Clamp(Math.Min(distance, _path.Length - distance) / 1.5, 0, 1);
+                double turn = Math.IEEERemainder(heading - _berthHeading, Math.Tau);
+                heading = _berthHeading + turn * blend;
+            }
+            return (p, heading);
+        }
+    }
+
     public sealed class Ship
     {
         public int Id;

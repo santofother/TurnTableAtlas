@@ -1,7 +1,7 @@
 # Session cards
 
 One line per card; the detail is in `docs/PLAN.md` §4. Handoffs (with screenshots) are in `docs/handoffs/`.
-All eleven cards ran on 2026-11-23 in one unattended session.
+The original eleven cards ran on 2026-11-23 in one unattended session.
 
 | Card | Scope | Owns | Depends on | Status |
 |---|---|---|---|---|
@@ -16,6 +16,7 @@ All eleven cards ran on 2026-11-23 in one unattended session.
 | S8 | Atlas ambient life, EventSystem, UI | `atlas/` (life, events, UI) | S7 | DONE |
 | S9 | World map, city switching | `atlas/` (map) | S7 | DONE |
 | S10 | Generator parametrised by `generator/cities/<id>.json`; second city | `generator/`, `cities/` | S2 | DONE |
+| S13 | Calderra voyages, port shipping, Known World-only viewer | `generator/`, `cities/fantasy_capital/city.json`, `blender/cinematic/ships.py`, `atlas/`, `docs/city_schema.md` | S4, S8, S11, S12 | DONE |
 
 ## Known World round 2 (planned 2026-11-23, detail in `docs/world_map/PLAN.md`)
 

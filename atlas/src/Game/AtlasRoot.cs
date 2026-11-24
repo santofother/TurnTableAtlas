@@ -1,5 +1,5 @@
 // App shell: discovers city packages, shows the world map or a city, handles screenshots and test flags.
-//   --city=<id>        open a city directly (otherwise the world map)   --map-mode=known_world --view=CAM_03_North
+//   --city=<id>        open a city directly (otherwise the world map)   --view=CAM_03_North
 //   --hour=19.5 --speed=0.1 --landmark=forum --event=chariot_race --arc
 //   --quit-after=5     exit after N seconds (smoke tests)    --shots=3,6   save screenshots at those seconds
 //   --cities=<dir>     where the packages live (default: <repo>/cities, or ./cities next to the executable)

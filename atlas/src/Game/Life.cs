@@ -112,7 +112,7 @@ namespace Atlas
         public readonly Dictionary<string, double> ZoneOverride = new();
         readonly Dictionary<int, MeshInstance3D> _ships = new();
         readonly Stack<MeshInstance3D> _pool = new();
-        readonly List<(Node3D N, Transform3D T, float Ph, bool Small)> _staticShips = new();
+        readonly List<(Node3D Node, Transform3D Start, Vector3 Scale, float Phase, bool Small, BoatVoyage Voyage)> _placedShips = new();
         readonly List<(Node3D N, Vector3 V)> _clouds = new();
         Node3D _peopleRoot, _shipsRoot, _cloudsRoot, _ambientRoot, _labelsRoot;
         Swarm _birds;
@@ -145,8 +145,17 @@ namespace Atlas
                 _peopleRoot.AddChild(pc.S.Node);
             }
             Traffic = new ShipTraffic(_m, 7);
+            var voyages = _m.Moorings.Concat(_m.AnchoredShips).Concat(_m.Boats)
+                .Where(s => s.Voyage != null).ToDictionary(s => s.Object, s => new BoatVoyage(s));
             foreach (var mi in v.City.ByName.Values.Where(n => n.Name.ToString().StartsWith("CAP_Ship_")))
-                _staticShips.Add((mi, mi.Transform, (float)GD.RandRange(0, 100), mi.Name.ToString().Contains("boat") || mi.Name.ToString().Contains("fisher")));
+            {
+                string name = mi.Name.ToString();
+                mi.Reparent(_shipsRoot);
+                var transform = mi.Transform;
+                _placedShips.Add((mi, transform, transform.Basis.Scale, (float)GD.RandRange(0, 100),
+                    name.Contains("boat") || name.Contains("fisher"), voyages.GetValueOrDefault(name)));
+            }
+            UpdatePlacedShips();
             BuildSteam();
             BuildBirds();
             BuildLabels();
@@ -192,7 +201,7 @@ namespace Atlas
             }
             Traffic.Step(dt);
             UpdateShips();
-            BobStaticShips();
+            UpdatePlacedShips();
             UpdateBirds();
         }
 
@@ -228,12 +237,19 @@ namespace Atlas
             }
         }
 
-        void BobStaticShips()
+        void UpdatePlacedShips()
         {
             float t = (float)_t;
-            foreach (var (n, tr, ph, small) in _staticShips)
+            foreach (var (n, start, scale, ph, small, voyage) in _placedShips)
             {
                 float amp = small ? 1.4f : 1f;
+                var tr = start;
+                if (voyage != null)
+                {
+                    var (p, heading) = voyage.At(Traffic.Time);
+                    var orientation = new Basis(Vector3.Up, (float)heading);
+                    tr = new Transform3D(orientation.Scaled(scale), Geo.V(p));
+                }
                 var b = tr.Basis * new Basis(Vector3.Right, 0.03f * amp * Mathf.Sin(t * 0.8f + ph)) * new Basis(Vector3.Forward, 0.015f * amp * Mathf.Sin(t * 0.6f + ph * 1.7f));
                 n.Transform = new Transform3D(b, tr.Origin + Vector3.Up * 0.014f * amp * Mathf.Sin(t * 1.1f + ph));
             }

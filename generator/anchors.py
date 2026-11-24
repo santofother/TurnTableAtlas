@@ -11,6 +11,7 @@ from collections import deque
 import bpy
 import numpy as np
 
+import boat_routes
 import sunarc
 
 SCHEMA_VERSION = 1
@@ -583,6 +584,7 @@ def build_manifest(m, cfg, report):
     lanes, lane_report = build_ship_lanes(m, T, cfg)
     report['ship_lanes(max_depth,clearance)'] = lane_report
     ships = build_moorings(m, cfg)
+    boat_routes.build(m, T, ships['moorings'] + ships['anchored'] + ships['boats'], cfg.get('boat_traffic'))
     lights = build_night_lights(m, T, rng)
     routes = {}
     for rid, waypoints in cfg.get('routes', {}).items():

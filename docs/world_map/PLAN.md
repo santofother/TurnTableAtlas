@@ -8,7 +8,7 @@ Changes to the Atlas's 3D Known World map (built in S11). Reference images:
 - **Source:** `~/PersonalProjects/FOMSMap/KnownWorld-Map/KnownWorld.blend`, which holds the terrain (`T_TerrainData`
   heights), water, realms and lore table. `tools/bake_known_world.py` reads it (never saves it) and writes
   `atlas/assets/map/known_world/` (albedo, height, json).
-- **Atlas side:** `atlas/src/Game/WorldMap.cs`, `relief.gdshader`, `paper_map.gdshader`, the board under the map.
+- **Atlas side:** `atlas/src/Game/WorldMap.cs`, `relief.gdshader`, the board under the map and `shipping_routes.json`.
 - So **terrain, sea and border changes are edits to the blend, followed by a rebake**, and the board or table is
   Godot only. Cards that edit the blend run **one at a time**. The table card and Karn Ashur can run alongside them.
 

@@ -109,6 +109,27 @@ class ManifestTests(unittest.TestCase):
                 for a, b in zip(pts[:-1], pts[1:]):
                     self.assertLess(math.dist(a[:2], b[:2]), 2.5, rid)
 
+    def test_calderra_boat_voyages(self):
+        for _, m in self.manifests():
+            if m['id'] != 'fantasy_capital':
+                continue
+            ships = m['moorings'] + m['anchored_ships'] + m['boats']
+            x0, y0, x1, y1 = m['extent']
+            for ship in ships:
+                voyage = ship['voyage']
+                points = voyage['points']
+                self.assertGreater(len(points), 3, ship['object'])
+                self.assertTrue(all(is_pt(q, 2) and x0 <= q[0] <= x1 and y0 <= q[1] <= y1 for q in points))
+                self.assertGreater(voyage['speed'], 0)
+                self.assertGreaterEqual(voyage['phase_s'], 0)
+                if ship['kind'].startswith('moored'):
+                    self.assertGreaterEqual(voyage['dwell_s'], 45)
+                if voyage['dwell_s']:
+                    self.assertEqual(points[0], ship['pos'][:2])
+                    self.assertEqual(points[-1], points[0])
+                else:
+                    self.assertNotEqual(points[0], points[-1])
+
     def test_package_files_exist(self):
         for p, m in self.manifests():
             d = os.path.dirname(p)

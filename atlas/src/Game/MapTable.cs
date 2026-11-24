@@ -1,9 +1,4 @@
-// W1: the war table the world maps lie on, in the manner of a strategy-game map room. A walnut table top running
-// into a dark room, a carved, stepped frame with a gold inlay and brass-capped corner blocks round each map (the
-// Known World relief gets a parchment margin inside its frame), and props on the table: candles that light at night,
-// a brass compass rose, a rolled chart, wooden markers, and brass weights on the corners of the painted map.
-// Everything is sized from the map so the same builder works for both frames. World frame: Godot (x, y up, -z north),
-// sea level / map surface at y = 0, table top at y = TableY.
+// W1: the walnut war table, carved relief frame, and props surrounding the Known World.
 using System;
 using System.Collections.Generic;
 using Godot;
@@ -16,8 +11,6 @@ namespace Atlas
         static readonly Color Brass = new(0.78f, 0.58f, 0.26f), Gold = new(0.95f, 0.74f, 0.33f);
         static readonly Color Room = new(0.025f, 0.017f, 0.012f);
 
-        Node3D _kwFrame, _geoFrame;
-        StaticBody3D _kwBody, _geoBody;
         ShaderMaterial _wood, _frameWood, _darkWood;
         StandardMaterial3D _brass, _gold, _wax, _parchment;
         readonly List<(OmniLight3D L, MeshInstance3D Flame, StandardMaterial3D M, float Phase)> _candles = new();
@@ -27,8 +20,7 @@ namespace Atlas
         public int CandleCount => _candles.Count;
 
         /// <param name="kw">Known World bounds in Godot xz (position = west / north corner).</param>
-        /// <param name="geo">The painted map's rectangle in Godot xz.</param>
-        public void Build(Rect2 kw, Rect2 geo)
+        public void Build(Rect2 kw)
         {
             Name = "MapTable";
             var shader = ResourceLoader.Load<Shader>("res://shaders/map_table.gdshader");
@@ -66,29 +58,13 @@ namespace Atlas
 
             // Known World: parchment margin, then the frame
             float margin = span * 0.012f, rim = span * 0.03f;
-            _kwFrame = new Node3D { Name = "KnownWorldFrame" };
-            AddChild(_kwFrame);
+            var frame = new Node3D { Name = "KnownWorldFrame" };
+            AddChild(frame);
             var inner = kw.Grow(margin);
-            Ring(_kwFrame, kw.Grow(-0.3f), margin + 0.3f, -0.05f, TableY - 0.05f, _parchment);   // under the relief's edge
-            _kwBody = Frame(_kwFrame, inner, rim, 3.0f);
+            Ring(frame, kw.Grow(-0.3f), margin + 0.3f, -0.05f, TableY - 0.05f, _parchment);   // under the relief's edge
+            Frame(frame, inner, rim, 3.0f);
 
-            // Geography: the painted map on its own frame (the board it used to lie on)
-            float grim = Math.Max(geo.Size.X, geo.Size.Y) * 0.022f;
-            _geoFrame = new Node3D { Name = "GeographyFrame" };
-            AddChild(_geoFrame);
-            Box(_geoFrame, "Base", new Vector3(geo.Size.X + 0.2f, -TableY, geo.Size.Y + 0.2f), new Vector3(geo.GetCenter().X, TableY / 2, geo.GetCenter().Y), _darkWood);
-            _geoBody = Frame(_geoFrame, geo.Grow(0.05f), grim, Math.Max(0.6f, grim * 0.12f));
-            float wr = grim * 0.55f;
-            foreach (var (x, z) in Corners(geo.Grow(-wr * 1.6f)))
-            {
-                var wgt = new Node3D { Position = new Vector3(x, 0.03f, z) };
-                _geoFrame.AddChild(wgt);
-                Cyl(wgt, wr, wr * 0.7f, wr * 0.35f, _brass);
-                Cyl(wgt, wr * 0.3f, wr * 0.3f, wr * 0.9f, _brass, wr * 0.7f);
-                Sphere(wgt, wr * 0.32f, wr * 1.65f, _gold);
-            }
-
-            // props on the table, outside the Known World frame so they show in both modes
+            // Props sit outside the relief frame.
             var outer = inner.Grow(rim);
             float u = span * 0.01f;   // prop unit (~7 on the Known World)
             var ne = new Vector2(outer.End.X, outer.Position.Y);
@@ -101,15 +77,7 @@ namespace Atlas
             Compass(sw + new Vector2(-6 * u, 5 * u), u * 3.2f);
             Scroll(new Vector2(c.X + outer.Size.X * 0.22f, outer.End.Y + 4 * u), u);
             Markers(new Vector2(c.X - outer.Size.X * 0.28f, outer.End.Y + 4.5f * u), u);
-            GD.Print($"[Atlas] map table: frame {inner.Size.X:0}x{inner.Size.Y:0}, painted map {geo.Size.X:0}x{geo.Size.Y:0}, {_candles.Count} candles");
-        }
-
-        public void SetMode(bool knownWorld)
-        {
-            _kwFrame.Visible = knownWorld;
-            _geoFrame.Visible = !knownWorld;
-            _kwBody.CollisionLayer = knownWorld ? CityLoader.CollisionLayer : 0;
-            _geoBody.CollisionLayer = knownWorld ? 0 : CityLoader.CollisionLayer;
+            GD.Print($"[Atlas] map table: frame {inner.Size.X:0}x{inner.Size.Y:0}, {_candles.Count} candles");
         }
 
         /// <summary>Candle flicker; their light comes up with the lamps.</summary>
@@ -139,8 +107,8 @@ namespace Atlas
         }
 
         /// <summary>A stepped, carved frame round <paramref name="r"/>: plinth, moulding with a gold inlay, a raised
-        /// inner lip, and corner blocks with brass caps. Returns its collision body.</summary>
-        StaticBody3D Frame(Node3D parent, Rect2 r, float w, float h)
+        /// inner lip, and corner blocks with brass caps.</summary>
+        void Frame(Node3D parent, Rect2 r, float w, float h)
         {
             var body = new StaticBody3D { Name = "FrameCollision", CollisionLayer = CityLoader.CollisionLayer, CollisionMask = 0 };
             parent.AddChild(body);
@@ -158,7 +126,6 @@ namespace Atlas
                 Cyl(cap, cb * 0.36f, cb * 0.42f, cb * 0.08f, _brass);
                 Sphere(cap, cb * 0.2f, cb * 0.12f, _gold);
             }
-            return body;
         }
 
         /// <summary>A rectangular ring of width <paramref name="w"/> just outside <paramref name="r"/>, from y0 to y1.</summary>

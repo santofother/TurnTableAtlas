@@ -114,6 +114,15 @@ namespace Atlas.Core
         [JsonPropertyName("pos")] public double[] Pos { get; set; }
         [JsonPropertyName("heading_deg")] public double HeadingDeg { get; set; }
         [JsonPropertyName("scale")] public double Scale { get; set; }
+        [JsonPropertyName("voyage")] public BoatVoyageData Voyage { get; set; }
+    }
+
+    public class BoatVoyageData
+    {
+        [JsonPropertyName("points")] public double[][] Points { get; set; }
+        [JsonPropertyName("speed")] public double Speed { get; set; }
+        [JsonPropertyName("dwell_s")] public double DwellS { get; set; }
+        [JsonPropertyName("phase_s")] public double PhaseS { get; set; }
     }
 
     public class SeatTier
