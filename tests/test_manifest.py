@@ -1,0 +1,118 @@
+"""Every cities/<id>/city.json must satisfy the v1 contract in docs/city_schema.md."""
+import glob
+import json
+import math
+import os
+import unittest
+from collections import deque
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REQUIRED = ['id', 'name', 'version', 'model_scale', 'extent', 'world_map', 'sun', 'files', 'street_graph',
+            'spawn_zones', 'ship_lanes', 'moorings', 'venues', 'routes', 'night_lights', 'landmarks', 'events']
+EVENTS = {'gladiator_games', 'chariot_race', 'theatre_play', 'fleet_arrival', 'festival_night'}
+
+
+def is_pt(p, n=3):
+    return isinstance(p, list) and len(p) == n and all(isinstance(v, (int, float)) and math.isfinite(v) for v in p)
+
+
+class ManifestTests(unittest.TestCase):
+    def manifests(self):
+        paths = sorted(glob.glob(os.path.join(ROOT, "cities", "*", "city.json")))
+        self.assertTrue(paths, "no city packages built (run tools/build_city.sh fantasy_capital)")
+        for p in paths:
+            with open(p) as f:
+                yield p, json.load(f)
+
+    def test_required_keys_and_ids(self):
+        for p, m in self.manifests():
+            for k in REQUIRED:
+                self.assertIn(k, m, "%s: missing %s" % (p, k))
+            self.assertEqual(m['version'], 1)
+            self.assertEqual(os.path.basename(os.path.dirname(p)), m['id'])
+            self.assertTrue(set(m['events']) <= EVENTS, m['events'])
+            u, v = m['world_map']['pin_uv']
+            self.assertTrue(0 <= u <= 1 and 0 <= v <= 1)
+            s = m['sun']
+            self.assertTrue(-90 <= s['latitude_deg'] <= 90 and 1 <= s['default_day_of_year'] <= 365)
+
+    def test_street_graph_is_valid_and_connected(self):
+        for p, m in self.manifests():
+            g = m['street_graph']
+            N, E = g['nodes'], g['edges']
+            self.assertGreater(len(N), 200, p)
+            self.assertTrue(all(is_pt(n) for n in N))
+            adj = [[] for _ in N]
+            for a, b, w in E:
+                self.assertTrue(0 <= a < len(N) and 0 <= b < len(N) and a != b and w > 0)
+                d = math.dist(N[a][:2], N[b][:2])
+                self.assertLess(d, 2.5, "edge too long in %s" % p)
+                adj[a].append(b)
+                adj[b].append(a)
+            seen, q = {0}, deque([0])
+            while q:
+                u = q.popleft()
+                for v in adj[u]:
+                    if v not in seen:
+                        seen.add(v)
+                        q.append(v)
+            self.assertEqual(len(seen), len(N), "street graph not connected in %s" % p)
+
+    def test_venues(self):
+        for p, m in self.manifests():
+            types = {v['type'] for v in m['venues']}
+            self.assertTrue(types, p)
+            for v in m['venues']:
+                self.assertTrue(v['seat_tiers'], v['id'])
+                for t in v['seat_tiers']:
+                    self.assertEqual(len(t['ring']), t['capacity'])
+                    self.assertTrue(all(is_pt(q) for q in t['ring']))
+                self.assertTrue(all(is_pt(q) for q in v['entrances']))
+                if v['type'] == 'circus':
+                    self.assertGreater(len(v['track_centerline']), 20)
+                    self.assertEqual(len(v['lane_radii']), v['lanes'])
+                    self.assertGreaterEqual(len(v['start_gates']), v['lanes'])
+                if v['type'] == 'arena':
+                    self.assertGreaterEqual(len(v['floor_poly']), 8)
+                if v['type'] == 'theatre':
+                    self.assertGreaterEqual(len(v['stage']), 3)
+
+    def test_lanes_zones_lights_landmarks_routes(self):
+        for p, m in self.manifests():
+            x0, y0, x1, y1 = m['extent']
+            for ln in m['ship_lanes']:
+                self.assertGreaterEqual(len(ln['points']), 2)
+                for q in ln['points']:
+                    self.assertTrue(x0 <= q[0] <= x1 and y0 <= q[1] <= y1, (ln['id'], q))
+                if ln.get('then'):
+                    self.assertIn(ln['then'], {l['id'] for l in m['ship_lanes']})
+            for z in m['spawn_zones']:
+                self.assertTrue(z['points'], "%s: empty zone %s" % (p, z['id']))
+            kinds = {l['kind'] for l in m['night_lights']}
+            self.assertTrue(kinds <= {'window', 'lamp', 'torch', 'lighthouse'})
+            self.assertIn('lighthouse', kinds)
+            for l in m['night_lights']:
+                if l['kind'] == 'window':
+                    self.assertTrue(0 < l['order'] < 1)
+            ids = [lm['id'] for lm in m['landmarks']]
+            self.assertEqual(len(ids), len(set(ids)))
+            self.assertIn('overview', ids)
+            for lm in m['landmarks']:
+                c = lm['camera']
+                self.assertTrue(is_pt(c['target']) and c['dist'] > 0 and -90 < c['pitch'] < 90)
+            for rid, pts in m['routes'].items():
+                self.assertGreater(len(pts), 5, rid)
+                for a, b in zip(pts[:-1], pts[1:]):
+                    self.assertLess(math.dist(a[:2], b[:2]), 2.5, rid)
+
+    def test_package_files_exist(self):
+        for p, m in self.manifests():
+            d = os.path.dirname(p)
+            for key in ('model', 'proxies', 'terrain_albedo', 'thumb'):
+                if os.environ.get('SKIP_PACKAGE_FILES'):
+                    continue
+                self.assertTrue(os.path.exists(os.path.join(d, m['files'][key])), "%s: missing %s" % (p, m['files'][key]))
+
+
+if __name__ == "__main__":
+    unittest.main()

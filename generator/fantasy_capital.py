@@ -272,24 +272,36 @@ def lighten(c, k=1.08):
 # =============================================================================
 # Mesh builder (one "Col" colour per face; shared "CAP_Painted" material)
 # =============================================================================
+WINDOW_ALPHA_CENTER = (2.0, -8.0)          # lamps light in a wave spreading out from the harbour
+
+
+def window_alpha(x, y, z):
+    """Light-up order of a window face, carried in the 'Col' alpha: 1.0 = not a window, else in (0, 1).
+    A window is lit while its alpha < the scene's NightLevel. Hash + distance from the harbour -> a staggered wave."""
+    h = _hash(int(round(x * 997)), int(round(y * 991)), int(round(z * 983)) + 7)
+    d = min(1.0, math.hypot(x - WINDOW_ALPHA_CENTER[0], y - WINDOW_ALPHA_CENTER[1]) / 48.0)
+    return float(min(0.98, max(0.01, 0.6 * h + 0.4 * d)))
+
+
 class MB:
     def __init__(self):
-        self.v, self.f, self.c, self.s, self.m = [], [], [], [], []
+        self.v, self.f, self.c, self.s, self.m, self.a = [], [], [], [], [], []
 
     def vid(self, pts):
         b = len(self.v)
         self.v.extend((float(p[0]), float(p[1]), float(p[2])) for p in pts)
         return b
 
-    def face(self, idx, col, smooth=False, mat=0):
+    def face(self, idx, col, smooth=False, mat=0, alpha=1.0):
         self.f.append(tuple(idx))
         self.c.append(col)
         self.s.append(smooth)
         self.m.append(mat)
+        self.a.append(alpha)
 
-    def poly(self, pts, col, smooth=False, mat=0):
+    def poly(self, pts, col, smooth=False, mat=0, alpha=1.0):
         b = self.vid(pts)
-        self.face(range(b, b + len(pts)), col, smooth, mat)
+        self.face(range(b, b + len(pts)), col, smooth, mat, alpha)
 
     def poly_facing(self, pts, want, col, mat=0):
         n = newell(pts)
@@ -418,7 +430,11 @@ class MB:
         else:
             y = ly + o
             loc = [(lx + ww / 2, y, z), (lx - ww / 2, y, z), (lx - ww / 2, y, z + wh), (lx + ww / 2, y, z + wh)]
-        self.poly([(*L2W(cx, cy, ang, a, b), zz) for a, b, zz in loc], col)
+        pts = [(*L2W(cx, cy, ang, a, b), zz) for a, b, zz in loc]
+        alpha = 1.0
+        if col is WIN:                                     # glazed windows glow at night; slits/doors (DARK) don't
+            alpha = window_alpha(*np.mean(pts, axis=0))
+        self.poly(pts, col, alpha=alpha)
 
     def arch(self, p, u, n, z0, w, h, col=DARK, seg=6, off=0.006):
         hs = max(h - w / 2, 0.0)
@@ -443,6 +459,7 @@ class MB:
         cols = lin(np.asarray(self.c, float)[:, :3]).astype(np.float32)
         rgba = np.ones((int(lt.sum()), 4), np.float32)
         rgba[:, :3] = np.repeat(cols, lt, axis=0)
+        rgba[:, 3] = np.repeat(np.asarray(self.a, np.float32), lt)
         attr = me.color_attributes.new('Col', 'FLOAT_COLOR', 'CORNER')
         attr.data.foreach_set('color', rgba.ravel())
         me.polygons.foreach_set('material_index', np.asarray(self.m, np.int32))
@@ -535,21 +552,48 @@ def proto_pine(n=7):
 
 
 def scatter(mb, proto, pos, scl, rot, cols, alt_col=WOOD_D, smooth=True):
+    """Instance a prototype. `mb` is an MB or a ChunkedMB (each instance goes to the chunk under it)."""
     PV, PF, PC = proto
     PV = np.asarray(PV, float)
     for i in range(len(pos)):
+        tgt = mb.at(pos[i][0], pos[i][1]) if isinstance(mb, ChunkedMB) else mb
         c, s = math.cos(rot[i]), math.sin(rot[i])
         V = PV * np.asarray(scl[i], float)
         X = V[:, 0] * c - V[:, 1] * s + pos[i][0]
         Y = V[:, 0] * s + V[:, 1] * c + pos[i][1]
         Z = V[:, 2] + pos[i][2]
-        b = len(mb.v)
-        mb.v.extend(zip(X.tolist(), Y.tolist(), Z.tolist()))
+        b = len(tgt.v)
+        tgt.v.extend(zip(X.tolist(), Y.tolist(), Z.tolist()))
         for f, ci in zip(PF, PC):
-            mb.f.append(tuple(b + k for k in f))
-            mb.c.append(cols[i] if ci == 0 else alt_col)
-            mb.s.append(smooth)
-            mb.m.append(0)
+            tgt.f.append(tuple(b + k for k in f))
+            tgt.c.append(cols[i] if ci == 0 else alt_col)
+            tgt.s.append(smooth)
+            tgt.m.append(0)
+            tgt.a.append(1.0)
+
+
+class ChunkedMB:
+    """A grid of MBs (cell size in metres) so big categories become several objects: better culling/LOD in Godot."""
+    def __init__(self, name, cell=20.0):
+        self.name, self.cell, self.mbs = name, cell, {}
+
+    def key(self, x, y):
+        return (int((x + HALF) // self.cell), int((y + HALF) // self.cell))
+
+    def at(self, x, y):
+        k = self.key(x, y)
+        if k not in self.mbs:
+            self.mbs[k] = MB()
+        return self.mbs[k]
+
+    def to_objects(self, coll, mats):
+        out = []
+        for (i, j), mb in sorted(self.mbs.items()):
+            ob = mb.to_object("%s_c%d_%d" % (self.name, i, j), coll, mats)
+            if ob is not None:
+                ob["chunk"] = [i, j]
+                out.append(ob)
+        return out
 
 
 # =============================================================================
@@ -767,6 +811,16 @@ def mat_painted():
     nt.links.new(_haze(nt, col), bs.inputs['Base Color'])
     bs.inputs['Roughness'].default_value = 0.78
     _sock(bs.inputs, 'Specular IOR Level').default_value = 0.35
+    # night windows: a face whose Col alpha < NightLevel glows (alpha 1 = not a window). Cinematics keyframe these.
+    nl = _node(nt, 'ShaderNodeValue', (-600, -400))
+    nl.name = nl.label = "NightLevel"
+    nl.outputs[0].default_value = 0.0
+    gl = _node(nt, 'ShaderNodeValue', (-600, -550))
+    gl.name = gl.label = "WindowGlow"
+    gl.outputs[0].default_value = 8.0
+    lit = _math(nt, 'LESS_THAN', at.outputs['Alpha'], nl.outputs[0], loc=(-400, -400))
+    nt.links.new(_math(nt, 'MULTIPLY', lit, gl.outputs[0], loc=(-200, -450)), _sock(bs.inputs, 'Emission Strength'))
+    _sock(bs.inputs, 'Emission Color').default_value = (1.0, 0.55, 0.22, 1.0)
     return m
 
 
@@ -1078,6 +1132,7 @@ def crenellate(mb, a, b, z, side_n, inset, col=STONE, size=0.12, step=0.26):
 
 def tower(mb, T, x, y, ang, size, top_z, rng, roof_chance=0.25):
     zg = T.hs(x, y)
+    ANCHORS.setdefault('_towers', []).append((float(x), float(y), float(top_z)))
     mb.box(x, y, zg - 0.6, size, size, top_z - (zg - 0.6), ang, STONE_D, STONE_TOP)
     if rng.random() < roof_chance:
         mb.hip_roof(x, y, top_z, size, size, ang, size * 0.55, jit(rng, ROOF), ov=0.06)
@@ -1143,6 +1198,8 @@ def build_walls(T, coll, mats, fire_mb, lights):
         ang = math.atan2(u[1], u[0])
         n = N[j]
         zg = T.hs(*g)
+        ANCHORS.setdefault('_gates', []).append({'pos': (float(g[0]), float(g[1]), zg), 'u': (float(u[0]), float(u[1])),
+                                                 'n_out': (float(n[0]), float(n[1]))})
         for sgn in (-1, 1):
             p = g + u * sgn * 1.15
             tower(mb, T, p[0], p[1], ang, 1.3, zg + WALL_H + 1.4, rng, 0.0)
@@ -1405,6 +1462,26 @@ def colosseum(mb, T, cx, cy, a, b, ang_deg, H, occ):
             mb.face((bb + k, bb + k2, bt + k2, bt + k), MARBLE_D)
             mb.face((bt + k, bt + k2, bi + k2, bi + k), MARBLE_D)
     occ.ellipse(cx, cy, a + 0.7, b + 0.7, ang)
+    # anchors: two rows of seats per tread, arena floor, outer entrances, beast gates on the long axis
+    def ell(sc, t):
+        return L2W(cx, cy, ang, a * sc * math.cos(t), b * sc * math.sin(t))
+    seat_tiers = []
+    for j in range(len(steps) - 1):
+        s1, zt = steps[j]
+        s2 = steps[j + 1][0]
+        for f in (0.3, 0.75):
+            sc = s1 - (s1 - s2) * f
+            per = math.pi * (3 * (a + b) - math.sqrt((3 * a + b) * (a + 3 * b))) * sc
+            ns = int(per / 0.13)
+            seat_tiers.append({'ring': [(*ell(sc, 2 * math.pi * k / ns), zt) for k in range(ns)], 'capacity': ns})
+    ents = []
+    for t in (0.0, math.pi / 2, math.pi, 3 * math.pi / 2, math.pi / 4, 3 * math.pi / 4, 5 * math.pi / 4, 7 * math.pi / 4):
+        q = ell(1.15, t)
+        ents.append((q[0], q[1], T.hs(*q)))
+    anchor_venue('colosseum', type='arena', label='Colosseum', center=[cx, cy], heading_deg=ang_deg,
+                 floor_poly=[ell(0.6, 2 * math.pi * k / 24) for k in range(24)], floor_z=z0 + 0.1,
+                 seat_tiers=seat_tiers, entrances=ents,
+                 beast_gates=[(*ell(0.6, 0.0), z0 + 0.1), (*ell(0.6, math.pi), z0 + 0.1)])
 
 
 def u_path(r, x_start, xc, step=0.55, nsemi=16):
@@ -1727,6 +1804,21 @@ def theater(mb, T, cx, cy, face_deg, R, occ):
         p = L2W(cx, cy, ang, lx, -0.45 - 0.275)
         mb.arch(p, u, (-nb[0], -nb[1]), zmax + 0.15, 0.25, 0.45)
     occ.rect(cx, cy + 0.0, 2 * R + 1.0, 2 * R + 1.0, ang)
+    seat_tiers = []
+    for k in range(tiers):
+        ri = r0 + (R - r0) * k / tiers
+        ro = r0 + (R - r0) * (k + 1) / tiers
+        zt = zmax + 0.12 + 0.17 * (k + 1)
+        for f in (0.3, 0.75):
+            rr = ri + (ro - ri) * f
+            ns = int(math.pi * rr / 0.13)
+            pts = [L2W(cx, cy, ang, rr * math.cos(math.pi * (i + 0.5) / ns), rr * math.sin(math.pi * (i + 0.5) / ns))
+                   for i in range(ns)]
+            seat_tiers.append({'ring': [(x_, y_, zt) for x_, y_ in pts], 'capacity': ns})
+    ents = [(*L2W(cx, cy, ang, sx * (R + 0.35), 0.1), zmax) for sx in (-1, 1)] + [(*L2W(cx, cy, ang, 0, R + 0.5), zmax)]
+    anchor_venue('theatre', type='theatre', label='Theatre', center=[cx, cy], heading_deg=face_deg,
+                 stage=[L2W(cx, cy, ang, 0.95 * math.cos(math.pi * i / 12), 0.95 * math.sin(math.pi * i / 12)) for i in range(13)],
+                 stage_z=zmax + 0.12, seat_tiers=seat_tiers, entrances=ents)
 
 
 def stoa(mb, T, a, b, rng, kind):
@@ -1946,8 +2038,8 @@ def harbor_front(T, occ, avenue_occ, rng, mb, trees):
         b = at_arc(Q, s, s1)
         m = (a + b) / 2
         sv = s1 + 0.35
-        if not (avenue_occ.free(m[0], m[1]) and avenue_occ.free(a[0], a[1]) and avenue_occ.free(b[0], b[1])):
-            continue
+        if not all(avenue_occ.free(*(a + (b - a) * t)) for t in np.linspace(0.0, 1.0, 9)):
+            continue                     # FIX(S2): sample the whole stoa, not just its ends, so avenues stay open
         if dist_to_polyline(np.array([m[0]]), np.array([m[1]]), WALL_PATH)[0] < 1.4:
             continue
         if np.linalg.norm(b - a) < 1.2:
@@ -2001,6 +2093,7 @@ def build_house(mb, rng, T, cx, cy, w, d, ang, hbias=0.0):
     rt = rng.random()
     flat = rt > 0.9
     mb.box(cx, cy, zb, w, d, zt - zb, ang, wall, lighten(wall, 0.92), top=flat)
+    ANCHORS.setdefault('_houses', []).append((cx, cy, w, d, ang, zmax, zt, floors))
     if rt < 0.58:
         mb.hip_roof(cx, cy, zt, w, d, ang, min(w, d) * rng.uniform(0.26, 0.36), roof)
     elif rt < 0.9:
@@ -2088,8 +2181,10 @@ def build_city(T, coll, mats, rng_seed=2024):
                     trees.append(('cypress', q[0], q[1], T.hs(*q), rng.uniform(0.55, 0.75)))
 
     # houses in concentric rings around the harbour
-    mbh = MB()
+    mbh = ChunkedMB("CAP_Houses", 20.0)
     C = (2.0, -8.0)
+    ANCHORS['_ring_center'] = C
+    ring_streets = ANCHORS.setdefault('_ring_streets', [])
     widths = np.array([0.55, 0.65, 0.75, 0.85, 0.95, 1.1, 1.3])
     wp = np.array([0.12, 0.18, 0.2, 0.18, 0.14, 0.11, 0.07])
     wp = wp / wp.sum()
@@ -2121,13 +2216,15 @@ def build_city(T, coll, mats, rng_seed=2024):
                 trees.append(('pine' if rng.random() < 0.5 else 'cypress', cx, cy, T.hs(cx, cy), rng.uniform(0.6, 0.9)))
                 continue
             dforum = math.hypot(cx - 1.5, cy - 11.0)
-            build_house(mbh, rng, T, cx, cy, w, depth, ang, 0.18 * math.exp(-dforum / 14.0))
+            build_house(mbh.at(cx, cy), rng, T, cx, cy, w, depth, ang, 0.18 * math.exp(-dforum / 14.0))
             count += 1
+        if ring % 5 == 4:
+            ring_streets.append(r + depth + 0.15)                 # the 0.3 m gap after every 5th ring is a street
         r += depth + (0.3 if ring % 5 == 4 else 0.025)
         ring += 1
 
     objs = {}
-    mbh.to_object("CAP_Houses", coll['city'], [mats['painted']])
+    mbh.to_objects(coll['city'], [mats['painted']])
     for name, b in lm.items():
         b.to_object("CAP_LM_" + name, coll['landmarks'], [mats['painted']])
     # city trees
@@ -2136,7 +2233,9 @@ def build_city(T, coll, mats, rng_seed=2024):
     tm.to_object("CAP_CityTrees", coll['city'], [mats['painted']])
     # steam plumes
     smat = mats['steam']
-    for i, (x, y, z, sc) in enumerate(steam + [(-3.5, 13.5, 2.0, 0.6), (18.0, 20.5, 2.2, 0.6)]):
+    vents = steam + [(-3.5, 13.5, 2.0, 0.6), (18.0, 20.5, 2.2, 0.6)]
+    ANCHORS['_steam'] = [(x + 0.6 * sc, y + 0.4 * sc, z) for (x, y, z, sc) in vents]
+    for i, (x, y, z, sc) in enumerate(vents):
         me = bpy.data.meshes.new("CAP_SteamMesh_%d" % i)
         import bmesh
         bm = bmesh.new()
@@ -2400,9 +2499,9 @@ def build_countryside(T, coll, mats, seed=77):
                 if 0.1 < z < 6 and occ.free(*q):
                     trees.append(('round', q[0], q[1], z, rng.uniform(0.6, 0.9)))
     vm.to_object("CAP_Villas_Vineyards", coll, [mats['painted']])
-    tm = MB()
+    tm = ChunkedMB("CAP_Countryside_Trees", 25.0)
     plant_trees(tm, trees, rng)
-    tm.to_object("CAP_Countryside_Trees", coll, [mats['painted']])
+    tm.to_objects(coll, [mats['painted']])
     # boulders at the cliff foot
     bm_ = MB()
     rp = proto_round(6)
@@ -2536,6 +2635,7 @@ def ship_mesh(kind):
 
 
 SHIP_SCALE = 1.35
+LANE_KEEPOUT = []          # ship-lane polylines (set by apply_config) that rowboats keep clear of
 SHIPS = [
     # (kind, x, y, heading_deg, scale)
     ('galley', -21.5, -33.5, 20, 1.0), ('galley', 4.5, -15.5, 92, 0.85), ('galley', 21.0, -27.5, 160, 0.9),
@@ -2582,9 +2682,12 @@ def build_ships(T, coll, mats, seed=5):
             continue
         if any(dist_to_polyline(np.array([x]), np.array([y]), m)[0] < 1.2 for m in (W_MOLE, E_MOLE)):
             continue
+        if any(dist_to_polyline(np.array([x]), np.array([y]), ln)[0] < 1.6 for ln in LANE_KEEPOUT):
+            continue                                       # keep rowboats off the shipping lanes
         placements.append(('boat', x, y, rng.uniform(0, 360), rng.uniform(0.9, 1.1)))
         boats += 1
     for i, (kind, x, y, hd, sc) in enumerate(placements):
+        ANCHORS.setdefault('_ships', []).append(("CAP_Ship_%02d_%s" % (i, kind), kind, float(x), float(y), float(hd), float(sc)))
         ob = bpy.data.objects.new("CAP_Ship_%02d_%s" % (i, kind), meshes[kind])
         ob.location = (x, y, 0.0)
         ob.rotation_euler = (0.0, 0.0, math.radians(hd))
@@ -2689,9 +2792,16 @@ def build_scene(coll, lights_pts, fire_obj=None):
 # =============================================================================
 # Orchestration
 # =============================================================================
+def apply_config(cfg):
+    """Apply a city config (generator/cities/<id>.json) to the module-level layout before build_all()."""
+    global LANE_KEEPOUT
+    LANE_KEEPOUT = [ln['points'] for ln in cfg.get('ship_lanes', []) if not ln.get('loop')]
+
+
 def build_all(stages=("terrain", "walls", "city", "countryside", "ships", "scene"), remove_defaults=True):
     t0 = time.time()
     stats = {}
+    ANCHORS.clear()
     if remove_defaults:
         stats["removed_defaults"] = remove_factory_defaults()
     clear_previous()
@@ -2713,6 +2823,9 @@ def build_all(stages=("terrain", "walls", "city", "countryside", "ships", "scene
     stats['terrain_secs'] = round(time.time() - t0, 2)
     fire = MB()
     lights = []
+    ANCHORS['_T'] = T
+    ANCHORS['_lighthouses'] = lights
+    ANCHORS['_root'] = root
     if "terrain" in stages:
         build_terrain(T, coll['terrain'], mats)
     if "walls" in stages:
