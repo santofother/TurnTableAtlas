@@ -442,19 +442,19 @@ class Fjords:
 
 
 # ---------------------------------------------------------------- mesh update
-def shift_mesh(ob, dz_world_fn, box_list):
-    """z = z0 + local dz at each vertex (z0 kept in the "w2_z0" point attribute)."""
+def shift_mesh(ob, dz_world_fn, box_list, baseline_attr="w2_z0"):
+    """z = z0 + local dz at each vertex, with a separate baseline attribute per edit."""
     me = ob.data
     n = len(me.vertices)
     co = np.empty(n * 3, dtype=np.float32)
     me.vertices.foreach_get("co", co)
     co = co.reshape(-1, 3)
-    att = me.attributes.get("w2_z0")
+    att = me.attributes.get(baseline_attr)
     if att is None:
         if DRY:
             z0 = co[:, 2].copy()
         else:
-            att = me.attributes.new("w2_z0", "FLOAT", "POINT")
+            att = me.attributes.new(baseline_attr, "FLOAT", "POINT")
             att.data.foreach_set("value", co[:, 2])
             z0 = co[:, 2].copy()
     else:
@@ -677,4 +677,5 @@ def main():
     log("saved", bpy.data.filepath)
 
 
-main()
+if __name__ == "__main__":
+    main()

@@ -77,17 +77,6 @@ def save_png(arr, path, w, h):
     bpy.data.images.remove(img)
 
 
-def resample(a, w, h):
-    """Area-average resample (h0, w0, c) -> (h, w, c) for downscaling."""
-    h0, w0, c = a.shape
-    ys = np.linspace(0, h0, h + 1).astype(int)
-    xs = np.linspace(0, w0, w + 1).astype(int)
-    cs = np.cumsum(np.cumsum(np.pad(a, ((1, 0), (1, 0), (0, 0))), 0), 1)
-    tot = cs[ys[1:]][:, xs[1:]] - cs[ys[:-1]][:, xs[1:]] - cs[ys[1:]][:, xs[:-1]] + cs[ys[:-1]][:, xs[:-1]]
-    area = np.outer(np.diff(ys), np.diff(xs))[..., None]
-    return tot / area
-
-
 def fit_affine(src, dst):
     """Least-squares 2D affine: dst = A @ [u, v, 1]."""
     X = np.array([[u, v, 1.0] for u, v in src])
@@ -219,10 +208,10 @@ def main():
     # elevation
     td = bpy.data.images["T_TerrainData"]
     td.reload()
-    elev = pixels(td)[..., 2] * 10000.0
-    hw = elev.shape[1]
-    hh = round(hw * elev.shape[0] / elev.shape[1])
-    e = resample(elev[..., None], hw, hh)[..., 0]
+    # The Atlas uses the native height grid. Summed-area resampling here used to
+    # lose hundreds of metres to float32 cancellation far from the image origin.
+    e = pixels(td)[..., 2] * 10000.0
+    hh, hw = e.shape
     emin, emax = float(e.min()), float(e.max())
     log(f"elevation {emin:.0f} .. {emax:.0f} m, {hw}x{hh}")
     q = np.round((e - emin) / (emax - emin) * 65535).astype(np.uint32)

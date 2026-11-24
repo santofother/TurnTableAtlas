@@ -105,6 +105,9 @@ namespace Atlas
                     Check(map.Table != null && map.Table.CandleCount >= 6 && map.Tod.Room != null,   // FIX(W1)
                           $"map table: frame, props, {map.Table?.CandleCount} candles, dark room");
                     map.WeatherControls.KindButton(WeatherKind.Fair).EmitSignal(BaseButton.SignalName.Pressed);
+                    if (!Args.Has("map-mode"))
+                        Check(map.Mode == MapMode.KnownWorld, "city returns to Known World by default");
+                    map.SetMode(MapMode.Geography);
                     _mapTarget = map.Rig.Target;
                     map.SetMode(MapMode.KnownWorld);
                     _step++; break;

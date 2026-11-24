@@ -21,7 +21,7 @@ namespace Atlas
     public partial class WorldMap : Node3D
     {
         // kept between visits (the map is rebuilt each time a city closes)
-        public static MapMode LastMode = MapMode.Geography;
+        public static MapMode LastMode = MapMode.KnownWorld;
         static readonly Dictionary<MapMode, (Vector3 T, float Y, float P, float D)> LastCam = new();
         static double _lastHour = 16.5;
         static Texture2D _geoTex, _kwTex;
