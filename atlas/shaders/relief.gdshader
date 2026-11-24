@@ -11,6 +11,7 @@ uniform sampler2D height_tex : filter_linear, repeat_disable;   // blend units, 
 uniform vec2 size = vec2(685.0, 357.0);                          // world units the mesh spans (x, z)
 uniform vec2 texel = vec2(0.000292, 0.00056);
 uniform float land_lift = 0.0;                                   // keeps a hair of land above the water line
+uniform vec4 hole = vec4(2.0);                                   // uv rect (u0, v0, u1, v1) a hero patch covers (W5)
 
 varying vec3 wpos;
 varying float hraw;
@@ -24,6 +25,8 @@ float land(vec2 uv) { return max(textureLod(height_tex, uv, 0.0).r, 0.0); }
 void vertex() {
     hraw = textureLod(height_tex, UV, 0.0).r;
     VERTEX.y = hraw > 0.0 ? hraw + land_lift : 0.0;
+    // vertices under a hero patch sink out of sight; the patch meets the ones on the rect's edge exactly
+    if (UV.x > hole.x && UV.x < hole.z && UV.y > hole.y && UV.y < hole.w) VERTEX.y = -1.0;
     wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 }
 

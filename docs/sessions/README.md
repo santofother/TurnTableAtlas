@@ -27,4 +27,4 @@ The original eleven cards ran on 2026-11-23 in one unattended session.
 | W2 | Terrain: Oravian Expanse mountains, Dovaran Crown fjords (blend) | none | DONE |
 | W3 | Fix sea colour round Dovaran Crown | W2 | DONE |
 | W4 | Salmara–Calderra shared border, no no-man's-land | W2 | DONE |
-| W5 | Karn Ashur matches the concept (map model; city package later) | W2 if terrain | TODO |
+| W5 | Karn Ashur matches the concept (map model; city package later) | W2 if terrain | DONE (a); (b) open |
