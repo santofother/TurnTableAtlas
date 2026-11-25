@@ -55,6 +55,16 @@ The naming supports drawing the **east toll and its hostel** as a local service 
 
 The compositions use approximate terrain and footprints. The [generation prompts](concepts/generation-prompts.md) record the visual choices for each study.
 
+## Expanded Valdora studies
+
+The larger studies develop Corivessa as a capital with several districts below the palace, the marsh road as a long route across an extensive coastal lowland, and Corivessa Port as a regional trading city with multiple working quays. The original studies give closer views of the gate, road, and old waterfront. Population, the exact footprints and the navigability of the Thennara at the Gate remain open.
+
+- [Expanded Corivessa and the Great Gate](scale-studies/01-corivessa-great-gate-expanded.png)
+- [Expanded marsh country and the Calderran border road](scale-studies/02-valdoran-marsh-country-expanded.png)
+- [Expanded Corivessa Port](scale-studies/03-corivessa-port-expanded.png)
+
+[ImageGen prompts and original image references](scale-studies/generation-prompts.md)
+
 ## First image set
 
 | Image | Composition and continuity check |
