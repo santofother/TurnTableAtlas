@@ -168,6 +168,10 @@ namespace Atlas
                           $"the map shares the city's weather ({root.Weather.Kind}, cloud {root.Weather.Current.Coverage:0.00})");
                     Check(map.Table != null && map.Table.CandleCount >= 6 && map.Tod.Room != null,   // FIX(W1)
                           $"map table: frame, props, {map.Table?.CandleCount} candles, dark room");
+                    Check(Mathf.IsEqualApprox(map.Rig.Yaw, -90f), $"the Known World opens square to the table (yaw {map.Rig.Yaw:0.0}°)");
+                    map.Rig.Snap(map.Rig.Target, -40f, map.Rig.Pitch, map.Rig.Dist);
+                    map.Rig._UnhandledInput(new InputEventKey { Keycode = Key.C, Pressed = true });
+                    Check(Mathf.IsEqualApprox(map.Rig.GoalYaw, -90f), $"C returns to the home view (heading for {map.Rig.GoalYaw:0.0}°)");
                     var sunC = map.SunControls;
                     int noon0 = (int)SunArc.Position(map.Tod.Latitude, map.Tod.DayOfYear, 12).Elevation;
                     if (sunC != null) { sunC.Latitude.Value = 10; sunC.ShowPath.ButtonPressed = true; }

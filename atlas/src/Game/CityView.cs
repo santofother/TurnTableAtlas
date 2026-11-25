@@ -43,7 +43,8 @@ namespace Atlas
             Rig = new TurntableCamera { Name = "Rig" };
             AddChild(Rig);
             var ov = M.Landmarks.FirstOrDefault(l => l.Id == "overview") ?? M.Landmarks[0];
-            Rig.Snap(Geo.V(ov.Camera.Target), (float)ov.Camera.Yaw, (float)ov.Camera.Pitch, (float)ov.Camera.Dist * 0.85f);
+            Rig.Home = new CameraPreset { Target = ov.Camera.Target, Yaw = ov.Camera.Yaw, Pitch = ov.Camera.Pitch, Dist = ov.Camera.Dist * 0.85 };
+            Rig.Snap(Geo.V(Rig.Home.Target), (float)Rig.Home.Yaw, (float)Rig.Home.Pitch, (float)Rig.Home.Dist);
             Life = new Life { Name = "Life" };
             AddChild(Life);
             Life.Build(this);

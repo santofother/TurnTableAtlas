@@ -1,6 +1,6 @@
 // Turntable camera: orbit (left drag), pan (right/middle drag), eased zoom (wheel / trackpad scroll / pinch / Q E),
 // W S raise and lower the camera, A D orbit, auto-rotate (R), free-fly (F: W S up/down, A D strafe,
-// Q E forward/back, right drag to look), smooth landmark jumps. Never clips into the proxies.
+// Q E forward/back, right drag to look), C returns to the home view, smooth landmark jumps. Never clips into the proxies.
 // macOS sends trackpad and Magic Mouse scrolling as InputEventPanGesture, not wheel buttons, so that zooms too.
 using System;
 using Atlas.Core;
@@ -13,6 +13,10 @@ namespace Atlas
         public Camera3D Cam { get; private set; }
         public bool AutoRotate;
         public bool FreeFly { get; private set; }
+        /// <summary>The view C (and the Centre view menu entries) returns to.</summary>
+        public CameraPreset Home;
+        /// <summary>The yaw the camera is heading for: a flight's end while one is under way.</summary>
+        public float GoalYaw => _flyT < 1.0 ? _flyTo.Y : _tYaw;
         public float MinDist = 2.0f, MaxDist = 170f, MinPitch = 4f, MaxPitch = 89f;
         public Vector3 Target;
         public float Yaw = -90f, Pitch = 35f, Dist = 90f;            // what is shown
@@ -49,6 +53,11 @@ namespace Atlas
             _flyTo = (to, yaw, (float)p.Pitch, (float)p.Dist);
             _flyT = 0.0;
             _flyDur = seconds;
+        }
+
+        public void Recentre()
+        {
+            if (Home != null) FlyTo(Home);
         }
 
         /// <summary>Keep looking at a moving point (an actor in a scene): the orbit's target eases after it.</summary>
@@ -126,6 +135,7 @@ namespace Atlas
             {
                 if (k.Keycode == Key.R) AutoRotate = !AutoRotate;
                 if (k.Keycode == Key.F) ToggleFreeFly();
+                if (k.Keycode == Key.C && !k.IsCommandOrControlPressed()) Recentre();
             }
         }
 

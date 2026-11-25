@@ -150,10 +150,9 @@ namespace Atlas
                 if (!_kw.Cameras.Any(c => c.Id == e.ViewId)) _kw.Cameras.Add(e.View());
             BuildOverlay();
             FillViews();
+            Rig.Home = _kw.HomeView();
             if (_lastCamera is { } last) Rig.Snap(last.Target, last.Yaw, last.Pitch, last.Distance);
-            else if (_kw.Cameras.FirstOrDefault() is { } overview)
-                Rig.Snap(Geo.V(overview.Target), (float)overview.Yaw, (float)overview.Pitch, (float)overview.Dist);
-            else Rig.Snap(new Vector3(cx, 0, -cy), -90f, 58f, bounds.Size.X);
+            else Rig.Snap(Geo.V(Rig.Home.Target), (float)Rig.Home.Yaw, (float)Rig.Home.Pitch, (float)Rig.Home.Dist);
             if (Args.Has("view")) FlyToView(Args.Get("view"), 0.01);
             if (Args.Get("orbit") is { } orbit)   // --orbit=x,y,z,yaw,pitch,dist (blend xy, height in units): a fixed shot
             {
@@ -482,6 +481,7 @@ namespace Atlas
             if (_views == null) return;
             _views.Clear();
             _views.AddItem("Views…");
+            _views.AddItem("Centre view (C)");
             foreach (var v in _kw.Cameras) _views.AddItem(v.Name);
             _views.Select(0);
         }
@@ -642,7 +642,8 @@ namespace Atlas
             _views.ItemSelected += i =>
             {
                 if (i <= 0) return;
-                Rig.FlyTo(_kw.Cameras[(int)i - 1].Preset);
+                if (i == 1) Rig.Recentre();
+                else Rig.FlyTo(_kw.Cameras[(int)i - 2].Preset);
                 _views.Select(0);
             };
             _weatherBtn = new Button { ToggleMode = true, FocusMode = Control.FocusModeEnum.None, CustomMinimumSize = new Vector2(150, 0) };
@@ -690,7 +691,7 @@ namespace Atlas
             row.AddChild(names);
             _ui.AddChild(panel);
 
-            var hint = new Label { Text = "Drag: orbit · Right-drag: pan · Scroll / Q E: zoom · W S: up/down · A D: orbit · Double-click: focus · F: free-fly" };
+            var hint = new Label { Text = "Drag: orbit · Right-drag: pan · Scroll / Q E: zoom · W S: up/down · A D: orbit · Double-click: focus · C: centre view · F: free-fly" };
             hint.AddThemeFontSizeOverride("font_size", 13);
             hint.AddThemeColorOverride("font_color", new Color(1, 1, 1, 0.75f));
             hint.AddThemeConstantOverride("outline_size", 5);

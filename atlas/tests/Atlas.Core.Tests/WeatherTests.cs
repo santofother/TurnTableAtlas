@@ -123,6 +123,18 @@ namespace Atlas.Core.Tests
         }
 
         [Fact]
+        public void HomeViewIsNorthUpOverTheMiddleOfTheMap()
+        {
+            var kw = Kw;
+            var home = kw.HomeView();
+            var (u, v) = kw.XyToUv(home.Target[0], home.Target[1]);
+            Assert.Equal(0.5, u, 9); Assert.Equal(0.5, v, 9);
+            Assert.Equal(-90, home.Yaw);
+            Assert.Equal(kw.Cameras[0].Pitch, home.Pitch);
+            Assert.Equal(kw.Cameras[0].Dist, home.Dist);
+        }
+
+        [Fact]
         public void EveryCityPackageLandsOnBothMaps()
         {
             var kw = Kw;

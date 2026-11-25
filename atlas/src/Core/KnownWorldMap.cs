@@ -84,6 +84,20 @@ namespace Atlas.Core
         /// <summary>Height in blend units, exaggerated as in the blend (sea level 0).</summary>
         public double Units(double metres) => metres / UnitM * Exaggeration;
 
+        /// <summary>The opening view: square to the table (north up), aimed at the middle of the map,
+        /// at the pitch and distance of the blend's overview camera.</summary>
+        public CameraPreset HomeView()
+        {
+            var overview = Cameras.FirstOrDefault();
+            return new CameraPreset
+            {
+                Target = new[] { BoundsXy[0] + Width / 2, BoundsXy[1] + Depth / 2, 0.0 },
+                Yaw = -90,
+                Pitch = overview?.Pitch ?? 58,
+                Dist = overview?.Dist ?? Width,
+            };
+        }
+
         public Place Settlement(string id) =>
             id == null ? null : Settlements.FirstOrDefault(s => s.Id == id || s.Id == "settlement:" + id);
 
