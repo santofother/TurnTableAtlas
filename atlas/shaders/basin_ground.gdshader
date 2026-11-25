@@ -6,6 +6,7 @@ render_mode diffuse_burley, specular_schlick_ggx;
 
 uniform sampler2D basin_tex : source_color, filter_linear_mipmap_anisotropic, repeat_disable;
 uniform sampler2D albedo_tex : source_color, filter_linear_mipmap, repeat_disable;
+uniform sampler2D relief_height : filter_linear, repeat_disable;
 uniform vec2 world_min;     // map xz of the albedo's top-left
 uniform vec2 world_size;
 uniform vec2 centre;        // the settlement (x, z)
@@ -37,7 +38,7 @@ void fragment() {
     // the ring: desert and sand at the feet, red rock on the steep and the high ground, snow on the highest
     float n = fbm(l * 9.0);
     vec3 desert = mix(lin(vec3(0.80, 0.62, 0.42)), lin(vec3(0.72, 0.54, 0.37)), smoothstep(0.35, 0.65, n));
-    vec3 sand = mix(lin(vec3(0.92, 0.67, 0.38)), lin(vec3(0.84, 0.56, 0.30)), 0.5 + 0.5 * sin(dot(l, vec2(0.78, 0.62)) * 420.0 + 6.0 * n));
+    vec3 sand = mix(lin(vec3(0.92, 0.67, 0.38)), lin(vec3(0.84, 0.56, 0.30)), 0.3 + 0.4 * fbm(l * 5.0 + 6.0 * n));
     vec3 rock = mix(lin(vec3(0.66, 0.36, 0.24)), lin(vec3(0.78, 0.50, 0.34)), 0.5 + 0.5 * sin(m / 70.0 + 5.0 * n));
     vec3 col = mix(desert, sand, smoothstep(700.0, 900.0, m) * (1.0 - smoothstep(1300.0, 1700.0, m)) * 0.7);
     col = mix(col, rock, max(smoothstep(0.25, 0.55, slope), smoothstep(1300.0, 1900.0, m)));
@@ -49,11 +50,18 @@ void fragment() {
     col = mix(own, col, smoothstep(0.86 + 0.05 * (n - 0.5), 1.0, rim));
     // the ring hands over to the map's own colour, a little warmed, then to the map itself
     float box = pow(pow(abs(l.x), 4.0) + pow(abs(l.y), 4.0), 0.25);
-    vec3 warm = mix(base, base * vec3(1.06, 0.97, 0.86), 0.6);
-    float ring_in = half_size * 1.02, ring_mid = mix(ring_in, blend_out, 0.35);   // keep the edges in order at any scale
-    col = mix(col, mix(col, warm, 0.55), smoothstep(ring_in, ring_mid, box));
-    col = mix(col, base, smoothstep(ring_mid, blend_out, box));
-    ALBEDO = col * cloud_shadow(wpos);
-    ROUGHNESS = 0.92;
-    SPECULAR = 0.2;
+    float outer = smoothstep(half_size * 0.93, blend_out, box);
+    // The regional crop belts follow the water into the foothills.
+    float irrigated = smoothstep(0.012, 0.085, base.g - base.r);
+    outer = max(outer, irrigated * smoothstep(0.93, 1.18, rim));
+    float grain = mix(0.94, 1.05, vn(wpos.xz * 3.0) * 0.6 + vn(wpos.xz * 11.0) * 0.4);
+    col = mix(col, base * grain, outer);
+    vec2 dt = 1.0 / vec2(textureSize(relief_height, 0));
+    float dx = texture(relief_height, map_uv + vec2(dt.x, 0)).r - texture(relief_height, map_uv - vec2(dt.x, 0)).r;
+    float dz = texture(relief_height, map_uv + vec2(0, dt.y)).r - texture(relief_height, map_uv - vec2(0, dt.y)).r;
+    vec3 regional_normal = normalize(vec3(-dx / (2.0 * dt.x * world_size.x), 1.0, -dz / (2.0 * dt.y * world_size.y)));
+    NORMAL = normalize((VIEW_MATRIX * vec4(mix(wnrm, regional_normal, outer), 0.0)).xyz);
+    ALBEDO = col * cloud_shadow(wpos) * mix(1.0, 0.7, outer * cloud_wet);
+    ROUGHNESS = mix(0.92, mix(0.9, 0.5, cloud_wet), outer);
+    SPECULAR = mix(0.2, 0.25, outer);
 }

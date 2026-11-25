@@ -130,9 +130,9 @@ namespace Atlas.Core.Tests
             var d = HighDunesData.Load(Path.Combine(Repo.Root, "atlas", "assets", "map", "known_world", "high_dunes.json"));
             var r = new HighDunesRegion(d, UnitM, Exag);
             r.LinkOutlet(s.OutletEnd);
-            r.LinkRoad(s.RoadEnd, s.Contains);
+            r.LinkRoad(s.RoadEnd, s.OnPlinth);
             var before = (float[])a.Clone();
-            r.EditHeights(a, w, h, Bounds, s.Contains);
+            r.EditHeights(a, w, h, Bounds, s.OnPlinth);
             Assert.Equal(5, r.Rivers.Count);                                                  // the outlet's link and four traces
             foreach (var run in r.Rivers)
             {
@@ -148,13 +148,13 @@ namespace Atlas.Core.Tests
                 for (int i = 0; i < w; i++)
                 {
                     double x = Bounds[0] + i / (double)(w - 1) * 685, y = Bounds[3] - j / (double)(h - 1) * 357;
-                    if (s.Contains(x, y)) { Assert.Equal(before[j * w + i], a[j * w + i]); continue; }
+                    if (s.OnPlinth(x, y)) { Assert.Equal(before[j * w + i], a[j * w + i]); continue; }
                     if (r.RegionWeight(x, y) >= 1) maxElsewhere = Math.Max(maxElsewhere, r.M(a[j * w + i]));
                 }
             Assert.True(maxElsewhere <= d.SummitCapM + 1, $"{maxElsewhere:0} m");
             // villages along the valleys with dry ground between them, and the region's people
             var rs = new ReliefSampler(a, w, h, Bounds, 1024, 534);
-            r.PlaceSettlements((x, y) => r.M(rs.Fine(x, y)), s.Contains);
+            r.PlaceSettlements((x, y) => r.M(rs.Fine(x, y)), s.OnPlinth);
             Assert.True(r.Villages.Count > 150, $"{r.Villages.Count} villages");
             foreach (var v in r.Villages)
                 Assert.True(r.Villages.Count(o => Math.Abs(o.X - v.X) + Math.Abs(o.Y - v.Y) < 0.15) == 1, "villages crowd each other");

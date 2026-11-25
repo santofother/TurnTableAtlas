@@ -142,11 +142,13 @@ namespace Atlas.Core
 
         /// <summary>Grade, carve and cap the relief (blend units, w x h, row 0 to the north) in place. `skip` marks the
         /// hero patches (their own ground replaces the relief there).</summary>
-        public void EditHeights(float[] h, int w, int hh, double[] bounds, Func<double, double, bool> skip)
+        public void EditHeights(float[] h, int w, int hh, double[] bounds, Func<double, double, bool> skip,
+                                Func<double, double, double?> basinMetres = null)
         {
             double x0 = bounds[0], y0 = bounds[1], x1 = bounds[2], y1 = bounds[3];
             double px = (x1 - x0) / (w - 1), py = (y1 - y0) / (hh - 1);
             double Hm(double x, double y) => M(Bilinear(h, w, hh, (x - x0) / px, (y1 - y) / py));
+            double Surface(double x, double y) => basinMetres?.Invoke(x, y) ?? Hm(x, y);
             // 1. the other summits of the massif stay below the great peak
             var (rx0, ry0, rx1, ry1) = Bounds(_region, 2);
             double cap = D.SummitCapM, knee = cap - 380;
@@ -173,13 +175,13 @@ namespace Atlas.Core
                 var bed = new double[pts.Length];
                 double first = double.NaN;
                 for (int k = 0; k < pts.Length && double.IsNaN(first); k++)
-                    if (!skip(pts[k].X, pts[k].Y)) first = Math.Max(Hm(pts[k].X, pts[k].Y), 0);
+                    if (!skip(pts[k].X, pts[k].Y)) first = Math.Max(Surface(pts[k].X, pts[k].Y), 0);
                 if (double.IsNaN(first)) continue;
                 double run = first, uphill = 0, carve = 0;
                 (double X, double Y) upAt = pts[0];
                 for (int k = 0; k < pts.Length; k++)
                 {
-                    double m = skip(pts[k].X, pts[k].Y) ? run : Math.Max(Hm(pts[k].X, pts[k].Y), 0);
+                    double m = skip(pts[k].X, pts[k].Y) ? run : Math.Max(Surface(pts[k].X, pts[k].Y), 0);
                     if (m - run > uphill) { uphill = m - run; upAt = pts[k]; }
                     run = Math.Min(run, m);
                     bed[k] = run - depth * (k == 0 ? 0 : 1);
@@ -283,7 +285,7 @@ namespace Atlas.Core
                 for (int k = 0; k + 1 < r.Pts.Length; k++)
                 {
                     var a = r.Pts[k]; var b = r.Pts[k + 1];
-                    double margin = r.Seasonal ? 0.15 : 0.7;
+                    double margin = r.Seasonal ? 0.7 : 1.5;
                     int ia = Math.Max(i0, (int)((Math.Min(a.X, b.X) - margin - x0) / px)), ib = Math.Min(i1, (int)((Math.Max(a.X, b.X) + margin - x0) / px));
                     int ja = Math.Max(j0, (int)((y1 - Math.Max(a.Y, b.Y) - margin) / py)), jb = Math.Min(j1, (int)((y1 - Math.Min(a.Y, b.Y) + margin) / py));
                     for (int j = ja; j <= jb; j++)
@@ -328,14 +330,18 @@ namespace Atlas.Core
                     }
                     // green farm belts along the perennial rivers (and the narrow valleys up the massif)
                     double dp = dPer[o];
-                    if (dp < 0.7)
+                    if (dp < 1.5 || dWadi[o] < 0.7)
                     {
                         bool belt = InBelt(x, y);
-                        double reach = belt ? 0.55 : 0.2;
+                        double reach = belt ? 1.45 : 0.88;
+                        double grade = Hyp(heightM(x + px, y) - hm, heightM(x, y + py) - hm) / (px * UnitM);
+                        double tillable = (1 - SmoothStep(0.06, 0.20, grade)) * (1 - SmoothStep(1950, 2400, hm));
                         double g = (1 - SmoothStep(reach * 0.45, reach, dp + 0.08 * (n1 - 0.5))) * (hm < 2300 ? 1 : 0);
-                        double patch = Fbm(x * 14, y * 14, 2, 9);
-                        double fr = patch > 0.62 ? 0.78 : patch > 0.45 ? 0.52 : 0.38, fg = patch > 0.62 ? 0.70 : patch > 0.45 ? 0.62 : 0.52, fb = patch > 0.62 ? 0.34 : 0.24;
-                        Mix(fr, fg, fb, g * (belt ? 0.85 : 0.7));
+                        double well = (1 - SmoothStep(0.15, 0.65, dWadi[o])) * SmoothStep(0.38, 0.66, n1);
+                        g = Math.Max(g, well) * tillable;
+                        double patch = Fbm(Math.Floor(x * 7 + y * 2), Math.Floor(y * 10 - x * 3), 2, 9);
+                        double fr = patch > 0.62 ? 0.72 : patch > 0.45 ? 0.45 : 0.30, fg = patch > 0.62 ? 0.70 : patch > 0.45 ? 0.62 : 0.52, fb = patch > 0.62 ? 0.34 : 0.24;
+                        Mix(fr, fg, fb, g * 0.94);
                     }
                     // the rivers themselves, the dry wadi's bed
                     if (dRiv[o] < 0.2) Mix(0.20, 0.44, 0.54, 1 - SmoothStep(0.05, 0.13, dRiv[o]));

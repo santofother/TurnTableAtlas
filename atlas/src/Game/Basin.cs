@@ -62,10 +62,10 @@ namespace Atlas
         public static KnownWorldMap.View View(BasinSite s)
         {
             var (x, y) = s.KmToWorld(-0.6, 0.4);
-            return new() { Id = ViewId, Name = "Karn Ashur", Target = new[] { x, y, s.GroundUnits(x, y) }, Yaw = -70, Pitch = 31, Dist = 10.5 };
+            return new() { Id = ViewId, Name = "Karn Ashur", Target = new[] { x, y, s.GroundUnits(x, y) }, Yaw = -84, Pitch = 34, Dist = 18.5 };
         }
 
-        public void Build(BasinSite site, CityManifest m, KnownWorldMap kw, Texture2D albedo)
+        public void Build(BasinSite site, CityManifest m, KnownWorldMap kw, Texture2D albedo, Texture2D reliefHeight)
         {
             Name = "Basin_" + m.Id;
             S = site; M = m;
@@ -79,6 +79,7 @@ namespace Atlas
             _ground = new ShaderMaterial { Shader = ResourceLoader.Load<Shader>("res://shaders/basin_ground.gdshader") };
             _ground.SetShaderParameter("basin_tex", c.Albedo);
             _ground.SetShaderParameter("albedo_tex", albedo);
+            _ground.SetShaderParameter("relief_height", reliefHeight);
             _ground.SetShaderParameter("world_min", new Vector2((float)kw.BoundsXy[0], -(float)kw.BoundsXy[3]));
             _ground.SetShaderParameter("world_size", new Vector2((float)kw.Width, (float)kw.Depth));
             _ground.SetShaderParameter("centre", new Vector2((float)S.Cx, -(float)S.Cy));

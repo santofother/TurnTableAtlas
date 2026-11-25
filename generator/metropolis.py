@@ -319,16 +319,16 @@ class Ground:
             w = (-(X - cx) * math.sin(a) + (Y - cy) * math.cos(a)) / (ms['r_km'][1] * KM)
             q = np.hypot(u, w) * (1.0 + 0.34 * (fc.fbm(Xk * 2.2 + 7, Yk * 2.2, 4, 21) - 0.5))
             top = ms['top_m'] + 14.0 * (fc.fbm(Xk * 3, Yk * 3, 2, 22) - 0.5)
-            e = smoothstep(0.8, 1.15, q) ** 0.7 * 4.0
-            e = (np.floor(e) + smoothstep(0.55, 0.95, e - np.floor(e))) / 4.0
+            e = smoothstep(0.44, 1.55, q + 0.08 * np.sin(3 * u + w))
             mesa = top - (top - 900.0) * e
             valley = np.maximum(valley, mesa)
         # the high col between the peaks, behind the basin
         nr = LAY['north_ridge']
-        d, _ = seg_nearest(X, Y, np.array(nr['xy']))
+        d, along = seg_nearest(X, Y, np.array(nr['xy']))
+        crest = np.interp(along, cumlen(np.array(nr['xy'])), nr['crest_m']) if 'crest_m' in nr else nr['top_m']
         t = np.clip(d / (nr['half_km'] * KM), 0.0, 1.0)
         rr = ridged(Xk / 1.3 + 4.0, Yk / 1.3, 6, 31)
-        ridge = 900.0 + (nr['top_m'] - 900.0) * (1.0 - t) ** 1.25 + 420.0 * (rr - 0.42) * np.sin(np.pi * t) * (1 - 0.5 * t)
+        ridge = 900.0 + (crest - 900.0) * (1.0 - t) ** 1.25 + 420.0 * (rr - 0.42) * np.sin(np.pi * t) * (1 - 0.5 * t)
         valley = smax(valley, ridge, 60.0)
         # the two peaks: a cliff band at the foot, concave flanks, arêtes and gullies from warped ridged noise
         mtn = np.full(X.shape, -1e4)
@@ -372,6 +372,15 @@ class Ground:
         w = cm * smoothstep(1300.0, 1420.0, mtn) * (1.0 - smoothstep(2100.0, 2450.0, mtn)) * 0.55
         mtn = mtn + (stepped - mtn) * w
         H = smax(valley, mtn, 90.0)
+        # A broad north-facing saddle descends to the coast. Its benches leave room
+        # for pack trains and gardens while the connecting crest rises on either side.
+        pass_road = CFG['layout']['roads'].get('north_pass')
+        if pass_road:
+            pass_xy = LAY['roads']['north_pass']['xy']
+            dist, along = seg_nearest(X, Y, pass_xy)
+            floor = np.interp(along, cumlen(pass_xy), pass_road['bench_m'])
+            shoulder = smoothstep(170, 1550, dist)
+            H += (np.minimum(H, floor + 0.055 * dist) - H) * (1 - shoulder)
         # rivers carve their beds: a gorge on the mountain, a gravel floodplain in the basin
         for d, bed, fp, width in carve:
             bars = 1.6 * fc.fbm(X / 90.0, Y / 90.0, 3, 61)
@@ -395,6 +404,8 @@ class Ground:
         self.district_mask = dm
         H = H + (blur(H, 6) - H) * dm * 0.75 * smoothstep(60.0, 200.0, rd)
         # the freight road keeps a gentle grade from the plinth edge into the yards
+        if pass_road:
+            H = self.grade_road(X, Y, H, pass_xy, 0.045, 18.0, 95.0)
         H = self.grade_road(X, Y, H, LAY['roads']['local_freight_road']['xy'], 0.035, 26.0, 110.0)
         return H, rd, bedmap, rid
 
@@ -572,6 +583,11 @@ def paint_albedo(G, px=ALBEDO_PX, villages=()):
         Rs.dist(P, 900.0, canal_d)
     for rv in LAY['rivers'].values():
         Rs.dist(rv['xy'], 900.0, canal_d)
+    # Irrigated meadow links field blocks to the canal banks and fades onto dry benches.
+    meadow = (1 - smoothstep(120, 850, canal_d)) * (1 - smoothstep(0.08, 0.23, S))
+    clear_channel = smoothstep(45, 155, G.up(G.rd, px))
+    meadow *= (1 - dist_m) * (1 - snow) * clear_channel
+    col = mix(col, np.asarray(RIPARIAN) * (0.94 + 0.35 * n2[..., None]), 0.72 * meadow)
     fid = 0
     for name, poly in LAY['fields'].items():
         fid += 1
@@ -604,7 +620,7 @@ def paint_albedo(G, px=ALBEDO_PX, villages=()):
         fc_col = np.where(border[..., None], fc_col * 0.72, fc_col)
         cd = canal_d[sl]
         dry = smoothstep(450.0, 850.0, cd) * (fc.fbm(Xw / 300.0, Yw / 300.0, 2, 180) > 0.42)
-        wgt = inside * smoothstep(0.0, 14.0, edge) * (1.0 - 0.85 * dry) * (1.0 - rockw[sl])
+        wgt = clear_channel[sl] * inside * smoothstep(0.0, 14.0, edge) * (1.0 - 0.55 * dry) * (1.0 - rockw[sl]) * (1 - smoothstep(0.08, 0.24, S[sl])) * (1 - dist_m[sl])
         col[sl] = mix(col[sl], fc_col.astype(np.float32), wgt.astype(np.float32))
     # canals: water with a green margin
     for name, P in LAY['canals'].items():
@@ -1644,7 +1660,10 @@ class City:
             xs = rng.uniform(Pp[:, 0].min(), Pp[:, 0].max(), 9000)
             ys = rng.uniform(Pp[:, 1].min(), Pp[:, 1].max(), 9000)
             m = points_in_poly(xs, ys, poly)
+            m &= (G._bilinear(G.rd, xs, ys) > 95) & (G._bilinear(G.district_mask, xs, ys) < 0.15)
             for x, y in zip(xs[m], ys[m]):
+                if G.slope_at(x, y) > 0.22 or not self.res.free([(x, y)]):
+                    continue
                 g = fc.vnoise(np.array(x / 260.0), np.array(y / 260.0), 301)
                 if g > 0.66:
                     self.tree('tree' if g < 0.8 else 'palm', x, y, None, rng.uniform(0.75, 1.0))
@@ -1901,7 +1920,7 @@ def landmark_list(G):
         cam_preset(G, 'first_flame', "The First Flame", (-5.31, 6.36), 900, -55, 20),
         cam_preset(G, 'library', "The Library of Karn Ashur", (-2.1, 0.23), 650, -75, 32),
         cam_preset(G, 'confluence', "The confluence and the bridges", (0.2, -3.9), 1900, -135, 30),
-        cam_preset(G, 'east_peak', "The eastern peak", (5.3, 5.2), 7500, -110, 16, 400),
+        cam_preset(G, 'east_peak', "The eastern peak", tuple(CFG['layout']['places']['east_peak']['at']), 7500, -110, 16, 400),
     ]
 
 

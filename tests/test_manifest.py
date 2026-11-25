@@ -165,6 +165,14 @@ class ManifestTests(unittest.TestCase):
             west, east = site['peaks']
             self.assertGreater(west['top_m'], east['top_m'], "the higher western peak carries the First Flame")
             self.assertEqual(len(site['districts']), 4)
+            self.assertLess(math.dist(west['at'], east['at']), 9.5)
+            road = site['roads']['north_pass']
+            self.assertEqual(road[0][1], site['plinth_half_km'])
+            self.assertTrue(west['at'][0] < road[2][0] < east['at'][0])
+            stream = site['rivers']['northern_pass_stream']
+            self.assertTrue(all(a[2] > b[2] for a, b in zip(stream, stream[1:])))
+            self.assertEqual(stream[-1][1], site['plinth_half_km'])
+            self.assertLess(math.dist(stream[-1][:2], road[0]), 0.5)
             for rid in ('western_snowmelt', 'eastern_snowmelt', 'southern_outlet'):
                 beds = [q[2] for q in site['rivers'][rid]]
                 self.assertTrue(all(b <= a for a, b in zip(beds, beds[1:])), rid + " runs downhill")

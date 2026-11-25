@@ -1,7 +1,7 @@
 // The High Dunes round Karn Ashur on the Known World (Atlas.Core.HighDunesRegion): the rivers on their carved beds,
 // the villages and market towns as a miniature (the basin's own house prototypes), and the grain route from the
-// River Flame delta: by sea to Qasr Samir, then overland up the caravan corridor to Karn Ashur's freight road, drawn
-// as a dashed line that keeps its width on screen as the camera pulls back, with camel trains walking it close up.
+// River Flame delta: by sea to Qasr Samir, then overland up the caravan corridor to Karn Ashur's freight road, marked only at sea
+// by a dashed line that keeps its width on screen as the camera pulls back, with camel trains walking it close up.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,7 +29,7 @@ namespace Atlas
         double[] _landS;
         Func<double, double, float> _ground;
 
-        public void Build(HighDunesRegion region, KnownWorldMap kw, Func<double, double, float> ground, InstanceSpec protos, double buildingScale)
+        public void Build(HighDunesRegion region, BasinSite basin, KnownWorldMap kw, Func<double, double, float> ground, InstanceSpec protos, double buildingScale)
         {
             Name = "HighDunes";
             R = region; _ground = ground;
@@ -61,7 +61,7 @@ namespace Atlas
                 }, tiles: 8, half: 400, shadows: true, rangeAll: VillageRange);
                 WeatherMaterials.Add(_mats.Instanced);
             }
-            BuildRoute(kw);
+            BuildRoute(kw, basin);
             BuildLabels();
             GD.Print($"[Atlas] High Dunes: {R.Rivers.Count} rivers graded ({string.Join(", ", R.Rivers.Select(r => $"{r.Id} {r.DropM:0} m drop, cut {r.MaxUphillM:0} m at ({r.UphillAt.X:0.0}, {r.UphillAt.Y:0.0})"))}), " +
                      $"{VillageCount} villages, {TownCount} market towns, ~{R.Population / 1000}k people, route {RouteSegments} segments in {Time.GetTicksMsec() - t0} ms");
@@ -99,7 +99,7 @@ namespace Atlas
 
         // ---------------------------------------------------------------- the grain route
 
-        void BuildRoute(KnownWorldMap kw)
+        void BuildRoute(KnownWorldMap kw, BasinSite basin)
         {
             _route = new ShaderMaterial { Shader = ResourceLoader.Load<Shader>("res://shaders/trade_route.gdshader"), RenderPriority = 6 };
             // the sea leg: the delta's shipping route to Qasr Samir (the ships already sail it)
@@ -111,18 +111,23 @@ namespace Atlas
                     if (e.GetProperty("from").GetString() == "river_flame_delta" && e.GetProperty("to").GetString() == "qasr")
                         SeaLeg = e.GetProperty("points").EnumerateArray().Select(p => (p[0].GetDouble(), p[1].GetDouble())).ToArray();
             }
-            var st = new SurfaceTool();
-            st.Begin(Mesh.PrimitiveType.Triangles);
-            double s0 = 0;
-            if (SeaLeg != null) s0 = Strip(st, HighDunesRegion.Resample(SeaLeg, 0.4), (x, y) => 0.03f, 0, 1f);
+            if (SeaLeg is { Length: > 1 })
+            {
+                var st = new SurfaceTool();
+                st.Begin(Mesh.PrimitiveType.Triangles);
+                Strip(st, HighDunesRegion.Resample(SeaLeg, 0.4), (x, y) => 0.03f, 0, 1f);
+                var mesh = st.Commit();
+                mesh.CustomAabb = new Aabb(new Vector3(-200, -2, -300), new Vector3(800, 20, 600));
+                AddChild(new MeshInstance3D { Name = "GrainRoute", Mesh = mesh, MaterialOverride = _route, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
+            }
             // the overland leg: Qasr Samir's harbour up the northern valleys to the basin's freight road
-            _land = HighDunesRegion.Resample(R.Corridor, 0.08);
+            var road = R.Corridor.Concat(basin.RoadPath.Reverse().Skip(1));
+            if (basin.Site.Roads.TryGetValue("north_pass", out var pass))
+                road = road.Concat(basin.Path(pass).Skip(1));
+            _land = HighDunesRegion.Resample(road.ToArray(), 0.08);
             _landS = new double[_land.Length];
             for (int k = 1; k < _land.Length; k++) _landS[k] = _landS[k - 1] + Math.Sqrt(Math.Pow(_land[k].X - _land[k - 1].X, 2) + Math.Pow(_land[k].Y - _land[k - 1].Y, 2));
-            Strip(st, _land, (x, y) => _ground(x, y) + 0.012f, s0, 0f);
-            var mesh = st.Commit();
-            mesh.CustomAabb = new Aabb(new Vector3(-200, -2, -300), new Vector3(800, 20, 600));
-            AddChild(new MeshInstance3D { Name = "GrainRoute", Mesh = mesh, MaterialOverride = _route, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
+
             // camel trains walking the corridor (seen close up)
             _mats ??= new Materials(null);
             var camel = Instances.Mesh(Protos.Camel);

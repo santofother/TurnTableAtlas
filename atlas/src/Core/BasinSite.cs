@@ -23,7 +23,7 @@ namespace Atlas.Core
         public readonly double S, SModel;
         /// <summary>Half the plinth (blend units) and the patch's half size.</summary>
         public readonly double Half, PatchHalf, HalfKm;
-        public const double EdgeBlend = 0.4;
+        public const double EdgeBlend = 0.95;
         public readonly ReliefSampler Relief;
         public readonly int I0, I1, J0, J1;
         public readonly double XMin, XMax, YMin, YMax;
@@ -126,7 +126,13 @@ namespace Atlas.Core
             var o = Site.OutletKm ?? new[] { 3.75, -10.4 };
             var (ox, oy) = KmToWorld(Math.Clamp(o[0], -HalfKm, HalfKm), Math.Clamp(o[1], -HalfKm, HalfKm));
             // south-east down to the patch's edge: the farm belt's river picks it up there
-            OutletPath = Line((ox, oy), (ox + 0.35 * (PatchHalf - Half), Cy - PatchHalf + 0.05), 24, 0.06, 7);
+            OutletPath = Line((ox, oy), (ox + 0.35 * (PatchHalf - Half), Cy - Half - 1.42), 24, 0.06, 7);
+            if (Site.Roads.TryGetValue("north_pass", out var pass))
+            {
+                var mouth = KmToWorld(pass[0][0], pass[0][1]);
+                RoadPath = Line(mouth, (Cx + 1.8, Cy + 5.15), 32, 0.10, 11);
+                return;
+            }
             var r = Site.FreightEntryKm ?? new[] { -HalfKm, 0.9 };
             var (rx, ry) = KmToWorld(Math.Clamp(r[0], -HalfKm, HalfKm), Math.Clamp(r[1], -HalfKm, HalfKm));
             RoadPath = Line((rx, ry), (Cx - PatchHalf + 0.05, ry - 0.25 * (PatchHalf - Half)), 24, 0.05, 11);
@@ -173,15 +179,27 @@ namespace Atlas.Core
             double broad = Broad(x, y);
             double target = fine + (broad - fine) * (1 - w) * 0.6;
             // the massif's spurs run out into the ring where the plinth's edge stands above the land beyond
-            double high = Math.Clamp((edge - broad) / 1.2, 0, 1);
-            double spur = Ridged(x * 2.6 + 3.1, y * 2.6 - 1.7, 5, 77) - 0.42;
-            double h = edge + (target - edge) * Math.Pow(w, 0.8) + 0.9 * high * spur * w * (1 - w) * 4 * (1 - 0.5 * w);
+            // Two outward spurs continue the high northern skyline across the apron.
+            double wing = Math.Max(0, Math.Abs(lx) - Half * 0.65);
+            double crestY = Half * 0.68 + 0.18 * wing + 0.28 * Math.Sin(wing * 1.5);
+            double spur = Math.Exp(-Math.Pow((ly - crestY) / 0.85, 2))
+                          * (0.65 + 0.35 * Math.Cos(wing * 4.8));
+            double h = edge + (target - edge) * Math.Pow(w, 0.8) + 0.48 * spur * w * (1 - w) * 4 * (1 - 0.5 * w);
             // the outlet's valley and the road's bench
             double dv = DistToLine(x, y, OutletPath), dr = DistToLine(x, y, RoadPath);
             if (TributaryPath.Length > 1) dv = Math.Min(dv, DistToLine(x, y, TributaryPath));
             double floorV = Lerp(edge, target, w) - 0.05;
             if (dv < 0.35) h = Lerp(Math.Min(h, floorV), h, SmoothStep(0.06, 0.35, dv));
-            if (dr < 0.22) h = Lerp(Lerp(edge, target, w), h, SmoothStep(0.05, 0.22, dr));
+            if (dr < 0.75)
+            {
+                var start = RoadPath[0];
+                var end = RoadEnd;
+                double dx = end.X - start.X, dy = end.Y - start.Y;
+                double t = Math.Clamp(((x - start.X) * dx + (y - start.Y) * dy) / (dx * dx + dy * dy), 0, 1);
+                var mouth = WorldToKm(start.X, start.Y);
+                double bench = Lerp(Units(PlinthMetres(mouth.X, mouth.Y)), Broad(end.X, end.Y), t);
+                h = Lerp(h, bench, (1 - SmoothStep(0.1, 0.75, dr)) * SmoothStep(0, 0.25, dOut));
+            }
             return Math.Max(h, 0.0);
         }
 

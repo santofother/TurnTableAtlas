@@ -181,8 +181,9 @@ namespace Atlas
                 {
                     _highDunes = new HighDunesRegion(HighDunesData.Load(hd), _kw.UnitM, _kw.Exaggeration);
                     _highDunes.LinkOutlet(pre[0].OutletEnd);
-                    _highDunes.LinkRoad(pre[0].RoadEnd, pre[0].Contains);
-                    _highDunes.EditHeights(_kwH, _hw, _hh, _kw.BoundsXy, (x, y) => pre.Any(b => b.Contains(x, y)));
+                    _highDunes.LinkRoad(pre[0].RoadEnd, pre[0].OnPlinth);
+                    _highDunes.EditHeights(_kwH, _hw, _hh, _kw.BoundsXy, (x, y) => pre.Any(b => b.OnPlinth(x, y)),
+                        (x, y) => pre.FirstOrDefault(b => b.Contains(x, y)) is { } basin ? basin.Metres(basin.MeshUnits(x, y)) : null);
                 }
                 MakeHeightTexture();
             }
@@ -212,11 +213,11 @@ namespace Atlas
                 var img = LoadImage(Path.Combine(_kw.Directory, _kw.Albedo));
                 if (img != null && _highDunes != null)
                 {
-                    bool InBasin(double x, double y) => basinSites.Any(b => b.Contains(x, y));
+                    bool InBasin(double x, double y) => basinSites.Any(b => b.OnPlinth(x, y));
                     _highDunes.PlaceSettlements((x, y) => _highDunes.M(_sampler.Fine(x, y)), InBasin);
                     img.Convert(Image.Format.Rgba8);
                     var px = img.GetData();
-                    _highDunes.PaintAlbedo(px, img.GetWidth(), img.GetHeight(), _kw.BoundsXy, (x, y) => _highDunes.M(_sampler.Fine(x, y)), InBasin);
+                    _highDunes.PaintAlbedo(px, img.GetWidth(), img.GetHeight(), _kw.BoundsXy, (x, y) => _highDunes.M(_sampler.Fine(x, y)), (_, _) => false);
                     img = Image.CreateFromData(img.GetWidth(), img.GetHeight(), false, Image.Format.Rgba8, px);
                 }
                 if (img != null) { img.GenerateMipmaps(); _kwTex = ImageTexture.CreateFromImage(img); }
@@ -252,7 +253,7 @@ namespace Atlas
             {
                 var b = new Basin();
                 AddChild(b);
-                b.Build(bs, _root.Cities.First(c => c.Id == bs.Id), _kw, _kwTex);
+                b.Build(bs, _root.Cities.First(c => c.Id == bs.Id), _kw, _kwTex, _kwHeightTex);
                 Basins.Add(b);
             }
             if (_highDunes != null)
@@ -261,7 +262,7 @@ namespace Atlas
                 AddChild(Dunes);
                 var metro = _root.Cities.FirstOrDefault(c => c.IsMetropolis);
                 double f = metro?.WorldMap?.Miniature?.Exaggeration ?? 4;
-                Dunes.Build(_highDunes, _kw, (x, y) => GroundAt(x, y), metro?.Instances, f / _kw.UnitM);
+                Dunes.Build(_highDunes, basinSites.First(), _kw, (x, y) => GroundAt(x, y), metro?.Instances, f / _kw.UnitM);
             }
             foreach (var es in estateSites)
             {
