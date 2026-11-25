@@ -19,6 +19,8 @@ namespace Atlas
         static bool _lastSunPath;
         /// <summary>The sun path's radius as a share of the camera distance: it stays the same size on screen.</summary>
         const float SunPathShare = 0.26f;
+        /// <summary>Camera distance inside which an estate's name appears.</summary>
+        public const float EstateNameDist = 3.5f;
         static Texture2D _kwTex;
         static ImageTexture _kwHeightTex;
         /// <summary>The relief's heights with each basin's own ground written in under its patch: the terrain-following fog
@@ -280,7 +282,7 @@ namespace Atlas
             {
                 var est = new Estate();
                 AddChild(est);
-                est.Build(es, _root.Cities.First(c => c.Id == es.Id), _kw, _kwTex);
+                est.Build(es, _root.Cities.First(c => c.Id == es.Id), _kw, _kwTex, _kwHeightTex);
                 Estates.Add(est);
             }
 
@@ -470,6 +472,9 @@ namespace Atlas
             foreach (var p in Pins)
             {
                 p.Tick(dt, k, night, p == _hover);
+                // an estate sits close to its city: its name shows only once the camera is in round it
+                if (p.M.IsEstate)
+                    p.LabelShown = Rig.Dist < EstateNameDist && Rig.Target.DistanceTo(p.Position) < Math.Max(0.5f, Rig.Dist * 0.5f);
                 var head = p.Head;
                 if (!p.Visible || cam.IsPositionBehind(head)) continue;
                 float d = cam.UnprojectPosition(head).DistanceTo(mouse);
@@ -511,7 +516,7 @@ namespace Atlas
             _taken.Clear();
             var vs = GetViewport().GetVisibleRect();
             foreach (var p in Pins)
-                if (p.Visible && !cam.IsPositionBehind(p.Head)) _taken.Add(LabelRect(cam.UnprojectPosition(p.Head) - new Vector2(0, 20), p.M.Name.Length, 15f));
+                if (p.Visible && p.LabelShown && !cam.IsPositionBehind(p.Head)) _taken.Add(LabelRect(cam.UnprojectPosition(p.Head) - new Vector2(0, 20), p.M.Name.Length, 15f));
             foreach (bool realmPass in new[] { true, false })
                 foreach (var (l, realm) in _names)
                 {
@@ -716,6 +721,8 @@ namespace Atlas
         Label3D _label;
         float _t;
 
+        public bool LabelShown { get => _label.Visible; set => _label.Visible = value; }
+
         public Vector3 Head => GlobalPosition + Vector3.Up * _body.Scale.Y;
 
         public void Build(CityManifest m)
@@ -740,7 +747,7 @@ namespace Atlas
             // the name is not scaled with the body: a fixed-size label stays the same size on screen
             _label = new Label3D
             {
-                Name = "Name", Text = m.Name, FontSize = 34, OutlineSize = 12, PixelSize = 0.0007f, FixedSize = true,
+                Name = "Name", Text = m.Name, FontSize = m.IsEstate ? 22 : 34, OutlineSize = m.IsEstate ? 9 : 12, PixelSize = 0.0007f, FixedSize = true,
                 Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, NoDepthTest = true, RenderPriority = 10, OutlineRenderPriority = 9,
                 Modulate = new Color(1f, 0.92f, 0.75f), OutlineModulate = new Color(0.1f, 0.06f, 0.03f, 0.95f),
                 Position = new Vector3(0, 1.22f, 0),

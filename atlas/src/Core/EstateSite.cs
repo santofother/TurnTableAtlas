@@ -3,8 +3,8 @@
 //   - the estate's own plinth, drawn from the package's terrain grid (city.json `terrain_grid`) as a miniature,
 //     `exaggeration` times its true size, so the house, its lake and its vineyards read on the map; the package's
 //     city.glb stands on it at the same scale (both use S, blend units per model metre).
-//   - rolling hills round the plinth that carry on the model's own hills, then hand over to the relief, meeting the
-//     relief mesh exactly at the patch's edge.
+//   - a few small hills round the plinth that carry on the model's own; beyond them the patch is the relief mesh's own
+//     surface, so only the villa's immediate surroundings rise.
 // Lengths are blend units (1 = 10 miles), +x east, +y north. Heights are blend units too.
 using System;
 using System.Collections.Generic;
@@ -24,26 +24,13 @@ namespace Atlas.Core
         public readonly double Base;
         /// <summary>The hills reach this far from the centre; the ground is the relief's at PatchHalf - EdgeBlend.</summary>
         public readonly double HillsR, PatchHalf;
+        /// <summary>The patch's colour is the map's own from this far inside its edge.</summary>
         public const double EdgeBlend = 0.32;
         public readonly ReliefSampler Relief;
         public readonly int I0, I1, J0, J1;
         public readonly double XMin, XMax, YMin, YMax;
         public readonly List<(double X, double Y, double R, double H)> Hills = new();
         readonly TerrainGrid _grid;
-        readonly double _broad0;
-
-        /// <summary>The relief smoothed over ~0.25 units: the land round the plinth follows its broad lie, not its texels.</summary>
-        public double Broad(double x, double y)
-        {
-            double sum = Relief.Fine(x, y), n = 1;
-            foreach (var rr in new[] { 0.12, 0.25 })
-                for (int k = 0; k < 8; k++)
-                {
-                    double a = k * Math.PI / 4 + rr;
-                    sum += Relief.Fine(x + rr * Math.Cos(a), y + rr * Math.Sin(a)); n++;
-                }
-            return sum / n;
-        }
 
         public EstateSite(string id, ReliefSampler relief, double cx, double cy, double unitM, double exag,
                           double modelScale, double modelHalf, TerrainGrid grid, double miniature, double hillsR)
@@ -67,8 +54,7 @@ namespace Atlas.Core
                 rim += grid.Z[k] + grid.Z[(grid.N - 1) * grid.N + k] + grid.Z[k * grid.N] + grid.Z[k * grid.N + grid.N - 1];
                 n += 4;
             }
-            _broad0 = Broad(cx, cy);
-            Base = Math.Max(0.02, _broad0) - S * rim / n;
+            Base = Math.Max(0.02, relief.Coarse(cx, cy)) - S * rim / n;
             // hills round the plinth, carrying on the model's: higher to the west and north, low to the south-east
             // (angle deg CCW from east, distance and radius in plinth halves, height in blend units)
             foreach (var (deg, d, r, h) in new[] { (180.0, 1.9, 0.9, 0.02), (135.0, 2.0, 1.0, 0.026), (95.0, 2.0, 0.9, 0.018),
@@ -95,46 +81,30 @@ namespace Atlas.Core
             return t * t * (3 - 2 * t);
         }
 
-        /// <summary>The estate's own ground (blend units): the model's terrain on the plinth, carried outwards by its rim,
-        /// with the hills rising beyond it.</summary>
-        public double LocalUnits(double x, double y)
+        /// <summary>Ground height (blend units). On the plinth, the model's own terrain; round it, the relief mesh's own
+        /// surface (so the patch cannot be told from the map) with a few small hills that die out by HillsR.</summary>
+        public double GroundUnits(double x, double y)
         {
             double lx = x - Cx, ly = y - Cy;
             double mx = Math.Clamp(lx / S, -ModelHalf, ModelHalf), my = Math.Clamp(ly / S, -ModelHalf, ModelHalf);
-            double h = Base + S * _grid.At(mx, my, ModelHalf);
+            double plinth = Base + S * _grid.At(mx, my, ModelHalf);
             double dx = Math.Max(Math.Abs(lx) - Half, 0), dy = Math.Max(Math.Abs(ly) - Half, 0);
             double dOut = Math.Sqrt(dx * dx + dy * dy);
-            double out1 = SmoothStep(0, 0.35 * Half, dOut);
-            if (out1 <= 0) return h;
-            h += (Broad(x, y) - _broad0) * SmoothStep(0, 1.5 * Half, dOut);
+            if (dOut <= 0) return plinth;
+            double land = Relief.Coarse(x, y);
+            double h = plinth + (land - plinth) * SmoothStep(0, Half, dOut);
             double hills = 0;
             foreach (var (hx, hy, hr, hh) in Hills)
             {
                 double d = Math.Sqrt((lx - hx) * (lx - hx) + (ly - hy) * (ly - hy)) / hr;
                 if (d < 1) hills += hh * Math.Pow(1 - d * d, 2);
             }
-            return h + hills * out1;
+            double fade = 1 - SmoothStep(HillsR * 0.75, HillsR, Math.Sqrt(lx * lx + ly * ly));
+            return h + hills * fade * SmoothStep(0, 0.35 * Half, dOut);
         }
 
-        /// <summary>Ground height (blend units): the estate's own inside HillsR, the relief's per-pixel height outside.</summary>
-        public double GroundUnits(double x, double y)
-        {
-            double r = Math.Sqrt((x - Cx) * (x - Cx) + (y - Cy) * (y - Cy));
-            double w = SmoothStep(HillsR * 0.75, PatchHalf - EdgeBlend, r);
-            double fine = Math.Max(0.0, Relief.Fine(x, y));
-            if (w >= 1) return fine;
-            double local = LocalUnits(x, y);
-            return local + (fine - local) * w;
-        }
-
-        /// <summary>The patch mesh's surface: the ground, turning into the relief mesh's own triangles at the patch's edge.</summary>
-        public double MeshUnits(double x, double y)
-        {
-            double g = GroundUnits(x, y);
-            double e = Math.Min(Math.Min(x - XMin, XMax - x), Math.Min(y - YMin, YMax - y));
-            double b = 1 - SmoothStep(0, EdgeBlend, e);
-            return b > 0 ? g + (Relief.Coarse(x, y) - g) * b : g;
-        }
+        /// <summary>The patch mesh's surface (the ground already is the relief mesh's own triangles at the edge).</summary>
+        public double MeshUnits(double x, double y) => GroundUnits(x, y);
 
         /// <summary>Heights on a grid over the patch (row 0 to the north), on the grid lines, seam-matched.</summary>
         public float[] SampleMesh(int nx, int ny)

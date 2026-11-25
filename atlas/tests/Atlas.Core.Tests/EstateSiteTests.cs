@@ -83,13 +83,25 @@ namespace Atlas.Core.Tests
         }
 
         [Fact]
+        public void BeyondTheHillsThePatchIsTheReliefItself()
+        {
+            var s = Shared.Value;
+            for (int k = 0; k < 64; k++)
+                foreach (var r in new[] { s.HillsR, s.HillsR + 0.2, s.PatchHalf })
+                {
+                    double a = k * Math.PI / 32, x = s.Cx + r * Math.Cos(a), y = s.Cy + r * Math.Sin(a);
+                    Assert.Equal(s.Relief.Coarse(x, y), s.MeshUnits(x, y), 9);
+                }
+        }
+
+        [Fact]
         public void EstateIsSmallAndItsRimSitsOnTheRelief()
         {
             var s = Shared.Value;
             Assert.InRange(s.Half * 2, 0.15, 0.35);            // a villa: a few km of miniature, not a city
             Assert.InRange(s.PatchHalf, 0.6, 1.2);
             double rim = Enumerable.Range(0, 40).Select(k => { double a = k * Math.PI / 20; return s.GroundUnits(s.Cx + s.Half * Math.Cos(a), s.Cy + s.Half * Math.Sin(a)); }).Average();
-            Assert.True(Math.Abs(rim - s.Broad(s.Cx, s.Cy)) < 0.03, $"rim {rim:0.000} vs relief {s.Broad(s.Cx, s.Cy):0.000}");
+            Assert.True(Math.Abs(rim - s.Relief.Coarse(s.Cx, s.Cy)) < 0.03, $"rim {rim:0.000} vs relief {s.Relief.Coarse(s.Cx, s.Cy):0.000}");
             Assert.True(s.Contains(s.Cx, s.Cy) && !s.Contains(s.Cx + 2 * s.PatchHalf, s.Cy));
         }
     }

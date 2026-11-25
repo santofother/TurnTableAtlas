@@ -185,6 +185,8 @@ namespace Atlas
                         Check(est != null && est.MiniMeshes > 20 && onPatch < 0.002f && map.Kw.Cameras.Any(c => c.Id == est.ViewId),
                               $"{m.Name} on the Known World: {est?.MiniMeshes} miniature meshes, {est?.S.Half * 2:0.000} units across, pin on its patch");
                     }
+                    foreach (var pin0 in map.Pins.Where(p => p.M.IsEstate))
+                        Check(!pin0.LabelShown, $"{pin0.M.Name}: name hidden until the camera comes in");
                     _mapBoats = map.Shipping.GetChildren().OfType<Node3D>().Select(b => b.Position).ToArray();
                     _step++; break;
                 }
