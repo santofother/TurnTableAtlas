@@ -6,6 +6,10 @@ From the Oravian plains, **the Great Gate appears first**. Its towers and fortif
 
 **Setting:** Book One, around 2100 CR. Valdora is the kingdom, Corivessa its inland capital, and the Great Gate the fortress-and-tower complex against which the city is built. Corivessa Port is a separate coastal settlement southwest of the capital. Kervara's capital and its own gates lie at the far end of the canyon. [Atlas Entry, 1–17, 39–43][Atlas Entry] [Atlas data] [Ventara illustration]
 
+## Valdora's southern coast
+
+**Current border, per author direction.** Valdora extends east along the Middle Sea across the entire southern shoreline below Kervara, as far as the mountains. The red, white, and blue coastal markings on the existing map are legacy boundary graphics. Treat that coastal strip as Valdoran territory in concept images and future political overlays. Keep the existing shoreline, bays, foothills, and mountain relief as the geographic base. The precise inland boundary and the point where the coastal boundary meets the mountains still need to be traced on the map.
+
 ## Fit to the existing map
 
 | Reference | What to carry into concept art and the build |
@@ -48,7 +52,7 @@ The naming supports drawing the **east toll and its hostel** as a local service 
 | Image | Composition and continuity check |
 | --- | --- |
 | 1. Gate from the plains | West-southwest approach based on the existing Great Gate camera. Show flat farmland opening out on one side, towers anchored to both canyon shoulders, town gathered at their base, and the palace higher. Let the canyon continue east behind the fortifications. |
-| 2. Terrain and circulation overhead | North-up relief overlay of the same footprint. Show the river, canyon road, fortress walls, arch and barbican, palace, lower town, east toll and hostel, and the southbound toll route. Add a small regional inset for the Kervara direction and separate port. Use this as the registration image for later modeling. |
+| 2. Terrain and circulation overhead | North-up relief overlay of the same footprint. Show the river, canyon road, fortress walls, arch and barbican, palace, lower town, east toll and hostel, and the southbound toll route. Add a small regional inset for the Kervara direction, the separate port, and Valdora’s continuous southern coast to the mountains. Use this as the registration image for later modeling. |
 | 3. Miriel at the outer arch | Grey winter morning at freight level, rain, cloth wagon, pitch mules, undyed wool, mail and the arch resolving through the queue. Show wheel and pedestrian clearance, the bend down the toll line, and the low plains beyond. |
 | 4. Lower town to east toll | View along the muddy shoulder road past the fish cart, forage traffic and raised winter hayricks toward the long, low hostel. Keep the main Gate mass or a ridge shoulder in the distance if the registered sightline supports it. |
 | 5. Palace and Gate after dark | Varen's study window and shutter in the foreground, the watchfires of the same Gate below, and waiting freight along the approach. A companion interior can show Miriel sewing in the low-arched Flame-chapel with the open door and warm candles. |
@@ -58,6 +62,7 @@ The naming supports drawing the **east toll and its hostel** as a local service 
 - **LORE?** Final fortress footprint, gate and bridge alignment, roads and river banks through the choke point, and the east-toll junction. Confirm on the detailed terrain before fixing them in aerial art.
 - **LORE?** City population and extent, palace exterior, tower and roof profiles, masonry palette, official heraldry, and local season-specific planting. Use visibly provisional shapes in the overhead.
 - **LORE?** Individual post, ford and farm locations, and the port's formal name and waterfront. Keep them regional until there is a mapped location.
+- **Map work.** Trace the author-confirmed coast in the future political overlay and resolve the inland boundary at the mountain end. The existing border graphics predate this correction.
 
 ## Sources
 
