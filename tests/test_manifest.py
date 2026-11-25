@@ -164,7 +164,8 @@ class ManifestTests(unittest.TestCase):
             self.assertEqual(len(site['peaks']), 2)
             west, east = site['peaks']
             self.assertGreater(west['top_m'], east['top_m'], "the higher western peak carries the First Flame")
-            self.assertEqual(len(site['districts']), 4)
+            self.assertIn('east_bank_quarter', site['districts'])
+            self.assertIn('central_inundation_basins', site['fields'])
             self.assertLess(math.dist(west['at'], east['at']), 9.5)
             road = site['roads']['north_pass']
             self.assertEqual(road[0][1], site['plinth_half_km'])

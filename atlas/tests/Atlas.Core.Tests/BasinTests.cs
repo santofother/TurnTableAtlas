@@ -122,6 +122,20 @@ namespace Atlas.Core.Tests
         }
 
         [Fact]
+        public void SouthernOutletFollowsThePackageGroundToTheMapJoin()
+        {
+            var (a, w, h) = Relief();
+            var basin = Site(new ReliefSampler(a, w, h, Bounds, 1024, 534));
+            var outlet = basin.Site.Rivers["southern_outlet"];
+            Assert.Equal(basin.KmToWorld(outlet[^1][0], outlet[^1][1]), basin.OutletPath[0]);
+            foreach (var p in outlet.Where(p => p[1] < -5))
+            {
+                // The manifest grid samples every 312.5 m, so it includes some bank.
+                Assert.InRange(basin.PlinthMetres(p[0], p[1]) - p[2], -10, 35);
+            }
+        }
+
+        [Fact]
         public void HighDunesRiversAreGradedDownhillAndPeopled()
         {
             var (a, w, h) = Relief();

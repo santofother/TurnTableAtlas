@@ -62,8 +62,9 @@ CITY_DUST = (0.82, 0.70, 0.54)
 ROAD = (0.88, 0.78, 0.62)
 PATH = (0.93, 0.86, 0.72)
 CANAL = (0.20, 0.42, 0.46)
-CROPS = [(0.40, 0.55, 0.20), (0.50, 0.62, 0.24), (0.84, 0.72, 0.32), (0.76, 0.64, 0.28), (0.33, 0.50, 0.18),
-         (0.62, 0.66, 0.26), (0.66, 0.50, 0.32), (0.44, 0.58, 0.22), (0.88, 0.78, 0.40)]
+# Date gardens, green barley, ripening grain and stubble on the canal benches.
+CROPS = [(0.32, 0.44, 0.18), (0.43, 0.49, 0.19), (0.56, 0.53, 0.20),
+         (0.68, 0.56, 0.22), (0.76, 0.61, 0.27), (0.72, 0.55, 0.29)]
 ORCHARD = (0.22, 0.36, 0.14)
 WALLS = [(0.80, 0.62, 0.42), (0.84, 0.68, 0.48), (0.76, 0.57, 0.39), (0.88, 0.75, 0.57), (0.73, 0.52, 0.35),
          (0.82, 0.66, 0.46)]
@@ -308,6 +309,9 @@ class Ground:
             bedmap = np.where(m, bed, bedmap)
             rid = np.where(m, i, rid)
             carve.append((d, bed, fp, rv['width']))
+        # A distant channel bend can switch the nearest bed sample abruptly.
+        # Spread those steps into the alluvial fan while retaining the local banks.
+        valley += (blur(valley, 18) - valley) * smoothstep(200, 850, rd)
         # gentle undulation away from the rivers, a little higher to the north
         und = 34.0 * (fc.fbm(Xk / 2.6 + 3.1, Yk / 2.6 - 1.7, 4, 11) - 0.5) + 10.0 * (fc.fbm(Xk * 1.7, Yk * 1.7, 3, 12) - 0.5)
         valley = valley + und * smoothstep(150.0, 600.0, rd) + 9.0 * np.clip(Yk, -10, 10)
@@ -388,6 +392,17 @@ class Ground:
             bank = 0.28 + 0.6 * smoothstep(1450.0, 1750.0, bed)
             c = bed + np.where(d < width * 0.5, -1.2, np.where(d < fp, 1.2 + bars, 1.2 + bars + bank * e + 0.004 * e * e))
             H = smin(H, c, 6.0)
+        # Fill the lower alluvial floor as well as cutting it. The broad valley
+        # grade can lie below a surveyed river bed, especially downstream.
+        fill = np.zeros_like(H)
+        influence = np.zeros_like(H)
+        for d, bed, fp, width in carve:
+            channel = smoothstep(width * 0.37, width * 0.65, d)
+            floor = bed - 1.2 + 2.8 * channel + 0.018 * np.maximum(d - fp, 0)
+            weight = (1 - smoothstep(0, 85, d - rd)) * (1 - smoothstep(fp, fp + 500, d))
+            influence += weight
+            fill += weight * np.maximum(floor - H, 0)
+        H += fill / np.maximum(1, influence)
         # sand aprons lean on the mountain feet
         am = np.zeros(X.shape)
         for poly in LAY['aprons'].values():
@@ -604,23 +619,29 @@ def paint_albedo(G, px=ALBEDO_PX, villages=()):
         a = math.atan2(ax[1], ax[0])
         u = (Xw - c0[0]) * math.cos(a) + (Yw - c0[1]) * math.sin(a)
         v = -(Xw - c0[0]) * math.sin(a) + (Yw - c0[1]) * math.cos(a)
-        u = u + 30.0 * (fc.fbm(Xw / 700.0, Yw / 700.0, 2, 130 + fid) - 0.5)
-        v = v + 30.0 * (fc.fbm(Xw / 700.0 + 5, Yw / 700.0, 2, 140 + fid) - 0.5)
-        su = 46.0 + 30.0 * fc.vnoise(np.floor(v / 220.0), fid * 7.0, 150)
-        iu = np.floor(u / su)
-        iv = np.floor(v / 220.0)
-        hsh = fc._hash(iu.astype(np.int64), iv.astype(np.int64), 160 + fid)
-        crop = np.asarray(CROPS, np.float32)[(hsh * len(CROPS)).astype(int) % len(CROPS)]
-        orch = hsh > 0.86
-        dots = fc.vnoise(Xw / 5.0, Yw / 5.0, 170) > 0.55
-        fc_col = np.where(orch[..., None], np.where(dots[..., None], np.asarray(ORCHARD) * 0.8, np.asarray(ORCHARD) * 1.25), crop)
-        fu = u / su - iu
-        fv = v / 220.0 - iv
-        border = (np.minimum(np.minimum(fu, 1 - fu) * su, np.minimum(fv, 1 - fv) * 220.0) < 2.2)
-        fc_col = np.where(border[..., None], fc_col * 0.72, fc_col)
+        # Earthen levees divide the floodplain into basins. Stagger successive
+        # banks and bow them with the terrain so the ends of plots seldom align.
+        u += 115 * (fc.fbm(Xw / 780, Yw / 780, 2, 130 + fid) - 0.5)
+        v += 165 * np.sin(u / 850 + fid) + 60 * (fc.fbm(Xw / 540, Yw / 540, 2, 140 + fid) - 0.5)
+        bank = np.floor(v / 185)
+        width = 130 + 145 * fc.vnoise(bank, fid * 7.0, 150)
+        cross = u / width + 2.4 * fc.vnoise(bank, fid, 151)
+        lot = np.floor(cross)
+        seed = fc._hash(lot.astype(np.int64), bank.astype(np.int64), 160 + fid)
+        moisture = (1 - smoothstep(100, 850, canal_d[sl]))
+        season = fc.fbm(Xw / 1100, Yw / 1100, 3, 162 + fid)
+        ripeness = np.clip(0.52 + 1.4 * (season - 0.5) - 0.24 * moisture + 0.18 * (seed - 0.5), 0, 0.99)
+        crop = np.asarray(CROPS, np.float32)[(ripeness * len(CROPS)).astype(int)]
+        # Raised beds and stubble still read at the city texture's 4.9 m/px.
+        furrow = 0.92 + 0.08 * np.cos(v / 4.8 + 0.6 * np.sin(u / 75))
+        fc_col = crop * furrow[..., None]
         cd = canal_d[sl]
-        dry = smoothstep(450.0, 850.0, cd) * (fc.fbm(Xw / 300.0, Yw / 300.0, 2, 180) > 0.42)
-        wgt = clear_channel[sl] * inside * smoothstep(0.0, 14.0, edge) * (1.0 - 0.55 * dry) * (1.0 - rockw[sl]) * (1 - smoothstep(0.08, 0.24, S[sl])) * (1 - dist_m[sl])
+        fallow = smoothstep(270, 900, cd) * (0.42 + 0.50 * seed)
+        fc_col = mix(fc_col, (0.68, 0.51, 0.32), fallow)
+        bank_edge = np.abs((v + 92.5) % 185 - 92.5)
+        lot_edge = np.abs((cross + 0.5) % 1 - 0.5) * width
+        fc_col = mix(fc_col, (0.63, 0.48, 0.29), 1 - smoothstep(3, 9, np.minimum(bank_edge, lot_edge)))
+        wgt = clear_channel[sl] * inside * smoothstep(0, 48, edge) * (1 - rockw[sl]) * (1 - smoothstep(0.09, 0.23, S[sl])) * (1 - dist_m[sl])
         col[sl] = mix(col[sl], fc_col.astype(np.float32), wgt.astype(np.float32))
     # canals: water with a green margin
     for name, P in LAY['canals'].items():
@@ -640,7 +661,7 @@ def paint_albedo(G, px=ALBEDO_PX, villages=()):
             continue
         sl, Xw, Yw = w
         r = np.hypot(Xw - vx, Yw - vy) * (1.0 + 0.25 * (fc.fbm(Xw / 60.0, Yw / 60.0, 2, 190) - 0.5))
-        col[sl] = mix(col[sl], ORCHARD, ((1.0 - smoothstep(170.0, 230.0, r)) * smoothstep(95.0, 125.0, r) * 0.85).astype(np.float32))
+        col[sl] = mix(col[sl], ORCHARD, ((1.0 - smoothstep(90.0, 220.0, r)) * smoothstep(0.38, 0.68, fc.fbm(Xw / 85, Yw / 85, 2, 191)) * 0.75).astype(np.float32))
         col[sl] = mix(col[sl], (0.86, 0.74, 0.56), (1.0 - smoothstep(85.0, 110.0, r)).astype(np.float32))
     ANCHORS['albedo_secs'] = round(time.time() - t0, 1)
     return np.clip(col, 0.0, 1.0)
@@ -1665,8 +1686,12 @@ class City:
                 if G.slope_at(x, y) > 0.22 or not self.res.free([(x, y)]):
                     continue
                 g = fc.vnoise(np.array(x / 260.0), np.array(y / 260.0), 301)
-                if g > 0.66:
-                    self.tree('tree' if g < 0.8 else 'palm', x, y, None, rng.uniform(0.75, 1.0))
+                if g > 0.71:
+                    # Date gardens grow in clusters sharing an irrigation basin.
+                    for offset in (-18, 0, 18):
+                        tx, ty = x + offset, y + 0.26 * offset
+                        if abs(tx) < R and abs(ty) < R and self.res.free([(tx, ty)]):
+                            self.tree('palm' if g > 0.76 else 'tree', tx, ty, None, rng.uniform(0.95, 1.35))
         # desert shrubs, sparse
         xs = rng.uniform(-R, R, 26000)
         ys = rng.uniform(-R, R, 26000)
@@ -1913,7 +1938,7 @@ def landmark_list(G):
         cam_preset(G, 'overview', "Karn Ashur and its basin", (0.0, 0.6), 30000, -72, 40),
         cam_preset(G, 'caravan_arrival', "The caravan arrival: the freight road and the grain yards", (-3.25, 1.5), 1250, -166, 9, 25),
         cam_preset(G, 'terraces', "The terraced neighbourhoods", (-1.7, -0.5), 3000, -40, 27),
-        cam_preset(G, 'downstream', "Downstream over the farming villages", (1.0, -7.9), 3300, 100, 20, 30),
+        cam_preset(G, 'downstream', "Downstream over the farming villages", (1.55, -6.55), 3500, -83, 10, 65),
         cam_preset(G, 'market', "The shaded market", (-2.42, 1.72), 700, -105, 36),
         cam_preset(G, 'al_mirah', "Al-Mirah's spring", (-3.54, 2.66), 520, -120, 30),
         cam_preset(G, 'pilgrimage', "The pilgrims' climb to the First Flame", (-4.5, 4.3), 4200, -58, 18, 200),
@@ -2019,7 +2044,8 @@ def site_block(G):
         'peaks': lay['peaks'], 'cliff_zones': lay['cliff_zones'], 'sand_aprons': lay['sand_aprons'],
         'districts': {k: v['poly'] for k, v in lay['districts'].items()},
         'fields': clean(lay['fields']),
-        'rivers': {k: v['pts'] for k, v in lay['rivers'].items()},
+        'rivers': {k: [[round(x / KM, 5), round(y / KM, 5), round(z, 2)]
+                       for (x, y), z in zip(rv['xy'], rv['z'])] for k, rv in LAY['rivers'].items()},
         'canals': clean(lay['canals']),
         'roads': {k.split(' ')[0]: v['pts'] for k, v in lay['roads'].items()},
         'pilgrimage_climb': lay['pilgrimage_climb'],

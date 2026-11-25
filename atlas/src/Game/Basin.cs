@@ -153,9 +153,9 @@ namespace Atlas
                 Ribbon(st, S.Path(pts), _ => -1, 0.0035);
                 RiverRibbons++;
             }
-            Ribbon(st, S.OutletPath, _ => -1, 0.02);
+            Ribbon(st, S.OutletPath, _ => -1, 0.036);
             RiverRibbons++;
-            if (S.TributaryPath.Length > 1) { Ribbon(st, S.TributaryPath, _ => -1, 0.016); RiverRibbons++; }
+            if (S.TributaryPath.Length > 1) { Ribbon(st, S.TributaryPath, _ => -1, 0.042); RiverRibbons++; }
             AddChild(new MeshInstance3D { Name = "Water", Mesh = st.Commit(), MaterialOverride = water, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
         }
 

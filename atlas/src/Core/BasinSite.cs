@@ -112,11 +112,16 @@ namespace Atlas.Core
         {
             var join = OutletPath.OrderBy(p => Math.Abs(p.X - (Cx + 0.4 * Half)) + Math.Abs(p.Y - (Cy - Half - 0.6))).First();
             var e = (Math.Min(entry.X, XMax - 0.02), Math.Clamp(entry.Y, YMin + 0.02, YMax - 0.02));
-            var p1 = (Cx + Half + 0.55, e.Item2 - 0.6);
-            var p2 = (Cx + Half + 0.2, Cy - Half - 0.45);
+            // Follow the foot of the eastern benches, turning gradually west
+            // into the southern outlet. Tangents run along the incoming streams.
             var pts = new List<(double X, double Y)>();
-            foreach (var (a, b) in new[] { (e, p1), (p1, p2), (p2, join) })
-                foreach (var q in Line(a, b, 10, 0.03, 13)) if (pts.Count == 0 || pts[^1] != q) pts.Add(q);
+            for (int i = 0; i <= 48; i++)
+            {
+                double t = i / 48.0, u = 1 - t;
+                double x = u * u * u * e.Item1 + 3 * u * u * t * (e.Item1 - 0.7) + 3 * u * t * t * (join.X + 1.4) + t * t * t * join.X;
+                double y = u * u * u * e.Item2 + 3 * u * u * t * (e.Item2 - 0.2) + 3 * u * t * t * (join.Y + 0.25) + t * t * t * join.Y;
+                pts.Add((x, y));
+            }
             TributaryPath = pts.ToArray();
         }
         public (double X, double Y) RoadEnd => RoadPath[^1];
@@ -182,8 +187,9 @@ namespace Atlas.Core
             // Two outward spurs continue the high northern skyline across the apron.
             double wing = Math.Max(0, Math.Abs(lx) - Half * 0.65);
             double crestY = Half * 0.68 + 0.18 * wing + 0.28 * Math.Sin(wing * 1.5);
+            if (lx > 0) crestY = Half * 0.73 + 0.47 * (lx - Half) + 0.095 * Math.Pow(lx - Half, 2);
             double spur = Math.Exp(-Math.Pow((ly - crestY) / 0.85, 2))
-                          * (0.65 + 0.35 * Math.Cos(wing * 4.8));
+                          * (lx > 0 ? 1.65 : 0.65 + 0.35 * Math.Cos(wing * 4.8));
             double h = edge + (target - edge) * Math.Pow(w, 0.8) + 0.48 * spur * w * (1 - w) * 4 * (1 - 0.5 * w);
             // the outlet's valley and the road's bench
             double dv = DistToLine(x, y, OutletPath), dr = DistToLine(x, y, RoadPath);

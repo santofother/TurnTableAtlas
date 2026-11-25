@@ -151,6 +151,9 @@ namespace Atlas.Core
             double Surface(double x, double y) => basinMetres?.Invoke(x, y) ?? Hm(x, y);
             // 1. the other summits of the massif stay below the great peak
             var (rx0, ry0, rx1, ry1) = Bounds(_region, 2);
+            var wells = Towns.FirstOrDefault(t => t.Id == "wadi_wells");
+            var wadi = D.Rivers.FirstOrDefault(r => r.Id == "southwest_wadi");
+            double apronElevation = wadi == null ? 0 : Math.Min(1250, Hm(wadi.Pts[0][0], wadi.Pts[0][1]) + 120);
             double cap = D.SummitCapM, knee = cap - 380;
             for (int j = (int)Math.Max(0, (y1 - ry1) / py); j <= Math.Min(hh - 1, (y1 - ry0) / py); j++)
                 for (int i = (int)Math.Max(0, (rx0 - x0) / px); i <= Math.Min(w - 1, (rx1 - x0) / px); i++)
@@ -159,6 +162,17 @@ namespace Atlas.Core
                     double mw = RegionWeight(x, y);
                     if (mw <= 0 || skip(x, y)) continue;
                     double m = M(h[j * w + i]);
+                    // Grade the broad alluvial apron before tracing the seasonal bed.
+                    // Its southern shoulder turns east towards the outlet.
+                    if (wells.Id != null)
+                    {
+                        double dx = x - wells.X, dy = y - wells.Y;
+                        double apron = Math.Exp(-Math.Pow(dx / 6.4, 2) - Math.Pow(dy / 5.9, 2));
+                        double south = Math.Exp(-Math.Pow((dx - 5.4) / 5.6, 2) - Math.Pow((dy + 4.5) / 2.8, 2));
+                        double lift = Math.Max(0, apronElevation - m) * Math.Max(apron, south) * mw;
+                        m += lift;
+                        h[j * w + i] = (float)U(m);
+                    }
                     if (m <= knee) continue;
                     double c = knee + (cap - knee) * Math.Tanh((m - knee) / (cap - knee));
                     h[j * w + i] = (float)U(m + (c - m) * mw);
@@ -198,7 +212,11 @@ namespace Atlas.Core
 
         void Carve(float[] h, int w, int hh, double x0, double y1, double px, double py, RiverRun r, Func<double, double, bool> skip)
         {
-            double rad = 1.6 * px;
+            // Ease the lifted ground down to the wadi across its alluvial slopes.
+            // Each segment cuts from the original surface so denser sampling
+            // cannot repeatedly erode a bank at the same pixel.
+            var surface = r.Seasonal ? (float[])h.Clone() : h;
+            double rad = r.Seasonal ? Math.Max(1.6 * px, 1.35) : 1.6 * px;
             for (int k = 0; k + 1 < r.Pts.Length; k++)
             {
                 var a = r.Pts[k]; var b = r.Pts[k + 1];
@@ -214,7 +232,7 @@ namespace Atlas.Core
                         double d = Hyp(x - a.X - bx * t, y - a.Y - by * t);
                         if (d > rad) continue;
                         double bed = r.BedM[k] + (r.BedM[k + 1] - r.BedM[k]) * t;
-                        double want = bed + (M(h[j * w + i]) - bed) * SmoothStep(0.45 * px, rad, d);
+                        double want = bed + (M(surface[j * w + i]) - bed) * SmoothStep(0.45 * px, rad, d);
                         h[j * w + i] = (float)Math.Min(h[j * w + i], U(want));
                     }
             }
@@ -339,8 +357,8 @@ namespace Atlas.Core
                         double g = (1 - SmoothStep(reach * 0.45, reach, dp + 0.08 * (n1 - 0.5))) * (hm < 2300 ? 1 : 0);
                         double well = (1 - SmoothStep(0.15, 0.65, dWadi[o])) * SmoothStep(0.38, 0.66, n1);
                         g = Math.Max(g, well) * tillable;
-                        double patch = Fbm(Math.Floor(x * 7 + y * 2), Math.Floor(y * 10 - x * 3), 2, 9);
-                        double fr = patch > 0.62 ? 0.72 : patch > 0.45 ? 0.45 : 0.30, fg = patch > 0.62 ? 0.70 : patch > 0.45 ? 0.62 : 0.52, fb = patch > 0.62 ? 0.34 : 0.24;
+                        double patch = Fbm(x * 2 + y, y * 3 - x + n1, 3, 9);
+                        double fr = patch > 0.62 ? 0.76 : patch > 0.45 ? 0.57 : 0.40, fg = patch > 0.62 ? 0.63 : patch > 0.45 ? 0.55 : 0.48, fb = patch > 0.62 ? 0.34 : 0.24;
                         Mix(fr, fg, fb, g * 0.94);
                     }
                     // the rivers themselves, the dry wadi's bed
