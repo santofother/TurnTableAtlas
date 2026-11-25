@@ -34,7 +34,8 @@ class ManifestTests(unittest.TestCase):
             self.assertTrue(set(m['events']) <= (ESTATE_EVENTS if m.get('kind') == 'estate' else EVENTS), m['events'])
             wm = m['world_map']
             # a pin on the painted Caelora map, or (for cities off Caelora) just a Known World settlement
-            self.assertTrue('pin_uv' in wm or wm.get('settlement', '').startswith('settlement:'), p)
+            # FIX(haven): or a Known World position (kw_xy) for a city with no settlement yet (the port at the Flame's mouth)
+            self.assertTrue('pin_uv' in wm or wm.get('settlement', '').startswith('settlement:') or len(wm.get('kw_xy', [])) == 2, p)
             if 'pin_uv' in wm:
                 u, v = wm['pin_uv']
                 self.assertTrue(0 <= u <= 1 and 0 <= v <= 1)
@@ -130,6 +131,29 @@ class ManifestTests(unittest.TestCase):
             for rid in ('peristyle_loop', 'lagoon_riding_loop', 'garden_to_bath'):
                 self.assertIn(rid, m['routes'])
 
+    def river_capital(self, m):
+        """Haven (generator/rivercity.py): the red River Flame through a floodplain, the three white-marble pyramids,
+        and the site block the Known World patch draws."""
+        th = m['terrain_height']
+        self.assertTrue(-10 < th['min_m'] < 0 < th['max_m'] < 120, "a low floodplain, the river bed below sea level")
+        site = m['site']
+        self.assertEqual(site['kind'], 'floodplain')
+        self.assertEqual(site['peaks'], [])
+        self.assertGreater(site['water_colour'][0], 2 * site['water_colour'][2], "the Flame runs red")
+        flame = site['rivers']['flame']
+        self.assertLess(flame[0][1], flame[-1][1], "the river flows north")
+        self.assertEqual(site['inlet_km'], flame[0][:2])
+        self.assertEqual(site['outlet_km'], flame[-1][:2])
+        pyr = [k for k in m['anchors'] if k.endswith('_pyramid')]
+        self.assertEqual(len(pyr), 3, "three white-marble pyramids")
+        self.assertGreater(m['instances']['groups']['marble'][1], 3 * 6)
+        ids = {lm['id'] for lm in m['landmarks']}
+        self.assertTrue({'overview', 'pyramids', 'river_front', 'bridge', 'harbour', 'outer_wall', 'fields'} <= ids)
+        for rid in ('procession', 'bridge_crossing', 'grain_road', 'quays'):
+            self.assertGreater(len(m['routes'][rid]), 5, rid)
+        pop = m['stats']['population_estimate']
+        self.assertTrue(400000 <= pop <= 650000, "400-600k people (the brief): %d" % pop)
+
     def test_metropolis_extras(self):
         """A metropolis (Karn Ashur, kind 'metropolis'): its instance table, its true-metre ground for the Known World,
         the basin layout the map patch draws, and the views and routes the brief asks for."""
@@ -147,8 +171,10 @@ class ManifestTests(unittest.TestCase):
             self.assertEqual(covered[0][0], 0)
             for (a0, c0), (a1, _) in zip(covered, covered[1:]):
                 self.assertEqual(a0 + c0, a1, "groups are contiguous runs of one kind")
-            self.assertGreater(ins['groups']['house'][1], 40000, "an ocean of roofs")
-            for kind in ('house', 'tower', 'terrace', 'warehouse', 'awning', 'camel', 'palm'):
+            roofs = ins['groups']['house'][1] + ins['groups'].get('roofhouse', [0, 0])[1]
+            self.assertGreater(roofs, 40000, "an ocean of roofs")
+            kinds = ('house', 'tower', 'terrace', 'warehouse', 'awning', 'palm') + (('camel',) if m['id'] == 'karn_ashur' else ('marble', 'silo', 'boat'))
+            for kind in kinds:
                 self.assertIn(kind, ins['protos'])
                 self.assertIn(kind, ins['groups'])
             with open(os.path.join(d, ins['file']), 'rb') as f:              # the first and last records' kinds
@@ -159,6 +185,9 @@ class ManifestTests(unittest.TestCase):
             self.assertTrue(-50 <= first[0] <= 50 and -50 <= first[1] <= 50)
             th = m['terrain_height']
             self.assertTrue(os.path.exists(os.path.join(d, th['file'])))
+            if m['id'] != 'karn_ashur':
+                self.river_capital(m)
+                continue
             self.assertTrue(900 < th['min_m'] < 1100 and 3650 < th['max_m'] < 3800, "basin floor and the First Flame's summit")
             site = m['site']
             self.assertEqual(len(site['peaks']), 2)

@@ -33,6 +33,7 @@ namespace Atlas
         /// <summary>Metropolis basins (Karn Ashur) by package id, and the High Dunes round them; kept between visits.</summary>
         static readonly Dictionary<string, BasinSite> _basinSites = new();
         static HighDunesRegion _highDunes;
+        static FlameValleyRegion _flame;   // FIX(haven): the River Flame valley
         /// <summary>Country estates' hero patches (Landric's villa), by city id; kept between visits.</summary>
         static readonly Dictionary<string, EstateSite> _estateSites = new();
         // the relief mesh's quads (its PlaneMesh subdivisions + 1); hero patches meet its triangles at their edges
@@ -56,6 +57,8 @@ namespace Atlas
         /// <summary>The High Dunes round Karn Ashur: rivers, villages, market towns, the grain route.</summary>
         public HighDunes Dunes { get; private set; }
         public static HighDunesRegion Region => _highDunes;
+        public FlameValley Valley { get; private set; }
+        public const string FlameViewId = "CAM_RiverFlame";
         /// <summary>Estates standing on the map as miniatures of their packages.</summary>
         public readonly List<Estate> Estates = new();
         readonly HashSet<MeshInstance3D> _basinGlows = new();
@@ -118,6 +121,7 @@ namespace Atlas
                 new CloudScale { Base = 9, Top = 21, Center = new Vector2(cx, -cy), Half = new Vector2((float)_kw.Width / 2, (float)_kw.Depth / 2)   /* W1: clouds stay over the map, not the table */,
                                  Cell = 230, Shape = 20, Detail = 5.5f, NearFade = 1.5f, Edge = 45, FlashR = 30 },
                 new[] { _reliefMat }.Concat(Basins.SelectMany(b => b.WeatherMaterials)).Concat(Dunes?.WeatherMaterials ?? new List<ShaderMaterial>())
+                    .Concat(Valley?.WeatherMaterials ?? new List<ShaderMaterial>())
                     .Concat(Estates.SelectMany(e => e.WeatherMaterials)), false, () => Rig.Target,
                 () => Math.Clamp(Math.Abs(Tod.Speed) * 60, 1.0, 20.0));
 
@@ -134,8 +138,10 @@ namespace Atlas
             Shipping = new WorldShipping();
             AddChild(Shipping);
             Shipping.Build(this);
-            foreach (var b in Basins)   // FIX(karn_ashur): the basin's view, and the High Dunes round it
-                if (!_kw.Cameras.Any(c => c.Id == Basin.ViewId)) _kw.Cameras.Add(Basin.View(b.S));
+            foreach (var b in Basins)   // FIX(karn_ashur): the basin's view, and the High Dunes round it (FIX(haven): one per basin)
+                if (!_kw.Cameras.Any(c => c.Id == Basin.ViewIdFor(b.S))) _kw.Cameras.Add(Basin.View(b.S, b.M.Name));
+            if (Valley != null && !_kw.Cameras.Any(c => c.Id == FlameViewId))
+                _kw.Cameras.Add(new KnownWorldMap.View { Id = FlameViewId, Name = "The River Flame", Target = new[] { 181.0, 60.0, 0.1 }, Yaw = -105, Pitch = 36, Dist = 52 });
             if (Dunes != null && !_kw.Cameras.Any(c => c.Id == HighDunesViewId))
                 _kw.Cameras.Add(new KnownWorldMap.View { Id = HighDunesViewId, Name = "The High Dunes", Target = new[] { 94.0, 31.0, 0.5 }, Yaw = -98, Pitch = 40, Dist = 62 });
             foreach (var e in Estates)
@@ -191,11 +197,12 @@ namespace Atlas
                 var raw = new ReliefSampler(_kwH, _hw, _hh, _kw.BoundsXy, ReliefQuadsX, ReliefQuadsY);
                 var pre = metros.Select(m => Basin.MakeSite(m, _kw, raw)).Where(b => b != null).ToList();
                 var hd = Path.Combine(_kw.Directory, "high_dunes.json");
-                if (pre.Count > 0 && Args.Get("high-dunes") != "off" && File.Exists(hd))
+                var karn = pre.FirstOrDefault(b => !b.Floodplain);   // FIX(haven): the High Dunes hang on Karn Ashur's basin
+                if (karn != null && Args.Get("high-dunes") != "off" && File.Exists(hd))
                 {
                     _highDunes = new HighDunesRegion(HighDunesData.Load(hd), _kw.UnitM, _kw.Exaggeration);
-                    _highDunes.LinkOutlet(pre[0].OutletEnd);
-                    _highDunes.LinkRoad(pre[0].RoadEnd, pre[0].OnPlinth);
+                    _highDunes.LinkOutlet(karn.OutletEnd);
+                    _highDunes.LinkRoad(karn.RoadEnd, karn.OnPlinth);
                     _highDunes.EditHeights(_kwH, _hw, _hh, _kw.BoundsXy, (x, y) => pre.Any(b => b.OnPlinth(x, y)),
                         (x, y) => pre.FirstOrDefault(b => b.Contains(x, y)) is { } basin ? basin.Metres(basin.MeshUnits(x, y)) : null);
                 }
@@ -209,6 +216,18 @@ namespace Atlas
                     _basinSites[m.Id] = bs;
                 }
             var basinSites = metros.Where(m => _basinSites.ContainsKey(m.Id)).Select(m => _basinSites[m.Id]).ToList();
+            var fv = Path.Combine(_kw.Directory, "flame_valley.json");
+            if (_flame == null && Args.Get("flame-valley") != "off" && File.Exists(fv))   // FIX(haven): the red River Flame and its farmland
+            {
+                _flame = new FlameValleyRegion(FlameValleyData.Load(fv), _kw.UnitM, _kw.Exaggeration);
+                foreach (var bs in basinSites.Where(b => b.Floodplain))
+                    if (_flame.LinkPatch(bs.Contains) is { } ends)
+                    {
+                        bs.SetRiverEnds(ends.Up, ends.Down);
+                        _flame.AddJoin("join_in_" + bs.Id, bs.InletPath);
+                        _flame.AddJoin("join_out_" + bs.Id, bs.OutletPath);
+                    }
+            }
             if (_fogHeightTex == null && basinSites.Count > 0)
             {
                 var fh = (float[])_kwH.Clone();
@@ -225,13 +244,22 @@ namespace Atlas
             if (_kwTex == null)
             {
                 var img = LoadImage(Path.Combine(_kw.Directory, _kw.Albedo));
-                if (img != null && _highDunes != null)
+                if (img != null && (_highDunes != null || _flame != null))
                 {
                     bool InBasin(double x, double y) => basinSites.Any(b => b.OnPlinth(x, y));
-                    _highDunes.PlaceSettlements((x, y) => _highDunes.M(_sampler.Fine(x, y)), InBasin);
+                    double Hm(double x, double y) => _sampler.Fine(x, y) * _kw.UnitM / _kw.Exaggeration;
                     img.Convert(Image.Format.Rgba8);
                     var px = img.GetData();
-                    _highDunes.PaintAlbedo(px, img.GetWidth(), img.GetHeight(), _kw.BoundsXy, (x, y) => _highDunes.M(_sampler.Fine(x, y)), (_, _) => false);
+                    if (_highDunes != null)
+                    {
+                        _highDunes.PlaceSettlements((x, y) => _highDunes.M(_sampler.Fine(x, y)), InBasin);
+                        _highDunes.PaintAlbedo(px, img.GetWidth(), img.GetHeight(), _kw.BoundsXy, (x, y) => _highDunes.M(_sampler.Fine(x, y)), (_, _) => false);
+                    }
+                    if (_flame != null)
+                    {
+                        _flame.PlaceSettlements(Hm, (x, y) => basinSites.Any(b => b.Contains(x, y)));
+                        _flame.PaintAlbedo(px, img.GetWidth(), img.GetHeight(), _kw.BoundsXy, Hm, InBasin);
+                    }
                     img = Image.CreateFromData(img.GetWidth(), img.GetHeight(), false, Image.Format.Rgba8, px);
                 }
                 if (img != null) { img.GenerateMipmaps(); _kwTex = ImageTexture.CreateFromImage(img); }
@@ -246,10 +274,10 @@ namespace Atlas
                 var (a0, b0, a1, b1) = estateSites[0].HoleUv;
                 _reliefMat.SetShaderParameter("hole2", new Vector4((float)a0, (float)b0, (float)a1, (float)b1));
             }
-            if (basinSites.Count > 0)
+            for (int bi = 0; bi < Math.Min(2, basinSites.Count); bi++)   // FIX(haven): a second basin sinks through hole3
             {
-                var (u0, v0, u1, v1) = basinSites[0].HoleUv;   // the patch covers these vertices: sink them out of sight
-                _reliefMat.SetShaderParameter("hole", new Vector4((float)u0, (float)v0, (float)u1, (float)v1));
+                var (u0, v0, u1, v1) = basinSites[bi].HoleUv;   // the patch covers these vertices: sink them out of sight
+                _reliefMat.SetShaderParameter(bi == 0 ? "hole" : "hole3", new Vector4((float)u0, (float)v0, (float)u1, (float)v1));
             }
             _reliefMat.SetShaderParameter("albedo_tex", _kwTex);
             _reliefMat.SetShaderParameter("height_tex", _kwHeightTex);
@@ -276,7 +304,16 @@ namespace Atlas
                 AddChild(Dunes);
                 var metro = _root.Cities.FirstOrDefault(c => c.IsMetropolis);
                 double f = metro?.WorldMap?.Miniature?.Exaggeration ?? 4;
-                Dunes.Build(_highDunes, basinSites.First(), _kw, (x, y) => GroundAt(x, y), metro?.Instances, f / _kw.UnitM);
+                Dunes.Build(_highDunes, basinSites.First(b => !b.Floodplain), _kw, (x, y) => GroundAt(x, y), metro?.Instances, f / _kw.UnitM);
+            }
+            if (_flame != null)
+            {
+                Valley = new FlameValley();
+                AddChild(Valley);
+                var haven = _root.Cities.FirstOrDefault(c => c.IsMetropolis && c.Site?.IsFloodplain == true) ?? _root.Cities.FirstOrDefault(c => c.IsMetropolis);
+                double f = haven?.WorldMap?.Miniature?.Exaggeration ?? 6;
+                Valley.Build(_flame, (x, y) => GroundAt(x, y), (x, y) => _sampler.Coarse(x, y), (x, y) => basinSites.Any(b => b.Contains(x, y)),
+                             haven?.Instances, f / _kw.UnitM);
             }
             foreach (var es in estateSites)
             {
@@ -350,6 +387,7 @@ namespace Atlas
                 _names.Add((l, true));
             }
             if (Dunes != null) foreach (var l in Dunes.Labels) _names.Add((l, false));   // the High Dunes' market towns
+            if (Valley != null) foreach (var l in Valley.Labels) _names.Add((l, false));   // FIX(haven): the River Flame's market towns
             GD.Print($"[Atlas] known world loaded: {_hw}x{_hh} heights, {_kw.Settlements.Count} settlements, {_kw.Cameras.Count} views in {Time.GetTicksMsec() - t0} ms");
         }
 
@@ -500,6 +538,7 @@ namespace Atlas
             }
             foreach (var b in Basins) b.Tick((float)Tod.WindowLevel, night);
             Dunes?.Tick(delta, Rig.Dist, (float)Tod.WindowLevel, night);
+            Valley?.Tick((float)Tod.WindowLevel, night);
             Declutter(cam);
             if (!_syncing && _time != null && Tod.Speed != 0) { _syncing = true; _time.Value = Tod.Hour; _syncing = false; }
             if (_clock != null) _clock.Text = TimeOfDay.Clock(Tod.Hour);

@@ -122,8 +122,19 @@ namespace Atlas
                     {
                         int walking = v.Life.Crowd.W.Count(w => w.Active);
                         Check(walking > 100 && Swarm.FigureScale < 1f, $"{walking} people on the metropolis's streets, figures x{Swarm.FigureScale:0.00}");
-                        var flame = v.M.NightLights.FirstOrDefault(l => l.Kind == "lighthouse");
-                        Check(flame != null && flame.Pos[2] > 25, $"the First Flame burns on the summit (z {flame?.Pos[2]:0.0})");
+                        if (v.M.Site?.IsFloodplain == true)   // FIX(haven): a river capital: its pyramids and its red river
+                        {
+                            int pyramids = v.M.Anchors.Keys.Count(k => k.EndsWith("_pyramid"));
+                            bool red = v.City.ByName.TryGetValue("CAP_Sea_Rivers", out var rw) && rw.Mesh is ArrayMesh am
+                                       && am.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Color].AsColorArray() is { Length: > 0 } wc && wc[0].G < 0.5f;
+                            Check(pyramids == 3 && v.City.Instances.CountOf("marble") >= 18 && red,
+                                  $"{v.M.Name}: {pyramids} white-marble pyramids ({v.City.Instances.CountOf("marble")} tiers and stairs), the river drawn silt-red");
+                        }
+                        else
+                        {
+                            var flame = v.M.NightLights.FirstOrDefault(l => l.Kind == "lighthouse");
+                            Check(flame != null && flame.Pos[2] > 25, $"the First Flame burns on the summit (z {flame?.Pos[2]:0.0})");
+                        }
                     }
                     else
                     {
@@ -168,10 +179,18 @@ namespace Atlas
                         var bas = map.Basins.FirstOrDefault(b => b.M.Id == m.Id);
                         var pinB = map.Pins.FirstOrDefault(p => p.M.Id == m.Id);
                         float onPatch = bas != null && pinB != null ? Math.Abs(pinB.Position.Y - (bas.HeightAt(bas.S.Cx, bas.S.Cy) ?? -9f)) : 9f;
-                        Check(bas != null && bas.InstanceCount > 50000 && bas.RiverRibbons >= 5 && onPatch < 0.002f && map.Kw.Cameras.Any(c => c.Id == Basin.ViewId)
-                              && bas.FlamePosition.Y > bas.S.Units(3500),
-                              $"{m.Name} on the Known World: {bas?.InstanceCount} instances, {bas?.RiverRibbons} water ribbons, plinth {bas?.S.Half * 2:0.00} units, the First Flame at {bas?.S.Metres(bas.FlamePosition.Y):0} m, pin on its patch");
+                        bool flood = bas?.S.Floodplain == true;   // FIX(haven): Haven's patch: the river across its ring, no flame
+                        Check(bas != null && bas.InstanceCount > 50000 && bas.RiverRibbons >= (flood ? 3 : 5) && onPatch < 0.002f
+                              && map.Kw.Cameras.Any(c => c.Id == Basin.ViewIdFor(bas.S))
+                              && (flood ? bas.S.InletPath.Length > 2 && bas.S.OutletPath.Length > 2 : bas.FlamePosition.Y > bas.S.Units(3500)),
+                              $"{m.Name} on the Known World: {bas?.InstanceCount} instances, {bas?.RiverRibbons} water ribbons, plinth {bas?.S.Half * 2:0.00} units, " +
+                              (flood ? "the river carried across its ring" : $"the First Flame at {bas?.S.Metres(bas.FlamePosition.Y):0} m") + ", pin on its patch");
                     }
+                    var fv = map.Valley;   // FIX(haven): the red River Flame and its farmland
+                    if (root.Cities.Any(c => c.Site?.IsFloodplain == true))
+                        Check(fv != null && fv.R.Reaches.Any(r => r.Id == "trunk_upper") && fv.R.Reaches.Count(r => r.Id.EndsWith("_arm")) == 4 && fv.VillageCount > 400
+                              && fv.FieldQuads > 1000 && fv.RiverSegments > 500 && map.Kw.Cameras.Any(c => c.Id == WorldMap.FlameViewId),
+                              $"River Flame: {fv?.R.Reaches.Count} red reaches joined to Haven's patch, {fv?.FieldQuads} field quads, {fv?.VillageCount} villages, {fv?.TownCount} market towns (~{fv?.R.Population / 1000}k people)");
                     var hd = map.Dunes;
                     bool graded = hd != null && hd.R.Rivers.All(r => r.BedM.Zip(r.BedM.Skip(1), (a, b) => b <= a + 1e-6).All(x => x));
                     Check(hd != null && graded && hd.R.Rivers.Count >= 4 && hd.VillageCount > 150 && hd.TownCount >= 5 && hd.RouteSegments > 50 && hd.SeaLeg != null

@@ -93,6 +93,7 @@ namespace Atlas.Core
             if (pin == null) return null;
             var s = Settlement(pin.Settlement);
             if (s != null) return (s.Uv[0], s.Uv[1]);
+            if (pin.KwXy is { Length: 2 }) return XyToUv(pin.KwXy[0], pin.KwXy[1]);   // FIX(haven)
             if (pin.PinUv is { Length: 2 }) return FromGeo(pin.PinUv[0], pin.PinUv[1]);
             return null;
         }

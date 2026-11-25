@@ -90,8 +90,11 @@ def build_estate(city_id, cfg, argv, t0):
 
 def build_metropolis(city_id, cfg, argv, t0):
     import bpy
-    import metropolis
     import anchors
+    if cfg.get('builder') == 'rivercity':   # FIX(haven): a floodplain capital (generator/rivercity.py)
+        import rivercity as metropolis
+    else:
+        import metropolis
     metropolis.apply_config(cfg)
     out_dir = os.path.join(ROOT, "cities", city_id)
     stats = metropolis.build_all(out_dir)

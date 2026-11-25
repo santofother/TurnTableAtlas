@@ -140,6 +140,15 @@ namespace Atlas.Core
         [JsonPropertyName("villages")] public double[][] Villages { get; set; }
         [JsonPropertyName("freight_entry_km")] public double[] FreightEntryKm { get; set; }
         [JsonPropertyName("outlet_km")] public double[] OutletKm { get; set; }
+        // FIX(haven): a floodplain capital (generator/rivercity.py): the river enters at inlet_km, leaves at outlet_km
+        /// <summary>"floodplain" for a river capital on flat land (Haven); null for a mountain basin (Karn Ashur).</summary>
+        [JsonPropertyName("kind")] public string Kind { get; set; }
+        [JsonPropertyName("inlet_km")] public double[] InletKm { get; set; }
+        [JsonPropertyName("river_width_km")] public double RiverWidthKm { get; set; }
+        /// <summary>The river's colour (sRGB), e.g. the River Flame's silt red.</summary>
+        [JsonPropertyName("water_colour")] public double[] WaterColour { get; set; }
+        [JsonPropertyName("outer_wall")] public double[][] OuterWall { get; set; }
+        [JsonIgnore] public bool IsFloodplain => Kind == "floodplain";
     }
 
     /// <summary>How an estate stands on the Known World: its miniature's size (x its true size) and its hills.</summary>
@@ -158,6 +167,9 @@ namespace Atlas.Core
         [JsonPropertyName("pin_uv")] public double[] PinUv { get; set; }
         /// <summary>Optional settlement id on the Known World relief map (e.g. "settlement:calderra").</summary>
         [JsonPropertyName("settlement")] public string Settlement { get; set; }
+        /// <summary>FIX(haven): a position on the Known World (blend xy, 1 unit = 10 miles) for a city with no settlement
+        /// in the lore table and off the painted Caelora map (the port at the River Flame's mouth).</summary>
+        [JsonPropertyName("kw_xy")] public double[] KwXy { get; set; }
         [JsonPropertyName("lore")] public string Lore { get; set; }
     }
 
