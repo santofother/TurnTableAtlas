@@ -133,6 +133,7 @@ namespace Atlas
                 pin.Build(m);
                 var uv = _kw.PinFor(m.WorldMap);
                 if (uv.HasValue) pin.Position = KwPoint(uv.Value.U, uv.Value.V);
+                pin.Placed = uv.HasValue;
                 pin.Visible = uv.HasValue;
                 Pins.Add(pin);
             }
@@ -514,10 +515,14 @@ namespace Atlas
             float best = 30f;
             foreach (var p in Pins)
             {
-                p.Tick(dt, k, night, p == _hover);
+                // small sites (an estate, a port like Flamemouth) raise their beacon only once about one realm is in view
+                float reveal = PinTiers.Reveal(p.M, Rig.Dist);
+                p.Shown = p.Placed && reveal > 0.01f;
+                p.Tick(dt, k * reveal, night, p == _hover);
                 // an estate sits close to its city: its name shows only once the camera is in round it
                 if (p.M.IsEstate)
                     p.LabelShown = Rig.Dist < EstateNameDist && Rig.Target.DistanceTo(p.Position) < Math.Max(0.5f, Rig.Dist * 0.5f);
+                else p.LabelShown = reveal > 0.5f;
                 var head = p.Head;
                 if (!p.Visible || cam.IsPositionBehind(head)) continue;
                 float d = cam.UnprojectPosition(head).DistanceTo(mouse);
@@ -768,6 +773,10 @@ namespace Atlas
         float _t;
 
         public bool LabelShown { get => _label.Visible; set => _label.Visible = value; }
+        /// <summary>The pin has a place on this map.</summary>
+        public bool Placed { get; set; }
+        /// <summary>Shown at the current zoom (WorldMap hides minor pins from far out).</summary>
+        public bool Shown { get => Visible; set { if (Visible != value) Visible = value; } }
 
         public Vector3 Head => GlobalPosition + Vector3.Up * _body.Scale.Y;
 
