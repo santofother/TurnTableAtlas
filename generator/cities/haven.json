@@ -145,15 +145,21 @@
     "pyramids": [
       {
         "id": "great_pyramid",
-        "label": "The Great Pyramid of Erros",
+        "label": "The Great Pyramid of Erros, the royal palace",
         "at": [
-          3.65,
+          3.55,
           0.25
         ],
-        "base_m": 560,
-        "height_m": 190,
-        "tiers": 7,
-        "stair_face": "west"
+        "base_m": 840,
+        "height_m": 285,
+        "tiers": 9,
+        "stair_face": "west",
+        "royal": {
+          "notes": "House Amaranth's royal palace (the user, 2026-11-24): the largest pyramid, inside its own walled court of colonnades, gardens and pools; a pylon gate on the processional way. Form is a proposal (LORE?).",
+          "court_m": 150,
+          "wall_h_m": 26,
+          "tower_every_m": 110
+        }
       },
       {
         "id": "south_pyramid",

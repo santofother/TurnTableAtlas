@@ -101,6 +101,42 @@ namespace Atlas.Core
 
         bool InPatch(double x, double y) => _patches.Any(p => p(x, y));
 
+        // ---------------------------------------------------------------- the barges
+
+        /// <summary>The barges' river from its source to the sea (world xy) with the drawn width at each point: the trunk,
+        /// and across a floodplain patch (Haven) the patch's own river and the joins either side of it.</summary>
+        public ((double X, double Y) P, double W)[] BargeRiver(BasinSite patch)
+        {
+            var route = new List<((double X, double Y) P, double W)>();
+            var upper = Reaches.FirstOrDefault(r => r.Id == "trunk_upper");
+            var lower = Reaches.FirstOrDefault(r => r.Id == "trunk_lower");
+            if (patch == null || upper.Pts == null || lower.Pts == null || patch.Site.Rivers.Count == 0)
+                return Trunk.Select(p => (p, TrunkWidth)).ToArray();
+            double w = patch.Site.RiverWidthKm > 0 ? patch.Site.RiverWidthKm * patch.S : TrunkWidth;
+            void Add(IEnumerable<(double X, double Y)> pts, double width)
+            {
+                foreach (var p in pts)
+                    if (route.Count == 0 || Math.Abs(route[^1].P.X - p.X) + Math.Abs(route[^1].P.Y - p.Y) > 1e-6) route.Add((p, width));
+            }
+            Add(upper.Pts, TrunkWidth);
+            Add(patch.InletPath, TrunkWidth);
+            Add(patch.Path(patch.Site.Rivers.Values.First()), w);
+            Add(patch.OutletPath, TrunkWidth);
+            Add(lower.Pts, TrunkWidth);
+            return route.ToArray();
+        }
+
+        /// <summary>Grain barges down the Flame to the sea and empty ones sailing back up, at the miniature's scale
+        /// (`metresToUnits`): a lane each side of the middle, at least 420 m between barges in a lane.</summary>
+        public BargeLane[] Barges(BasinSite patch, double metresToUnits)
+        {
+            var route = RiverBarges.Resample(BargeRiver(patch), 0.01);   // on the drawn river itself: no corner cutting
+            double L(double m) => m * metresToUnits;
+            return RiverBarges.Lanes(route, 0.5,
+                new BargeSpec(Speed: 0.006, Count: 170, MinGap: L(420), LenMin: L(34), LenMax: L(50), Jitter: L(8), Seed: 7),
+                new BargeSpec(Speed: 0.0045, Count: 130, MinGap: L(420), LenMin: L(30), LenMax: L(44), Jitter: L(8), Seed: 11));
+        }
+
         // ---------------------------------------------------------------- where the farmland is
 
         public bool InDelta(double x, double y) => HighDunesRegion.InPoly(x, y, _delta);

@@ -36,6 +36,11 @@ N = 1025
 MESH_STEP = 2
 ALBEDO_PX = 4096
 WL = 4.0                     # the river's water level (true metres)
+# The barges' channel: a lane each side of the middle (through the bridge's arches at +-75 m), the water gates' booms
+# open across the middle, and the traffic on each lane (Atlas.Core.RiverBarges keeps every gap >= min_gap_m).
+CHANNEL = {'offset_m': 75.0, 'jitter_m': 4.0, 'gate_m': 135.0,
+           'down': {'speed': 0.06, 'count': 26, 'min_gap_m': 320.0, 'length_m': [38.0, 52.0]},
+           'up': {'speed': 0.045, 'count': 20, 'min_gap_m': 320.0, 'length_m': [32.0, 46.0]}}
 ANCHORS = {}
 CFG = {}
 LAY = {}
@@ -60,6 +65,9 @@ LIMESTONE = (0.86, 0.78, 0.64)
 WALL_STONE = (0.80, 0.68, 0.50)
 WALL_STONE_D = (0.70, 0.57, 0.41)
 TERRACOTTA = (0.70, 0.31, 0.20)
+GRAIN = (0.88, 0.72, 0.34)
+GOLD = (0.93, 0.74, 0.30)
+TIMBER = (0.42, 0.29, 0.18)
 WALLS = [(0.86, 0.72, 0.52), (0.90, 0.80, 0.62), (0.82, 0.66, 0.46), (0.93, 0.86, 0.72), (0.78, 0.60, 0.42),
          (0.88, 0.76, 0.56), (0.84, 0.70, 0.50)]
 WHITEWASH = (0.94, 0.91, 0.84)
@@ -73,7 +81,7 @@ SHRUB = (0.50, 0.48, 0.30)
 WIN_C = (0.13, 0.09, 0.07)
 COURT = (0.46, 0.36, 0.26)
 
-KINDS = dict(mp.KINDS, roofhouse=8, marble=9, silo=14, boat=15)
+KINDS = dict(mp.KINDS, roofhouse=8, marble=9, silo=14, boat=15, barge_grain=16, barge_empty=17)
 
 
 # =============================================================================
@@ -505,13 +513,80 @@ def proto_boat():
     return p
 
 
+def _hull(p, deck=0.16):
+    """A flat-bottomed river barge's hull (length along local x, bow at +x) with a raised stern and a plank deck."""
+    V = [(-0.5, -0.42, deck), (0.36, -0.5, deck), (0.5, 0.0, deck + 0.06), (0.36, 0.5, deck), (-0.5, 0.42, deck),
+         (-0.46, -0.34, 0.0), (0.32, -0.4, 0.0), (0.44, 0.0, 0.04), (0.32, 0.4, 0.0), (-0.46, 0.34, 0.0)]
+    F = [((5, 6, 1, 0), 'tint', 0.8), ((6, 7, 2, 1), 'tint', 0.74), ((7, 8, 3, 2), 'tint', 0.86), ((8, 9, 4, 3), 'tint', 0.8),
+         ((9, 5, 0, 4), 'tint', 0.7), ((0, 1, 2, 3, 4), 'abs', TIMBER)]
+    p.add(V, F)
+    # gunwales: a dark rail round the deck
+    for (x0, x1, y0, y1) in ((-0.5, 0.36, -0.47, -0.41), (-0.5, 0.36, 0.41, 0.47)):
+        p.add(*_box_faces(x0, x1, y0, y1, deck, deck + 0.04, mode='abs', shade=((0.30, 0.20, 0.12),) * 4, top=None))
+    # the stern deckhouse and the steering oar
+    p.add(*_box_faces(-0.49, -0.36, -0.26, 0.26, deck, deck + 0.13, top=1.0))
+    p.add(*_box_faces(-0.53, -0.47, -0.02, 0.02, deck - 0.12, deck + 0.18, mode='abs', shade=((0.30, 0.20, 0.12),) * 4, top=None))
+
+
+def _heap(p, cx, rx, ry, z0, h, col):
+    """A heap of loose grain: an oval mound of eight faces round a ridge."""
+    n = 8
+    ring = [(cx + rx * math.cos(2 * math.pi * k / n), ry * math.sin(2 * math.pi * k / n), z0) for k in range(n)]
+    mid = [(cx + 0.62 * rx * math.cos(2 * math.pi * (k + 0.5) / n), 0.62 * ry * math.sin(2 * math.pi * (k + 0.5) / n), z0 + 0.62 * h) for k in range(n)]
+    V = ring + mid + [(cx - 0.2 * rx, 0.0, z0 + h), (cx + 0.2 * rx, 0.0, z0 + h)]
+    F = []
+    for k in range(n):
+        lit = 0.9 + 0.12 * math.cos(2 * math.pi * (k + 0.5) / n - 2.2)
+        c = tuple(min(1.0, v * lit) for v in col)
+        F.append(((k, (k + 1) % n, n + k), 'abs', c))
+        F.append((((k + 1) % n, n + (k + 1) % n, n + k), 'abs', c))
+        top = 2 * n + (1 if math.cos(2 * math.pi * (k + 0.5) / n) > 0 else 0)
+        F.append(((n + k, n + (k + 1) % n, top), 'abs', tuple(min(1.0, v * (lit + 0.06)) for v in col)))
+    F.append(((2 * n, 2 * n + 1, n + 2), 'abs', col))          # close the ridge's ends
+    F.append(((2 * n + 1, 2 * n, n + 6), 'abs', col))
+    p.add(V, F)
+
+
+def proto_barge_grain():
+    """A grain barge low in the water bound downstream: three golden heaps of wheat on deck, the mast lowered along it.
+    Scaled by (length, 0.3 x length, 0.5 x length)."""
+    p = Proto()
+    _hull(p)
+    for cx, rx in ((-0.18, 0.17), (0.06, 0.15), (0.27, 0.12)):
+        _heap(p, cx, rx, 0.38, 0.2, 0.34 if cx < 0.2 else 0.28, GRAIN)
+    # sheaves bound at the deck's edge, and the mast lying on the heaps
+    for k in range(5):
+        x = -0.3 + 0.14 * k
+        for sy in (-1, 1):
+            p.add(*_box_faces(x - 0.04, x + 0.04, sy * 0.36 - 0.04, sy * 0.36 + 0.04, 0.18, 0.27, mode='abs', shade=((0.80, 0.64, 0.30),) * 4, top_col=(0.90, 0.75, 0.38)))
+    p.add(*_box_faces(-0.34, 0.42, -0.015, 0.015, 0.52, 0.55, mode='abs', shade=((0.32, 0.22, 0.14),) * 4, top=None))
+    return p
+
+
+def proto_barge_empty():
+    """An empty barge sailing back upstream on the north wind: a bare deck, a tall mast, a broad square sail.
+    Scaled by (length, 0.3 x length, 0.5 x length)."""
+    p = Proto()
+    _hull(p)
+    for x in (-0.2, 0.0, 0.2):                                                      # deck beams and hatch boards
+        p.add(*_box_faces(x - 0.03, x + 0.03, -0.4, 0.4, 0.16, 0.19, mode='abs', shade=((0.36, 0.25, 0.15),) * 4, top=None))
+    p.add(*_box_faces(0.06, 0.1, -0.03, 0.03, 0.16, 1.0, mode='abs', shade=((0.32, 0.22, 0.14),) * 4, top=None))
+    p.add(*_box_faces(0.1, 0.12, -0.62, 0.62, 0.92, 0.95, mode='abs', shade=((0.32, 0.22, 0.14),) * 4, top=None))   # the yard
+    # the sail: bellied forward (the wind from astern, from the north, as they sail south)
+    p.add([(0.12, -0.6, 0.92), (0.12, 0.6, 0.92), (0.2, 0.56, 0.62), (0.2, -0.56, 0.62), (0.13, 0.52, 0.34), (0.13, -0.52, 0.34)],
+          [((0, 1, 2, 3), 'abs', SAIL), ((3, 2, 4, 5), 'abs', tuple(c * 0.95 for c in SAIL)),
+           ((3, 2, 1, 0), 'abs', tuple(c * 0.84 for c in SAIL)), ((5, 4, 2, 3), 'abs', tuple(c * 0.8 for c in SAIL))])
+    return p
+
+
 PROTOS = {}
 
 
 def protos():
     if not PROTOS:
         PROTOS.update(mp.protos())
-        PROTOS.update({'roofhouse': proto_roofhouse(), 'marble': proto_marble(), 'silo': proto_silo(), 'boat': proto_boat()})
+        PROTOS.update({'roofhouse': proto_roofhouse(), 'marble': proto_marble(), 'silo': proto_silo(), 'boat': proto_boat(),
+                       'barge_grain': proto_barge_grain(), 'barge_empty': proto_barge_empty()})
         mp.PROTOS.update(PROTOS)
     return PROTOS
 
@@ -527,6 +602,10 @@ class City(mp.City):
         self.foam = []
         self.boats = 0
         self.pyramid_tops = {}
+        self.booms = []           # the water gates' booms either side of the channel (metres)
+        self.piers = []           # the bridge's piers and cutwaters: (x, y, half x, half y)
+        self.moored = []          # moored barges: (xy, length)
+        self.traffic = None
 
     def wall_col(self, x, y):
         r = self.rng.random()
@@ -557,6 +636,9 @@ class City(mp.City):
         self.res.rect(pl['xy'][0], pl['xy'][1], pl['w_m'], pl['d_m'], 0.0, 10.0)
         for p in LAY['pyramids']:
             self.res.rect(p['xy'][0], p['xy'][1], p['base_m'], p['base_m'], 0.0, 40.0)
+            if p.get('royal'):                                  # the royal court inside its own wall
+                side = p['base_m'] + 2 * p['royal']['court_m']
+                self.res.rect(p['xy'][0], p['xy'][1], side, side, 0.0, 30.0)
         ii = LAY['inner']['poly']
         for a, b in zip(ii, ii[1:] + ii[:1]):
             self.res.line([a, b], 16.0)
@@ -572,10 +654,25 @@ class City(mp.City):
         ux, uy = math.cos(face), math.sin(face)
         # a low podium, the tiers
         self.I.add('marble', x, y, z0 - 2.0, b + 34, b + 34, 3.2, 0.0, MARBLE_SHADE)
+        royal = p.get('royal')
         for k in range(T):
             side = b - (b - top_side) * k / max(1, T - 1)
             z = z0 + 1.2 + k * th
             self.I.add('marble', x, y, z, side, side, th + 0.4, 0.0, MARBLE if k % 2 == 0 else MARBLE_SHADE)
+            if royal:
+                # a gilded frieze round each tier's brow, and a colonnade along the terrace above it
+                for (cu, cv, w, d) in ((0, -1, side + 1.2, 1.4), (0, 1, side + 1.2, 1.4), (-1, 0, 1.4, side + 1.2), (1, 0, 1.4, side + 1.2)):
+                    self.I.add('wall', x + cu * side / 2, y + cv * side / 2, z + th - 1.6, w, d, 2.4, 0.0, GOLD)
+                nxt = b - (b - top_side) * (k + 1) / max(1, T - 1) if k + 1 < T else side * 0.8
+                ring = (side + nxt) / 4 + 1.5                   # half-way across the terrace
+                if ring - nxt / 2 > 5.0:
+                    nc = max(4, int(2 * ring / 16.0))
+                    for c in range(nc + 1):
+                        t = -ring + 2 * ring * c / nc
+                        for (cx_, cy_) in ((x + t, y - ring), (x + t, y + ring), (x - ring, y + t), (x + ring, y + t)):
+                            if abs(cx_ - x - ux * ring) < 0.1 * b and abs(cy_ - y - uy * ring) < 0.1 * b:
+                                continue                        # the stair passes through
+                            self.I.add('wall', cx_, cy_, z + th + 0.2, 2.2, 2.2, 8.0, 0.0, MARBLE)
             for c in range(4):                                         # lamps at the tier corners
                 a = math.pi / 4 + c * math.pi / 2
                 if k % 2 == 1:
@@ -601,7 +698,18 @@ class City(mp.City):
         # the summit hall: the palace's upper court, a colonnade and a tiled roof
         zt = z0 + 1.2 + T * th
         hall = top_side * 0.62
-        self.I.add('roofhouse', x, y, zt, hall, hall * 0.72, 16.0, face + math.pi / 2, WHITEWASH, )
+        if royal:
+            # the throne hall: a white palace court under a great gilded dome, gilded pavilions at its corners
+            self.I.add('house', x, y, zt, hall * 1.15, hall * 1.15, 18.0, face, WHITEWASH)
+            self.I.add('dome', x, y, zt + 17.5, hall * 0.5, hall * 0.5, hall * 0.42, 0.0, GOLD)
+            for c in range(4):
+                a = math.pi / 4 + c * math.pi / 2
+                qx, qy = x + hall * 0.5 * math.cos(a) * 1.414, y + hall * 0.5 * math.sin(a) * 1.414
+                self.I.add('tower', qx, qy, zt, 12.0, 12.0, 26.0, 0.0, MARBLE)
+                self.I.add('dome', qx, qy, zt + 25.5, 12.5, 12.5, 11.0, 0.0, GOLD)
+                self.light(qx, qy, zt + 30.0, 'torch', 0.9)
+        else:
+            self.I.add('roofhouse', x, y, zt, hall, hall * 0.72, 16.0, face + math.pi / 2, WHITEWASH, )
         for k in range(10):
             t = -0.45 + 0.1 * k
             for sv in (-1, 1):
@@ -610,8 +718,119 @@ class City(mp.City):
                 self.I.add('wall', cx, cy, zt, 1.8, 1.8, 9.0, 0.0, MARBLE)
         self.light(x, y, zt + 18.0, 'lamp', 1.0)
         self.light(x + ux * hall * 0.6, y + uy * hall * 0.6, zt + 4.0, 'torch', 0.9)
-        self.pyramid_tops[p['id']] = (x, y, zt)
+        self.pyramid_tops[p['id']] = (x, y, zt + (hall * 0.42 + 17.5 if royal else 0.0))
         self.zone_pts.setdefault('pyramid_steps', []).append((x + ux * (b / 2 + 40), y + uy * (b / 2 + 40), z0))
+        if royal:
+            self.royal_court(p, z0, face)
+
+    def royal_court(self, p, z0, face):
+        """The royal palace's own walled court round the Great Pyramid: a high white wall with towers and gilded
+        crowns, a pylon gate on the processional way (and lesser gates on the other three sides), colonnades round the
+        inside, gardens of palms, long pools on the cross axes, an avenue of obelisks to the stair, the courtiers' halls."""
+        x, y = p['xy']
+        rc = p['royal']
+        b = float(p['base_m'])
+        half = b / 2 + rc['court_m']
+        H = rc['wall_h_m']
+        ux, uy = math.cos(face), math.sin(face)
+        WHITE_WALL = (0.93, 0.90, 0.83)
+        corners = [(x - half, y - half), (x + half, y - half), (x + half, y + half), (x - half, y + half)]
+        gates = {f: (x + math.cos(a) * half, y + math.sin(a) * half) for f, a in (('west', math.pi), ('east', 0.0), ('north', math.pi / 2), ('south', -math.pi / 2))}
+        front = min(gates, key=lambda f: math.hypot(gates[f][0] - (x + ux * half), gates[f][1] - (y + uy * half)))
+        for a, bb in zip(corners, corners[1:] + corners[:1]):
+            self.wall_line([a, bb], H, 12.0, WHITE_WALL, towers=rc['tower_every_m'], tower_h=H * 1.35,
+                           gaps=[g for g in gates.values()], gap_r=55.0, gatehouses=False)
+            # merlons along the wall walk
+            L = math.hypot(bb[0] - a[0], bb[1] - a[1])
+            ang = math.atan2(bb[1] - a[1], bb[0] - a[0])
+            for t in np.arange(6.0, L - 6.0, 9.0):
+                q = (a[0] + (bb[0] - a[0]) * t / L, a[1] + (bb[1] - a[1]) * t / L)
+                if min(math.hypot(q[0] - g[0], q[1] - g[1]) for g in gates.values()) < 60:
+                    continue
+                self.I.add('wall', q[0], q[1], self.G.hs(*q) + H - 0.2, 4.0, 12.4, 3.2, ang, WHITE_WALL)
+        for (cx, cy) in corners:                               # corner bastions with gilded crowns
+            z = self.G.hs(cx, cy)
+            self.I.add('tower', cx, cy, z - 1.5, 34, 34, H * 1.6 + 1.5, 0.0, WHITE_WALL)
+            self.I.add('wall', cx, cy, z + H * 1.6 - 0.5, 35.5, 35.5, 2.6, 0.0, GOLD)
+            self.light(cx, cy, z + H * 1.6 + 3, 'torch', 1.0)
+        for f, (gx, gy) in gates.items():
+            z = self.G.hs(gx, gy)
+            big = f == front
+            nx, ny = (gx - x) / half, (gy - y) / half              # out of the court
+            tx, ty = -ny, nx                                       # along the wall
+            ang = math.atan2(ty, tx)
+            w, hh = (46.0, H * 2.0) if big else (30.0, H * 1.5)
+            for sd in (-1, 1):                                     # the pylon's two towers
+                qx, qy = gx + tx * sd * (w * 0.5 + 24), gy + ty * sd * (w * 0.5 + 24)
+                self.I.add('tower', qx, qy, z - 1.5, 44 if big else 30, 34 if big else 26, hh + 1.5, ang, WHITE_WALL)
+                self.I.add('wall', qx, qy, z + hh - 0.5, 45.5 if big else 31.5, 35.5 if big else 27.5, 2.8, ang, GOLD)
+                self.light(qx + nx * 20, qy + ny * 20, z + 8, 'torch', 1.0)
+            self.I.add('wall', gx, gy, z + hh * 0.62, w + 14, 18, hh * 0.3, ang, WHITE_WALL)     # the lintel
+            self.I.add('wall', gx + nx * 9.5, gy + ny * 9.5, z + hh * 0.62 + hh * 0.12, w, 1.2, 3.0, ang, GOLD)
+            if big:                                                # banners before the gate, the sphinx-less approach
+                for sd in (-1, 1):
+                    for j in range(3):
+                        qx = gx + nx * (40 + 30 * j) + tx * sd * 40
+                        qy = gy + ny * (40 + 30 * j) + ty * sd * 40
+                        self.I.add('tower', qx, qy, self.G.hs(qx, qy), 3.0, 3.0, 26.0, 0.0, MARBLE)
+                        self.I.add('wall', qx + tx * sd * 3.2, qy + ty * sd * 3.2, self.G.hs(qx, qy) + 13, 0.6, 5.0, 11.0, ang + math.pi / 2, (0.62, 0.12, 0.16))
+                        self.light(qx, qy, self.G.hs(qx, qy) + 27, 'lamp', 0.6)
+        zc = self.G.hs(x, y)
+        # the court's paving, and the avenue from the pylon to the foot of the stair
+        self.I.add('terrace', x, y, zc - 1.6, 2 * half - 20, 2 * half - 20, 2.0, 0.0, (0.91, 0.87, 0.79))
+        fx, fy = gates[front]
+        foot = (x + ux * (b / 2 + 20), y + uy * (b / 2 + 20))
+        L = math.hypot(foot[0] - fx, foot[1] - fy)
+        ang = math.atan2(foot[1] - fy, foot[0] - fx)
+        self.I.add('terrace', (fx + foot[0]) / 2, (fy + foot[1]) / 2, zc - 1.2, L, 64.0, 2.0, ang, (0.95, 0.93, 0.88))
+        px, py = -math.sin(ang), math.cos(ang)
+        for t in np.arange(25.0, L - 10.0, 22.0):
+            for sd in (-1, 1):
+                qx, qy = fx + (foot[0] - fx) * t / L + px * sd * 40, fy + (foot[1] - fy) * t / L + py * sd * 40
+                self.I.add('tower', qx, qy, zc + 0.6, 4.2, 4.2, 30.0, 0.0, MARBLE)
+                self.I.add('dome', qx, qy, zc + 30.4, 4.4, 4.4, 4.0, 0.0, GOLD)
+                self.light(qx, qy, zc + 34, 'lamp', 0.5)
+        # colonnades round the inside of the wall
+        inner = half - 26.0
+        for (a, bb) in zip([(x - inner, y - inner), (x + inner, y - inner), (x + inner, y + inner), (x - inner, y + inner)],
+                           [(x + inner, y - inner), (x + inner, y + inner), (x - inner, y + inner), (x - inner, y - inner)]):
+            Lc = math.hypot(bb[0] - a[0], bb[1] - a[1])
+            angc = math.atan2(bb[1] - a[1], bb[0] - a[0])
+            for t in np.arange(10.0, Lc - 5.0, 12.0):
+                q = (a[0] + (bb[0] - a[0]) * t / Lc, a[1] + (bb[1] - a[1]) * t / Lc)
+                if min(math.hypot(q[0] - g[0], q[1] - g[1]) for g in gates.values()) < 70:
+                    continue
+                self.I.add('wall', q[0], q[1], zc + 0.4, 2.4, 2.4, 11.0, 0.0, MARBLE)
+            mid = ((a[0] + bb[0]) / 2, (a[1] + bb[1]) / 2)
+            self.I.add('terrace', mid[0], mid[1], zc + 11.2, Lc + 8, 16.0, 1.6, angc, MARBLE_SHADE)   # the colonnade's roof
+        # long pools on the cross axes and gardens of palms between the colonnade and the pyramid's podium
+        for f, (gx, gy) in gates.items():
+            if f == front:
+                continue
+            nx, ny = (gx - x) / half, (gy - y) / half
+            for j in range(3):
+                r0 = b / 2 + 40 + j * 34
+                if r0 > inner - 20:
+                    break
+                self.water.append((x + nx * r0, y + ny * r0, 20.0, zc + 0.8))
+        for k in range(900):
+            qx, qy = x + self.rng.uniform(-inner + 12, inner - 12), y + self.rng.uniform(-inner + 12, inner - 12)
+            if max(abs(qx - x), abs(qy - y)) < b / 2 + 30:
+                continue
+            if abs((qx - x) * px + (qy - y) * py) < 70 and (qx - x) * ux + (qy - y) * uy > 0:
+                continue                                        # the avenue
+            if min(abs(qx - x), abs(qy - y)) < 26:
+                continue                                        # the pools' axes
+            self.tree('palm' if self.rng.random() < 0.7 else 'tree', qx, qy, zc + 0.4, self.rng.uniform(0.95, 1.25))
+        # the courtiers' halls in the corners
+        for (cu, cv) in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
+            qx, qy = x + cu * (inner - 46), y + cv * (inner - 46)
+            if max(abs(qx - x), abs(qy - y)) < b / 2 + 40:
+                continue
+            self.I.add('house', qx, qy, zc + 0.4, 62, 48, 15.0, 0.0, WHITEWASH)
+            self.I.add('dome', qx, qy, zc + 15.0, 18, 18, 14, 0.0, GOLD)
+        for (cx, cy) in corners:
+            self.zone_pts.setdefault('pyramid_steps', []).append(((cx + x) / 2, (cy + y) / 2, zc))
 
     def plaza(self):
         pl = LAY['plaza']
@@ -635,7 +854,7 @@ class City(mp.City):
             self.wall_line([a, b], 8.0, 4.0, WALL_STONE, towers=240.0, tower_h=13.0, gaps=[LAY['plaza']['xy']], gap_r=120.0)
 
     # ------------------------------------------------------------ walls
-    def wall_line(self, pts, h, th, col, towers=200.0, tower_h=None, gaps=(), gap_r=60.0, skip=None):
+    def wall_line(self, pts, h, th, col, towers=200.0, tower_h=None, gaps=(), gap_r=60.0, skip=None, gatehouses=True):
         P = resample(np.asarray(pts, float), 30.0)
         s = cumlen(P)
         made = 0
@@ -662,7 +881,7 @@ class City(mp.City):
             ang = math.atan2(u[1], u[0])
             z = self.G.hs(*q)
             self.I.add('tower', q[0], q[1], z - 1.5, th * 2.1, th * 2.1, th_h + 1.5, ang, col)
-        for g in gaps:                                                    # a gatehouse: two towers flanking the road
+        for g in (gaps if gatehouses else ()):                            # a gatehouse: two towers flanking the road
             if dist_to_polyline(np.array([g[0]]), np.array([g[1]]), [tuple(p) for p in P])[0] > gap_r:
                 continue
             i = int(np.argmin(np.hypot(P[:, 0] - g[0], P[:, 1] - g[1])))
@@ -728,8 +947,16 @@ class City(mp.City):
                 z = self.G.hs(*p)
                 self.I.add('tower', p[0], p[1], z - 2.0, 26, 26, 26, ang, WALL_STONE)
                 self.light(p[0], p[1], z + 25, 'torch', 0.9)
-            self.I.add('wall', q[0], q[1], mp.disp(WL) - 2.0, 2 * hw + 40, 3.0, 3.4, ang, WALL_STONE_D)
-            self.foam.append((q[0], q[1], mp.disp(WL) + 0.4, 2 * hw, ang))
+            # the boom from each bank, leaving the barges' channel open between two chain towers
+            g = CHANNEL['gate_m']
+            for sd in (-1, 1):
+                a, b = q + u * sd * g, q + u * sd * (hw + 20.0)
+                m = (a + b) / 2
+                L = float(np.linalg.norm(b - a))
+                self.I.add('wall', m[0], m[1], mp.disp(WL) - 2.0, L, 3.0, 3.4, ang, WALL_STONE_D)
+                self.foam.append((m[0], m[1], mp.disp(WL) + 0.4, L - 20.0, ang))
+                self.I.add('tower', a[0], a[1], mp.disp(WL) - 2.0, 9.0, 9.0, 12.0, ang, WALL_STONE)
+                self.booms.append((a, b))
         self.stats['outer_gates'] = len(gates)
 
     # ------------------------------------------------------------ the river front
@@ -779,33 +1006,102 @@ class City(mp.City):
             for yy, rot in ((y0 - 40, math.pi / 2), (y1 + 40, math.pi / 2)):
                 self.I.add('warehouse', x, yy, zq, 56, 34, 12, rot, (0.82, 0.70, 0.52))
         wl = mp.disp(WL) + 0.3
-        for k in range(26):
-            bx, by = self.rng.uniform(x0 + 40, x1 - 40), self.rng.uniform(y0 + 30, y1 - 30)
-            self.I.add('boat', bx, by, wl, 30.0, 9.0, 15.0, self.rng.choice([0.0, math.pi]) + self.rng.normal(0, 0.05), HULL)
-            self.boats += 1
+        # berths in rows along the basin: each boat has its own slot, so none lie on top of another
+        for by_ in np.arange(y0 + 40, y1 - 30, 30.0):
+            for bx in np.arange(x0 + 60, x1 - 40, 44.0):
+                if self.rng.random() > 0.22:
+                    continue
+                ang = self.rng.choice([0.0, math.pi]) + self.rng.normal(0, 0.03)
+                if self.rng.random() < 0.4:
+                    self.I.add('barge_grain', bx, by_, wl - 0.6, 34.0, 10.2, 17.0, ang, HULL)
+                else:
+                    self.I.add('boat', bx, by_, wl, 30.0, 9.0, 15.0, ang, HULL)
+                self.boats += 1
         self.zone_pts['harbour'] = [(x1 + 30, (y0 + y1) / 2, zq)]
 
     def river_boats(self):
+        """Barges moored along both banks (grain-laden at the granaries' quays), each with its own stretch of bank and
+        clear of the channel, the bridge and the water gates. The barges under way are the manifest's river_traffic."""
         rv = LAY['river']
         hw = rv['width'] / 2
         P = rv['xy']
         s = cumlen(P)
         wl = mp.disp(WL) + 0.3
-        for k in range(160):
-            sk = self.rng.uniform(200, s[-1] - 200)
+        by = LAY['bridge']['y']
+        x0, x1, y0, y1 = LAY['harbour']
+        taken = {-1: [], 1: []}
+        for k in range(320):
+            sk = self.rng.uniform(300, s[-1] - 300)
+            side = int(self.rng.choice([-1, 1]))
+            L = self.rng.uniform(26, 40)
+            if any(abs(sk - t) < (L + lt) / 2 + 12 for t, lt in taken[side]):
+                continue
             i = min(int(np.searchsorted(s, sk)), len(P) - 1)
-            u = P[i] - P[max(i - 1, 0)]
+            u = P[min(i + 1, len(P) - 1)] - P[max(i - 1, 0)]
             u = u / max(np.linalg.norm(u), 1e-6)
-            nrm = np.array([u[1], -u[0]])
-            moored = self.rng.random() < 0.45
-            off = (hw - 22.0) * self.rng.choice([-1, 1]) if moored else self.rng.uniform(-hw * 0.7, hw * 0.7)
-            q = np.array([np.interp(sk, s, P[:, 0]), np.interp(sk, s, P[:, 1])]) + nrm * off
-            ang = math.atan2(u[1], u[0]) + (0 if self.rng.random() < 0.6 else math.pi)
-            L = self.rng.uniform(22, 40)
-            self.I.add('boat', q[0], q[1], wl, L, L * 0.3, L * (0.2 if moored and self.rng.random() < 0.5 else 0.55), ang,
-                       tuple(np.clip(np.asarray(HULL) * self.rng.uniform(0.8, 1.2), 0, 1)))
+            nrm = np.array([u[1], -u[0]])                       # right of the flow: east
+            q = np.array([np.interp(sk, s, P[:, 0]), np.interp(sk, s, P[:, 1])]) + nrm * side * (hw - 0.15 * L - 9.0)
+            if max(abs(q[0]), abs(q[1])) > mp.R - 300 or abs(q[1] - by) < 90:
+                continue
+            if any(dist_to_polyline(np.array([q[0]]), np.array([q[1]]), [tuple(a), tuple(b)])[0] < 70 for a, b in self.booms):
+                continue
+            if side > 0 and y0 - 80 < q[1] < y1 + 80:          # the harbour's mouth
+                continue
+            granary = side > 0 and any(abs(q[1] - gy) < n * 15 + 80 for gx, gy, n in LAY['granaries'])
+            ang = math.atan2(u[1], u[0]) + (0.0 if self.rng.random() < 0.5 else math.pi)
+            col = tuple(np.clip(np.asarray(HULL) * self.rng.uniform(0.8, 1.2), 0, 1))
+            if granary or self.rng.random() < 0.3:              # loading at the granaries, or waiting to sail
+                self.I.add('barge_grain', q[0], q[1], wl - 0.6, L, L * 0.3, L * 0.5, ang, col)
+            else:                                               # unloaded, the sail furled low
+                self.I.add('boat', q[0], q[1], wl, L, L * 0.3, L * 0.22, ang, col)
+            taken[side].append((sk, L))
+            self.moored.append((q, L))
             self.boats += 1
         self.stats['boats'] = self.boats
+        self.stats['moored_barges'] = len(self.moored)
+
+    def barge_lanes(self):
+        """The channel's two lanes (Atlas RiverBarges): laden barges downstream on the east side of the middle, empty
+        ones upstream on the west, CHANNEL['offset_m'] out, through the bridge's arches and the water gates' channel.
+        Checked here against the banks, the bridge piers, the booms and the moored barges."""
+        rv = LAY['river']
+        hw = rv['width'] / 2
+        P = resample(rv['xy'], 20.0)
+        u = np.gradient(P, axis=0)
+        u /= np.maximum(np.linalg.norm(u, axis=1, keepdims=True), 1e-9)
+        right = np.column_stack([u[:, 1], -u[:, 0]])
+        off = CHANNEL['offset_m']
+        inside = (np.abs(P[:, 0]) < mp.R - 250) & (np.abs(P[:, 1]) < mp.R - 250)
+        east, west = (P + right * off)[inside], (P - right * off)[inside]
+        lmax = max(CHANNEL['down']['length_m'][1], CHANNEL['up']['length_m'][1])
+        side_room = 0.15 * lmax + CHANNEL['jitter_m'] + 3.0            # half a beam, the jitter, a margin
+        for name, lane in (('downstream', east), ('upstream', west)):
+            S = resample(lane, 5.0)
+            x, y = S[:, 0], S[:, 1]
+            d = self.G.river_d(x, y)
+            if d.max() > hw - 40:
+                raise ValueError(f"{name} lane runs {d.max():.0f} m off the river's middle (half-width {hw:.0f})")
+            for (px, py, hx, hy) in self.piers:
+                near = np.abs(y - py) < hy + lmax / 2
+                if near.any() and (np.abs(x[near] - px) - hx).min() < side_room:
+                    raise ValueError(f"{name} lane grazes a bridge pier at x {px:.0f}: {(np.abs(x[near] - px) - hx).min():.1f} m")
+            for a, b in self.booms:
+                g = dist_to_polyline(x, y, [tuple(a), tuple(b)]).min()
+                if g < side_room + 2:
+                    raise ValueError(f"{name} lane grazes a water gate's boom: {g:.1f} m")
+            for q, L in self.moored:
+                g = np.hypot(x - q[0], y - q[1]).min()
+                if g < 0.15 * L + side_room + 10:
+                    raise ValueError(f"{name} lane runs into a moored barge: {g:.1f} m")
+        MS = mp.MS
+
+        def lane(name, pts, laden, spec, seed):
+            return {'id': name, 'laden': laden, 'points': (np.asarray(pts) / MS).round(3).tolist(), 'speed': spec['speed'],
+                    'count': spec['count'], 'min_gap': round(spec['min_gap_m'] / MS, 3),
+                    'length': [round(v / MS, 3) for v in spec['length_m']], 'jitter': round(CHANNEL['jitter_m'] / MS, 3), 'seed': seed}
+        self.traffic = {'z': round(float(mp.disp(WL)) / MS, 4), 'beam': 0.3, 'height': 0.5,
+                        'lanes': [lane('downstream', east, True, CHANNEL['down'], 3), lane('upstream', west[::-1], False, CHANNEL['up'], 5)]}
+        self.stats['barge_lanes_km'] = round(float(cumlen(east)[-1]) / 1000, 1)
 
     def bridge_main(self):
         rv = LAY['river']
@@ -828,8 +1124,10 @@ class City(mp.City):
             cx = a[0] + span * k
             zg = min(self.G.hs(cx, y), deck - 2)
             self.mb.box(cx, y, bedz - 1.0, 5.5, wdt - 0.4, deck - 1.6 - bedz + 1.0, 0.0, LIMESTONE)
+            self.piers.append((cx, y, 2.75, wdt / 2))
             if 0 < k < n:
                 self.mb.box(cx, y, bedz, 7.5, wdt + 1.0, mp.disp(WL + 0.6) - bedz, 0.0, WALL_STONE_D)     # cutwaters
+                self.piers.append((cx, y, 3.75, wdt / 2 + 0.5))
         for k in range(n):
             c0, c1 = a[0] + span * k, a[0] + span * (k + 1)
             for sd in (-1, 1):
@@ -1124,6 +1422,7 @@ class City(mp.City):
         self.districts()
         self.villages()
         self.river_boats()
+        self.barge_lanes()
         self.vegetation()
         self.stats['instances'] = len(self.I.rows)
         self.stats['city_secs'] = round(time.time() - t0, 1)
@@ -1146,18 +1445,46 @@ def mat_river_water():
     return m
 
 
-def build_water(G, city, coll, mat):
-    V, F, D = [], [], []
+def flow_strip(P, z, width, step, across):
+    """A strip of water along P (metres, in the direction of flow) with `across` + 1 vertices across it: the vertices,
+    quads, UVs (signed distance from the middle, distance downstream; model units) and depth (shallow at the banks)."""
+    S = resample(np.asarray(P, float), step)
+    ss = cumlen(S)
+    V, F, UV, D = [], [], [], []
+    n = across + 1
+    for i, p in enumerate(S):
+        u = S[min(i + 1, len(S) - 1)] - S[max(i - 1, 0)]
+        u = u / max(np.linalg.norm(u), 1e-6)
+        left = np.array([-u[1], u[0]])
+        for j in range(n):
+            t = j / across
+            o = (0.5 - t) * width
+            q = p + left * o
+            V.append((q[0], q[1], z))
+            UV.append((o / mp.MS, -ss[i] / mp.MS))          # glTF flips V (1 - v): the Atlas reads 1 + distance downstream
+            D.append(0.04 + 0.36 * math.sin(math.pi * t) ** 0.6 if across > 1 else 0.05)
+        if i:
+            b, a = n * i, n * (i - 1)
+            F += [(a + j, a + j + 1, b + j + 1, b + j) for j in range(across)]
+    return V, F, UV, D
 
-    def add(v, f, depth):
+
+def build_water(G, city, coll, mat):
+    """The river and the canals carry flow UVs (Col.b = 0 marks flowing water for the Atlas's water shader: U across,
+    V downstream, in model units); the harbour basin and the pools lie still."""
+    V, F, D, UV, FL = [], [], [], [], []
+
+    def add(v, f, depth, uv=None, flowing=False):
         b = len(V)
         V.extend(v)
         F.extend([tuple(b + i for i in q) for q in f])
-        D.extend([depth] * len(v))
+        D.extend(depth if isinstance(depth, list) else [depth] * len(v))
+        UV.extend(uv if uv is not None else [(0.0, 0.0)] * len(v))
+        FL.extend([0.0 if flowing else 1.0] * len(v))
     rv = LAY['river']
     wl = float(mp.disp(WL))
-    v, f = ribbon(rv['xy'], lambda s, p: wl, rv['width'] * 1.03, 30.0)
-    add(v, f, 0.3)
+    v, f, uv, d = flow_strip(rv['xy'], wl, rv['width'] * 1.03, 30.0, 6)
+    add(v, f, d, uv, True)
     for kind, P in LAY['canals']:
         v, f = ribbon(P, lambda s, p: G.hs(p[0], p[1]) + 0.35, 7.0 if kind == 'trunk' else 4.5, 20.0)
         add(v, f, 0.05)
@@ -1178,10 +1505,15 @@ def build_water(G, city, coll, mat):
     rgba = np.ones((len(V), 4), np.float32)
     rgba[:, 0] = D
     rgba[:n_silt, 1] = 0.0                            # G = 1 - silt: the Atlas's water shader turns it red (pools stay clear)
+    rgba[:, 2] = FL                                   # B = 0: flowing (the shader runs the silt and ripples downstream)
     a = me.color_attributes.new('Col', 'FLOAT_COLOR', 'POINT')
     a.data.foreach_set('color', rgba.ravel())
     da = me.attributes.new('depth', 'FLOAT', 'POINT')
     da.data.foreach_set('value', np.asarray(D, np.float32))
+    lay = me.uv_layers.new(name="UVMap")
+    li = np.zeros(len(me.loops), np.int32)
+    me.loops.foreach_get('vertex_index', li)
+    lay.data.foreach_set('uv', np.asarray(UV, np.float32)[li].ravel())
     me.materials.append(mat)
     ob = bpy.data.objects.new("CAP_Sea_Rivers", me)
     coll.objects.link(ob)
@@ -1280,8 +1612,9 @@ def landmark_list(G):
     return [
         cp(G, 'overview', "Haven and the River Flame", (1.0, 0.0), 30000, -80, 38),
         cp(G, 'pyramids', "The three white pyramids of the Amaranth palaces", (2.9, -0.55), 3500, 176, 24, 40),
-        cp(G, 'great_pyramid', "The Great Pyramid and the processional way", tuple(py['great_pyramid']), 900, 180, 18, 60),
+        cp(G, 'great_pyramid', "The royal palace: the Great Pyramid in its walled court", tuple(py['great_pyramid']), 1500, 180, 20, 90),
         cp(G, 'river_front', "The red river, the quays and the granaries", (0.9, -2.2), 2600, -170, 20),
+        cp(G, 'barges', "Grain barges down the river, empty ones sailing back up", (river_x(-2.6 * KM) / KM, -2.6), 520, -150, 24),
         cp(G, 'bridge', "The stone bridge to the west bank", (0.3, by), 1500, -120, 16),
         cp(G, 'harbour', "Queen Meret's harbour basin", (1.3, 2.3), 1100, -160, 30),
         cp(G, 'outer_wall', "Erros's outer wall and the walled fields", (6.5, -6.0), 4200, -60, 22),
@@ -1410,6 +1743,7 @@ def build_manifest(cfg, report):
                       'fields': ['x', 'y', 'z', 'w', 'd', 'h', 'rot', 'r', 'g', 'b', 'kind'],
                       'kinds': KINDS, 'groups': groups, 'protos': {k: p.json() for k, p in protos().items()}},
         'site': site_block(G),
+        'river_traffic': city.traffic,
         'stats': {k: v for k, v in report.get('generator', {}).items()},
     }
     report['instances'] = {k: v[1] for k, v in groups.items()}

@@ -129,6 +129,12 @@ namespace Atlas
                                        && am.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Color].AsColorArray() is { Length: > 0 } wc && wc[0].G < 0.5f;
                             Check(pyramids == 3 && v.City.Instances.CountOf("marble") >= 18 && red,
                                   $"{v.M.Name}: {pyramids} white-marble pyramids ({v.City.Instances.CountOf("marble")} tiers and stairs), the river drawn silt-red");
+                            var bf = v.Life.Barges;   // grain barges down the river, empty ones back up, moving
+                            var p0 = bf?.Positions();
+                            bf?.Tick(bf.Time + 30);
+                            var p1 = bf?.Positions();
+                            Check(bf != null && bf.Afloat > 20 && p0.Length == p1.Length && p0.Zip(p1, (a, b) => a.DistanceTo(b)).Count(d => d > 0.5f) > 15,
+                                  $"{bf?.Afloat} barges under way on the Flame ({bf?.Count} on two lanes), {v.City.Instances.CountOf("barge_grain")} grain barges moored");
                         }
                         else
                         {
@@ -191,6 +197,9 @@ namespace Atlas
                         Check(fv != null && fv.R.Reaches.Any(r => r.Id == "trunk_upper") && fv.R.Reaches.Count(r => r.Id.EndsWith("_arm")) == 4 && fv.VillageCount > 400
                               && fv.FieldQuads > 1000 && fv.RiverSegments > 500 && map.Kw.Cameras.Any(c => c.Id == WorldMap.FlameViewId),
                               $"River Flame: {fv?.R.Reaches.Count} red reaches joined to Haven's patch, {fv?.FieldQuads} field quads, {fv?.VillageCount} villages, {fv?.TownCount} market towns (~{fv?.R.Population / 1000}k people)");
+                    if (root.Cities.Any(c => c.Site?.IsFloodplain == true))
+                        Check(fv?.Barges != null && fv.Barges.Count > 200 && fv.Barges.Afloat > 150,
+                              $"River Flame: {fv?.Barges?.Afloat} barges afloat from the foothills to the sea");
                     var hd = map.Dunes;
                     bool graded = hd != null && hd.R.Rivers.All(r => r.BedM.Zip(r.BedM.Skip(1), (a, b) => b <= a + 1e-6).All(x => x));
                     Check(hd != null && graded && hd.R.Rivers.Count >= 4 && hd.VillageCount > 150 && hd.TownCount >= 5 && hd.HasNode("Caravans") && !hd.HasNode("GrainRoute")

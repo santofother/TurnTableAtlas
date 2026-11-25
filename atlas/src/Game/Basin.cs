@@ -113,7 +113,7 @@ namespace Atlas
                 AddChild(root);
                 var mk = m.Anchors.TryGetValue("great_market", out var a) ? a : new double[] { 0, 0 };
                 var (count, _) = Instances.Build(root, c.Table, _mats.Instanced, mk[0], mk[1], PlaceOnMap, tiles: 6, rangeAll: CityRange,
-                                                     skipKinds: new[] { "terrace", "boat" });   // the map's own ground carries the houses
+                                                     skipKinds: new[] { "terrace", "boat", "barge_grain", "barge_empty" });   // FIX(haven): barges under way are FlameValley's   // the map's own ground carries the houses
                 InstanceCount = count;
                 WeatherMaterials.Add(_mats.Instanced);
             }
@@ -138,16 +138,22 @@ namespace Atlas
             bool tree = t.Kind(i) >= 10 && t.Kind(i) <= 13;   // FIX(haven): silos and boats are kinds 14, 15
             double z0 = tree ? lo + 0.3 * (hi - lo) : lo - 0.0004;
             double hh = tree ? h : h + (hi - lo) + 0.0004;
+            // FIX(haven): a part stacked on another (a pyramid's tiers, the throne hall on its summit) keeps its height
+            // above the ground, else every tier would stand on the ground and the pyramid shows as its broad base alone
+            double lift = (t.Z(i) - S.ModelZ(S.PlinthMetres(t.X(i) * M.ModelScale / 1000, t.Y(i) * M.ModelScale / 1000))) * M.ModelScale;
+            if (!tree && lift > 3.0) { z0 = hi + lift / M.ModelScale * s; hh = h; }
             var basis = new Basis(Vector3.Up, t.Rot(i)) * Basis.FromScale(new Vector3((float)w, (float)Math.Max(hh, 1e-5), (float)d));
             return new Transform3D(basis, new Vector3((float)x, (float)z0, -(float)y));
         }
 
         void BuildWater()
         {
-            var water = new ShaderMaterial { Shader = ResourceLoader.Load<Shader>("res://shaders/karn_ashur_water.gdshader") };
+            // FIX(haven): a floodplain's river is the River Flame: silt red and flowing (flame_river.gdshader)
+            var water = new ShaderMaterial { Shader = ResourceLoader.Load<Shader>(S.Floodplain ? "res://shaders/flame_river.gdshader" : "res://shaders/karn_ashur_water.gdshader") };
             WeatherMaterials.Add(water);
-            if (S.Site.WaterColour is { Length: 3 } wc)   // FIX(haven): the River Flame's silt red
+            if (S.Site.WaterColour is { Length: 3 } wc)
                 water.SetShaderParameter("silt", new Color((float)wc[0], (float)wc[1], (float)wc[2], 1f));
+            if (S.Floodplain) water.SetShaderParameter("metres_per_unit", (float)(1000.0 / S.S));
             double riverW = S.Site.RiverWidthKm > 0 ? S.Site.RiverWidthKm * S.S : 0;
             var st = new SurfaceTool();
             st.Begin(Mesh.PrimitiveType.Triangles);
@@ -188,6 +194,7 @@ namespace Atlas
                 double g = S.MeshUnits(pts[k].X, pts[k].Y);
                 bedPer[k] = b0 < 0 || b1 < 0 ? g + 0.0008 : Math.Max(b0 + (b1 - b0) * t, g + 0.0004);
             }
+            double along = 0;
             for (int k = 0; k + 1 < pts.Length; k++)
             {
                 var a = pts[k]; var b = pts[k + 1];
@@ -197,9 +204,19 @@ namespace Atlas
                 var a1 = new Vector3((float)(a.X - nx), (float)bedPer[k], -(float)(a.Y - ny));
                 var b0 = new Vector3((float)(b.X + nx), (float)bedPer[k + 1], -(float)(b.Y + ny));
                 var b1 = new Vector3((float)(b.X - nx), (float)bedPer[k + 1], -(float)(b.Y - ny));
+                // FIX(haven): the flow's frame for flame_river.gdshader: UV (across, downstream), COLOR.r 0 / 1 at the banks
+                float hw = (float)(width / 2), s0 = (float)along, s1 = (float)(along + len);
                 st.SetNormal(Vector3.Up);
-                st.AddVertex(a0); st.AddVertex(b0); st.AddVertex(a1);
-                st.AddVertex(a1); st.AddVertex(b0); st.AddVertex(b1);
+                V(a0, 0, hw, s0); V(b0, 0, hw, s1); V(a1, 1, -hw, s0);
+                V(a1, 1, -hw, s0); V(b0, 0, hw, s1); V(b1, 1, -hw, s1);
+                along += len;
+            }
+
+            void V(Vector3 p, float side, float across, float s)
+            {
+                st.SetColor(new Color(side, 0, 0));
+                st.SetUV(new Vector2(across, s));
+                st.AddVertex(p);
             }
         }
 
@@ -271,6 +288,9 @@ namespace Atlas
             _lamps.Visible = night > 0.02f;
             _lampMat.AlbedoColor = new Color(1f, 0.6f, 0.25f, Math.Min(1f, night * 1.3f));
         }
+
+        /// <summary>FIX(haven): the river's surface (blend units) under a world point of the patch, as BuildWater lays it.</summary>
+        public float WaterAt(double x, double y) => (float)Math.Max(S.Units(2.2), S.MeshUnits(x, y) + 0.0008);
 
         /// <summary>Patch height (blend units) under a world point, or null outside the patch.</summary>
         public float? HeightAt(double x, double y) => S.Contains(x, y) ? (float)S.MeshUnits(x, y) : null;

@@ -50,6 +50,7 @@ namespace Atlas
                     if (!city.ShipMeshes.ContainsKey(kind)) city.ShipMeshes[kind] = mesh;
                 }
             }
+            if (m.ModelScale > 0) city.Mats.Water.SetShaderParameter("metres_per_unit", (float)m.ModelScale);   // the river's flow laid out in metres
             if (m.Instances != null && m.Files.ContainsKey("instances"))   // FIX(karn_ashur): instanced buildings and trees
             {
                 city.Instances = InstanceTable.Load(m.Directory, m.Instances);

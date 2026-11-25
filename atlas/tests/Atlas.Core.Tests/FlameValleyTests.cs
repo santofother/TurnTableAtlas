@@ -146,6 +146,36 @@ namespace Atlas.Core.Tests
         }
 
         [Fact]
+        public void BargesRunTheWholeFlameThroughHaven()
+        {
+            var rs = Relief();
+            var s = Site(rs);
+            var r = new FlameValleyRegion(Data.Value, UnitM, Exag);
+            var ends = r.LinkPatch(s.Contains).Value;
+            s.SetRiverEnds(ends.Up, ends.Down);
+            var river = r.BargeRiver(s);
+            Assert.Equal(r.Trunk[0], river[0].P);
+            Assert.Equal(Data.Value.Trunk[^1][1], river[^1].P.Y, 6);
+            Assert.Contains(river, q => s.OnPlinth(q.P.X, q.P.Y) && q.W > 0.15);      // across the plinth on Haven's own river
+            double k = s.SModel / Haven.Value.ModelScale;                                       // metres -> units at the miniature's scale
+            var lanes = r.Barges(s, k);
+            var down = lanes.Single(l => l.Laden);
+            Assert.True(down.Path.P[^1].Y > 86 && lanes.Single(l => !l.Laden).Path.P[^1].Y < 20, "grain down to the sea, empties back up");
+            Assert.True(down.Count > 100);
+            var fine = RiverBarges.Resample(river, 0.004);
+            for (double t = 0; t < 20000; t += 1111)
+            {
+                Assert.True(RiverBarges.MinSpacing(lanes, t) > 80 * k, $"barges {RiverBarges.MinSpacing(lanes, t) / k:0} m apart");
+                foreach (var b in lanes.SelectMany(l => l.All(t)).Where(b => b.Visible).Take(400))
+                {
+                    var near = fine.OrderBy(q => Math.Abs(q.P.X - b.X) + Math.Abs(q.P.Y - b.Y)).First();
+                    double d = Math.Sqrt(Math.Pow(near.P.X - b.X, 2) + Math.Pow(near.P.Y - b.Y, 2));
+                    Assert.True(d < near.W / 2, $"barge off the water at ({b.X:0.00}, {b.Y:0.00}): {d:0.000} from the middle, half-width {near.W / 2:0.000}");
+                }
+            }
+        }
+
+        [Fact]
         public void ThePortStandsAtTheMouth()
         {
             var m = CityManifest.Load(Path.Combine(Repo.Cities, "flamemouth", "city.json"));

@@ -48,6 +48,8 @@ namespace Atlas.Core
         [JsonPropertyName("terrain_height")] public TerrainHeightSpec TerrainHeight { get; set; }
         /// <summary>A metropolis's basin layout in kilometres from its settlement (the Known World draws the same basin).</summary>
         [JsonPropertyName("site")] public SiteData Site { get; set; }
+        /// <summary>Haven: the river's barge lanes (RiverBarges), laden downstream and empty upstream.</summary>
+        [JsonPropertyName("river_traffic")] public RiverTrafficData RiverTraffic { get; set; }
 
         [JsonIgnore] public string Directory { get; set; }
 
