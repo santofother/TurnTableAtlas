@@ -13,6 +13,7 @@ uniform vec2 texel = vec2(0.000292, 0.00056);
 uniform float land_lift = 0.0;                                   // keeps a hair of land above the water line
 uniform vec4 hole = vec4(2.0);                                   // uv rect (u0, v0, u1, v1) a hero patch covers (W5)
 uniform vec4 hole2 = vec4(2.0);                                  // a second one: an estate's patch (Landric's villa)
+uniform vec4 hole3 = vec4(2.0);                                  // a second basin: Haven's patch (FIX(haven))
 
 varying vec3 wpos;
 varying float hraw;
@@ -29,6 +30,7 @@ void vertex() {
     // vertices under a hero patch sink out of sight; the patch meets the ones on the rect's edge exactly
     if (UV.x > hole.x && UV.x < hole.z && UV.y > hole.y && UV.y < hole.w) VERTEX.y = -1.0;
     if (UV.x > hole2.x && UV.x < hole2.z && UV.y > hole2.y && UV.y < hole2.w) VERTEX.y = -1.0;
+    if (UV.x > hole3.x && UV.x < hole3.z && UV.y > hole3.y && UV.y < hole3.w) VERTEX.y = -1.0;
     wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 }
 

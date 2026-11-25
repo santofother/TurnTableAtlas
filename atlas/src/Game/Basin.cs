@@ -14,6 +14,8 @@ namespace Atlas
     public partial class Basin : Node3D
     {
         public const string ViewId = "CAM_KarnAshur";
+        /// <summary>FIX(haven): each basin has its own view (Karn Ashur keeps its id).</summary>
+        public static string ViewIdFor(BasinSite s) => s.Floodplain ? "CAM_" + string.Concat(s.Id.Split('_').Select(w => char.ToUpperInvariant(w[0]) + w[1..])) : ViewId;
         const int QuadsPerReliefQuad = 28, CollisionRes = 129;
         const float CityRange = 34f;
 
@@ -59,8 +61,13 @@ namespace Atlas
         }
 
         /// <summary>Orbit preset: the metropolitan aerial's view, from the south-south-east up the basin to the two peaks.</summary>
-        public static KnownWorldMap.View View(BasinSite s)
+        public static KnownWorldMap.View View(BasinSite s, string name = null)
         {
+            if (s.Floodplain)   // FIX(haven): from the south-west over the red river to the city and its pyramids
+            {
+                var (hx, hy) = s.KmToWorld(1.5, 0.5);
+                return new() { Id = ViewIdFor(s), Name = name ?? s.Id, Target = new[] { hx, hy, s.GroundUnits(hx, hy) }, Yaw = -112, Pitch = 32, Dist = 14.5 };
+            }
             var (x, y) = s.KmToWorld(-0.6, 0.4);
             return new() { Id = ViewId, Name = "Karn Ashur", Target = new[] { x, y, s.GroundUnits(x, y) }, Yaw = -84, Pitch = 34, Dist = 18.5 };
         }
@@ -106,7 +113,7 @@ namespace Atlas
                 AddChild(root);
                 var mk = m.Anchors.TryGetValue("great_market", out var a) ? a : new double[] { 0, 0 };
                 var (count, _) = Instances.Build(root, c.Table, _mats.Instanced, mk[0], mk[1], PlaceOnMap, tiles: 6, rangeAll: CityRange,
-                                                     skipKinds: new[] { "terrace" });   // the map's own ground carries the houses
+                                                     skipKinds: new[] { "terrace", "boat" });   // the map's own ground carries the houses
                 InstanceCount = count;
                 WeatherMaterials.Add(_mats.Instanced);
             }
@@ -128,7 +135,7 @@ namespace Atlas
                 double g = S.GroundUnits(x + c * u * w - sn * v * d, y + sn * u * w + c * v * d);
                 lo = Math.Min(lo, g); hi = Math.Max(hi, g);
             }
-            bool tree = t.Kind(i) >= 10;
+            bool tree = t.Kind(i) >= 10 && t.Kind(i) <= 13;   // FIX(haven): silos and boats are kinds 14, 15
             double z0 = tree ? lo + 0.3 * (hi - lo) : lo - 0.0004;
             double hh = tree ? h : h + (hi - lo) + 0.0004;
             var basis = new Basis(Vector3.Up, t.Rot(i)) * Basis.FromScale(new Vector3((float)w, (float)Math.Max(hh, 1e-5), (float)d));
@@ -139,13 +146,16 @@ namespace Atlas
         {
             var water = new ShaderMaterial { Shader = ResourceLoader.Load<Shader>("res://shaders/karn_ashur_water.gdshader") };
             WeatherMaterials.Add(water);
+            if (S.Site.WaterColour is { Length: 3 } wc)   // FIX(haven): the River Flame's silt red
+                water.SetShaderParameter("silt", new Color((float)wc[0], (float)wc[1], (float)wc[2], 1f));
+            double riverW = S.Site.RiverWidthKm > 0 ? S.Site.RiverWidthKm * S.S : 0;
             var st = new SurfaceTool();
             st.Begin(Mesh.PrimitiveType.Triangles);
             foreach (var (id, pts) in S.Site.Rivers)
             {
                 var path = pts.Select(p => (S.KmToWorld(p[0], p[1]), p.Length > 2 ? p[2] : double.NaN)).ToList();
                 Ribbon(st, path.Select(q => q.Item1).ToArray(), k => double.IsNaN(path[Math.Min(k, path.Count - 1)].Item2)
-                       ? -1 : S.Units(path[Math.Min(k, path.Count - 1)].Item2 + 1.2), id == "southern_outlet" ? 0.016 : 0.011);
+                       ? -1 : S.Units(path[Math.Min(k, path.Count - 1)].Item2 + 1.2), riverW > 0 ? riverW : id == "southern_outlet" ? 0.016 : 0.011);
                 RiverRibbons++;
             }
             foreach (var (id, pts) in S.Site.Canals)
@@ -153,8 +163,9 @@ namespace Atlas
                 Ribbon(st, S.Path(pts), _ => -1, 0.0035);
                 RiverRibbons++;
             }
-            Ribbon(st, S.OutletPath, _ => -1, 0.036);
+            Ribbon(st, S.OutletPath, _ => -1, S.Floodplain ? FlameValleyRegion.TrunkWidth : 0.036);
             RiverRibbons++;
+            if (S.InletPath.Length > 1) { Ribbon(st, S.InletPath, _ => -1, FlameValleyRegion.TrunkWidth); RiverRibbons++; }
             if (S.TributaryPath.Length > 1) { Ribbon(st, S.TributaryPath, _ => -1, 0.042); RiverRibbons++; }
             AddChild(new MeshInstance3D { Name = "Water", Mesh = st.Commit(), MaterialOverride = water, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
         }
@@ -194,6 +205,7 @@ namespace Atlas
 
         void BuildFires()
         {
+            if (!S.Site.Places.ContainsKey("first_flame")) { BuildLamps(); return; }   // FIX(haven): only Karn Ashur's flame
             // the First Flame on the western summit: a flame you can see from the regional view, and its light
             var (fx, fy, fh) = S.Place("first_flame");
             FlamePosition = new Vector3((float)fx, (float)fh, -(float)fy);
@@ -207,6 +219,11 @@ namespace Atlas
             AddFire(FlamePosition + Vector3.Up * 0.02f, 0.9f, 1.2f);
             var (mx, my, mh) = S.Place("al_mirah");
             AddFire(new Vector3((float)mx, (float)mh + 0.01f, -(float)my), 0.25f, 0.4f);
+            BuildLamps();
+        }
+
+        void BuildLamps()
+        {
             // the package's night lights (lamps, torches up the climb, caravanserai gates), seated on the map's ground
             var glow = new GradientTexture2D
             {

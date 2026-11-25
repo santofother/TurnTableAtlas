@@ -43,3 +43,28 @@ Status: concept only. The images are design references for a later Blender build
 - `Hamen Atlas Entry.md`, especially Terrain and Economy and Architecture Note.
 - `The River Flame Chronicles - Volume I.md`, Chapter IV (Founding of Haven) and Chapter VI (Great Houses).
 - `The River Flame Chronicles - Volume II.md`, Books One and Two (eastern-bank lordship, reunification, harbor and grain economy).
+
+## User additions (2026-11-24)
+
+- **The River Flame is red**, as in the concepts: an earthy, silt-red river, in the city and on the Known World.
+- **Three big white-marble stepped pyramids** are a big part of Haven: the city's defining landmark.
+- Farms and countryside on both banks of the Flame; a **Mediterranean port city at the river's mouth**.
+
+## Agent's reading (filled in by the session)
+
+- **References:** the regional v2 and the user's two attached concepts agree: a broad red river running north, the
+  dense walled inner city on one bank with quays, granaries, a stone bridge and sluice gates; stepped pyramid-palaces
+  near its middle; a vast outer wall enclosing canal-fed fields on both banks; a sharp edge to the desert beyond.
+- **Build:** `generator/rivercity.py` (`"kind": "metropolis"`, a floodplain capital at 1:200 on a 20 km plinth centred
+  on `settlement:haven`, same frame and Atlas contract as Karn Ashur). River north through the plinth, ~550 m wide,
+  red. Inner city on the **east bank** (~25 km², courtyard houses), the **three white-marble pyramids** round a
+  ceremonial plaza on the axis to the river gate and the bridge; quays, round granaries, the inland harbour basin
+  ("harbour renewal"), the Dareth Archive, the Selenne river shrine. One stone bridge to a west-bank suburb. Erros's
+  outer wall (an ~17 × 18 km oval) across both banks with water gates; canals and sluices on a grid; fields and
+  ~50 farming villages; desert at the east and west edges. Sun: 22°N (the Known World graticule), day 100.
+- **Known World:** the package as a hero patch at Haven; the Flame and its delta arms repainted red; irrigated fields,
+  canals and villages on both banks from the Varduun foothills to the delta; the port at the delta's tip.
+- **Port at the mouth:** a separate Roman/Mediterranean city package (`fantasy_capital.py`), placeholder name
+  **Flamemouth** (`LORE?`), pinned at the trunk's mouth (no settlement there in the lore table).
+- **Generator gaps / LORE?:** bank plan, bridge count, the pyramids' exact form and placement, the port's name and
+  whether it is Meret's fleet harbour.

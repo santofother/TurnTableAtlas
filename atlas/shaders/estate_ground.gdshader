@@ -5,7 +5,8 @@ render_mode diffuse_burley, specular_schlick_ggx;
 #include "res://shaders/cloud_shadow.gdshaderinc"
 
 uniform sampler2D estate_tex : source_color, filter_linear_mipmap, repeat_disable;
-uniform sampler2D albedo_tex : source_color, filter_linear_mipmap, repeat_disable;
+uniform sampler2D albedo_tex : source_color, filter_linear_mipmap_anisotropic, repeat_disable;
+uniform sampler2D height_tex : filter_linear, repeat_disable;   // the relief's heights, for its own shading
 uniform vec2 world_min;     // map xz of the albedo's top-left
 uniform vec2 world_size;
 uniform vec2 centre;        // estate centre (x, z)
@@ -61,7 +62,24 @@ void fragment() {
     vec3 warm = mix(base, base * vec3(1.05, 0.98, 0.86), 0.6);
     col = mix(col, warm, smoothstep(1.8 * half_size, 2.8 * half_size, r));
     col = mix(col, base, smoothstep(2.8 * half_size, blend_out, r));
+    // away from the villa, light the ground exactly as relief.gdshader does, so the patch cannot be seen
+    float far = smoothstep(1.8 * half_size, hills_r, r);
+    vec2 texel = 1.0 / vec2(textureSize(height_tex, 0));
+    float hx = max(textureLod(height_tex, map_uv + vec2(texel.x, 0.0), 0.0).r, 0.0) - max(textureLod(height_tex, map_uv - vec2(texel.x, 0.0), 0.0).r, 0.0);
+    float hz = max(textureLod(height_tex, map_uv + vec2(0.0, texel.y), 0.0).r, 0.0) - max(textureLod(height_tex, map_uv - vec2(0.0, texel.y), 0.0).r, 0.0);
+    vec3 rn = normalize(vec3(-hx / (2.0 * texel.x * world_size.x), 1.0, -hz / (2.0 * texel.y * world_size.y)));
+    vec3 vn_world = normalize((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).xyz);
+    NORMAL = normalize((VIEW_MATRIX * vec4(normalize(mix(vn_world, rn, far)), 0.0)).xyz);
+    col *= mix(1.0, mix(0.94, 1.05, vn(wpos.xz * 3.0) * 0.6 + vn(wpos.xz * 11.0) * 0.4), far);
+    col *= mix(1.0, mix(1.0, 0.7, cloud_wet), far);
     ALBEDO = col * cloud_shadow(wpos);
-    ROUGHNESS = 0.92;
-    SPECULAR = 0.2;
+    ROUGHNESS = mix(0.92, mix(0.9, 0.5, cloud_wet), far);
+    SPECULAR = mix(0.2, 0.25, far);
+    // the patch reaches the coast: where the map is sea, draw it as the relief does
+    if (textureLod(height_tex, map_uv, 0.0).r <= 0.0) {
+        ALBEDO = base * cloud_shadow(wpos);
+        NORMAL = normalize((VIEW_MATRIX * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
+        ROUGHNESS = 0.3;
+        SPECULAR = 0.5;
+    }
 }

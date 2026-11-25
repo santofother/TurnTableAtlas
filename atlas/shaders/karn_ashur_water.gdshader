@@ -4,6 +4,7 @@ shader_type spatial;
 render_mode cull_disabled, diffuse_burley, specular_schlick_ggx;
 #include "res://shaders/cloud_shadow.gdshaderinc"
 
+uniform vec4 silt = vec4(0.0);   // FIX(haven): a > 0: silt-laden river water of this (sRGB) colour, e.g. the red River Flame
 varying vec3 wpos;
 
 float hash2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -23,8 +24,9 @@ void fragment() {
     float fres = pow(1.0 - clamp(dot(nv, VIEW), 0.0, 1.0), 4.0);
     vec3 deep = pow(vec3(0.09, 0.25, 0.29), vec3(2.2));
     vec3 sky = pow(vec3(0.55, 0.66, 0.72), vec3(2.2));
-    ALBEDO = mix(deep, sky, fres * 0.6) * cloud_shadow(wpos);
-    ROUGHNESS = 0.1;
-    SPECULAR = 0.6;
+    vec3 mud = pow(silt.rgb, vec3(2.2)) * (1.15 + 0.16 * w0);
+    ALBEDO = mix(mix(deep, sky, fres * 0.6), mix(mud, sky, fres * 0.15), silt.a) * cloud_shadow(wpos);
+    ROUGHNESS = mix(0.1, 0.5, silt.a);
+    SPECULAR = mix(0.6, 0.15, silt.a);
     NORMAL = nv;
 }

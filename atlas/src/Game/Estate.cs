@@ -40,7 +40,7 @@ namespace Atlas
             Id = ViewId, Name = M.Name, Target = new[] { S.Cx, S.Cy, S.Base + 0.01 }, Yaw = -115, Pitch = 34, Dist = 0.55,
         };
 
-        public void Build(EstateSite site, CityManifest m, KnownWorldMap kw, Texture2D albedo)
+        public void Build(EstateSite site, CityManifest m, KnownWorldMap kw, Texture2D albedo, Texture2D heights)
         {
             Name = "Estate_" + m.Id;
             S = site; M = m;
@@ -53,6 +53,7 @@ namespace Atlas
             _ground = new ShaderMaterial { Shader = ResourceLoader.Load<Shader>("res://shaders/estate_ground.gdshader") };
             _ground.SetShaderParameter("estate_tex", c.Albedo);
             _ground.SetShaderParameter("albedo_tex", albedo);
+            _ground.SetShaderParameter("height_tex", heights);
             _ground.SetShaderParameter("world_min", new Vector2((float)kw.BoundsXy[0], -(float)kw.BoundsXy[3]));
             _ground.SetShaderParameter("world_size", new Vector2((float)kw.Width, (float)kw.Depth));
             _ground.SetShaderParameter("centre", new Vector2((float)S.Cx, -(float)S.Cy));
@@ -119,6 +120,14 @@ namespace Atlas
                     float dx = (hgt[j * nx + Math.Min(i + 1, nx - 1)] - hgt[j * nx + Math.Max(i - 1, 0)]) / (float)(2 * sx);
                     float dz = (hgt[Math.Min(j + 1, ny - 1) * nx + i] - hgt[Math.Max(j - 1, 0) * nx + i]) / (float)(2 * sy);
                     norms[k] = new Vector3(-dx, 1, -dz).Normalized();
+                }
+            // tuck the rim just under the relief round it, else pinholes show along the join
+            const float Lap = 0.006f, Drop = 0.002f;
+            for (int j = 0; j < ny; j++)
+                for (int i = 0; i < nx; i++)
+                {
+                    int ox = i == 0 ? -1 : i == nx - 1 ? 1 : 0, oz = j == 0 ? -1 : j == ny - 1 ? 1 : 0;
+                    if (ox != 0 || oz != 0) verts[j * nx + i] += new Vector3(ox * Lap, -Drop, oz * Lap);
                 }
             var idx = new int[(nx - 1) * (ny - 1) * 6];
             int o = 0;

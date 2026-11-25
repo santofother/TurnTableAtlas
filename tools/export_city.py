@@ -78,6 +78,10 @@ def prepare_sea_and_terrain():
         a = sea.data.color_attributes.new('Col', 'FLOAT_COLOR', 'POINT')
         rgba = np.ones((len(d), 4), np.float32)
         rgba[:, 0] = d
+        if 'silt' in sea.data.attributes:   # FIX(haven): G = 1 - silt (atlas/shaders/water.gdshader turns it river-red)
+            si = np.empty(len(d), np.float32)
+            sea.data.attributes['silt'].data.foreach_get('value', si)
+            rgba[:, 1] = 1.0 - si
         a.data.foreach_set('color', rgba.ravel())
     ter = bpy.data.objects.get("CAP_Terrain")
     if ter is not None and not ter.data.uv_layers:

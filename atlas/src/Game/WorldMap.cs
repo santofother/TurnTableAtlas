@@ -14,6 +14,13 @@ namespace Atlas
         // kept between visits (the map is rebuilt each time a city closes)
         static (Vector3 Target, float Yaw, float Pitch, float Distance)? _lastCamera;
         static double _lastHour = 16.5;
+        static readonly SunDefaults MapSun = new() { LatitudeDeg = 38, DefaultDayOfYear = 172, NorthOffsetDeg = 0 };
+        static (double Latitude, double Day, double North)? _lastSun;
+        static bool _lastSunPath;
+        /// <summary>The sun path's radius as a share of the camera distance: it stays the same size on screen.</summary>
+        const float SunPathShare = 0.26f;
+        /// <summary>Camera distance inside which an estate's name appears.</summary>
+        public const float EstateNameDist = 3.5f;
         static Texture2D _kwTex;
         static ImageTexture _kwHeightTex;
         /// <summary>The relief's heights with each basin's own ground written in under its patch: the terrain-following fog
@@ -26,6 +33,7 @@ namespace Atlas
         /// <summary>Metropolis basins (Karn Ashur) by package id, and the High Dunes round them; kept between visits.</summary>
         static readonly Dictionary<string, BasinSite> _basinSites = new();
         static HighDunesRegion _highDunes;
+        static FlameValleyRegion _flame;   // FIX(haven): the River Flame valley
         /// <summary>Country estates' hero patches (Landric's villa), by city id; kept between visits.</summary>
         static readonly Dictionary<string, EstateSite> _estateSites = new();
         // the relief mesh's quads (its PlaneMesh subdivisions + 1); hero patches meet its triangles at their edges
@@ -49,6 +57,8 @@ namespace Atlas
         /// <summary>The High Dunes round Karn Ashur: rivers, villages, market towns, the grain route.</summary>
         public HighDunes Dunes { get; private set; }
         public static HighDunesRegion Region => _highDunes;
+        public FlameValley Valley { get; private set; }
+        public const string FlameViewId = "CAM_RiverFlame";
         /// <summary>Estates standing on the map as miniatures of their packages.</summary>
         public readonly List<Estate> Estates = new();
         readonly HashSet<MeshInstance3D> _basinGlows = new();
@@ -62,7 +72,11 @@ namespace Atlas
         // overlay
         CanvasLayer _ui;
         OptionButton _views;
-        Button _weatherBtn;
+        Button _weatherBtn, _sunBtn;
+        /// <summary>Today's sun path, drawn round the point the camera looks at.</summary>
+        public SunArcGizmo Gizmo { get; private set; }
+        /// <summary>The sun drop-down's controls.</summary>
+        public SunPanel SunControls { get; private set; }
         /// <summary>The weather drop-down's controls.</summary>
         public WeatherPanel WeatherControls { get; private set; }
         HSlider _time;
@@ -81,7 +95,8 @@ namespace Atlas
             _kw ??= KnownWorldMap.Load(ProjectSettings.GlobalizePath(KwJson));
             Tod = new TimeOfDay { Name = "TimeOfDay", FogScale = 0.3f, Room = MapTable.RoomColor };
             AddChild(Tod);
-            Tod.Setup(null, new SunDefaults { LatitudeDeg = 38, DefaultDayOfYear = 172, NorthOffsetDeg = 0 });
+            Tod.Setup(null, MapSun);
+            if (_lastSun is { } sun) (Tod.Latitude, Tod.DayOfYear, Tod.NorthOffset) = sun;
             Tod.Hour = Args.Has("hour") ? Args.F("hour", 16.5f) : _lastHour;
             Tod.Apply();
 
@@ -96,6 +111,8 @@ namespace Atlas
             Rig = new TurntableCamera { Name = "Rig", MinDist = 0.8f, MaxDist = 950f, MinPitch = 5f, FlySpeed = 4f, Bounds = bounds };
             AddChild(Rig);
             Rig.Cam.Far = 8000f;
+            Gizmo = new SunArcGizmo { Name = "SunArc", FixedSizeLabels = true, Visible = _lastSunPath || Args.Has("arc") };
+            AddChild(Gizmo);
 
             Weather = new WeatherView { Name = "Weather" };
             AddChild(Weather);
@@ -104,6 +121,7 @@ namespace Atlas
                 new CloudScale { Base = 9, Top = 21, Center = new Vector2(cx, -cy), Half = new Vector2((float)_kw.Width / 2, (float)_kw.Depth / 2)   /* W1: clouds stay over the map, not the table */,
                                  Cell = 230, Shape = 20, Detail = 5.5f, NearFade = 1.5f, Edge = 45, FlashR = 30 },
                 new[] { _reliefMat }.Concat(Basins.SelectMany(b => b.WeatherMaterials)).Concat(Dunes?.WeatherMaterials ?? new List<ShaderMaterial>())
+                    .Concat(Valley?.WeatherMaterials ?? new List<ShaderMaterial>())
                     .Concat(Estates.SelectMany(e => e.WeatherMaterials)), false, () => Rig.Target,
                 () => Math.Clamp(Math.Abs(Tod.Speed) * 60, 1.0, 20.0));
 
@@ -120,8 +138,10 @@ namespace Atlas
             Shipping = new WorldShipping();
             AddChild(Shipping);
             Shipping.Build(this);
-            foreach (var b in Basins)   // FIX(karn_ashur): the basin's view, and the High Dunes round it
-                if (!_kw.Cameras.Any(c => c.Id == Basin.ViewId)) _kw.Cameras.Add(Basin.View(b.S));
+            foreach (var b in Basins)   // FIX(karn_ashur): the basin's view, and the High Dunes round it (FIX(haven): one per basin)
+                if (!_kw.Cameras.Any(c => c.Id == Basin.ViewIdFor(b.S))) _kw.Cameras.Add(Basin.View(b.S, b.M.Name));
+            if (Valley != null && !_kw.Cameras.Any(c => c.Id == FlameViewId))
+                _kw.Cameras.Add(new KnownWorldMap.View { Id = FlameViewId, Name = "The River Flame", Target = new[] { 181.0, 60.0, 0.1 }, Yaw = -105, Pitch = 36, Dist = 52 });
             if (Dunes != null && !_kw.Cameras.Any(c => c.Id == HighDunesViewId))
                 _kw.Cameras.Add(new KnownWorldMap.View { Id = HighDunesViewId, Name = "The High Dunes", Target = new[] { 94.0, 31.0, 0.5 }, Yaw = -98, Pitch = 40, Dist = 62 });
             foreach (var e in Estates)
@@ -177,11 +197,12 @@ namespace Atlas
                 var raw = new ReliefSampler(_kwH, _hw, _hh, _kw.BoundsXy, ReliefQuadsX, ReliefQuadsY);
                 var pre = metros.Select(m => Basin.MakeSite(m, _kw, raw)).Where(b => b != null).ToList();
                 var hd = Path.Combine(_kw.Directory, "high_dunes.json");
-                if (pre.Count > 0 && Args.Get("high-dunes") != "off" && File.Exists(hd))
+                var karn = pre.FirstOrDefault(b => !b.Floodplain);   // FIX(haven): the High Dunes hang on Karn Ashur's basin
+                if (karn != null && Args.Get("high-dunes") != "off" && File.Exists(hd))
                 {
                     _highDunes = new HighDunesRegion(HighDunesData.Load(hd), _kw.UnitM, _kw.Exaggeration);
-                    _highDunes.LinkOutlet(pre[0].OutletEnd);
-                    _highDunes.LinkRoad(pre[0].RoadEnd, pre[0].OnPlinth);
+                    _highDunes.LinkOutlet(karn.OutletEnd);
+                    _highDunes.LinkRoad(karn.RoadEnd, karn.OnPlinth);
                     _highDunes.EditHeights(_kwH, _hw, _hh, _kw.BoundsXy, (x, y) => pre.Any(b => b.OnPlinth(x, y)),
                         (x, y) => pre.FirstOrDefault(b => b.Contains(x, y)) is { } basin ? basin.Metres(basin.MeshUnits(x, y)) : null);
                 }
@@ -195,6 +216,18 @@ namespace Atlas
                     _basinSites[m.Id] = bs;
                 }
             var basinSites = metros.Where(m => _basinSites.ContainsKey(m.Id)).Select(m => _basinSites[m.Id]).ToList();
+            var fv = Path.Combine(_kw.Directory, "flame_valley.json");
+            if (_flame == null && Args.Get("flame-valley") != "off" && File.Exists(fv))   // FIX(haven): the red River Flame and its farmland
+            {
+                _flame = new FlameValleyRegion(FlameValleyData.Load(fv), _kw.UnitM, _kw.Exaggeration);
+                foreach (var bs in basinSites.Where(b => b.Floodplain))
+                    if (_flame.LinkPatch(bs.Contains) is { } ends)
+                    {
+                        bs.SetRiverEnds(ends.Up, ends.Down);
+                        _flame.AddJoin("join_in_" + bs.Id, bs.InletPath);
+                        _flame.AddJoin("join_out_" + bs.Id, bs.OutletPath);
+                    }
+            }
             if (_fogHeightTex == null && basinSites.Count > 0)
             {
                 var fh = (float[])_kwH.Clone();
@@ -211,13 +244,22 @@ namespace Atlas
             if (_kwTex == null)
             {
                 var img = LoadImage(Path.Combine(_kw.Directory, _kw.Albedo));
-                if (img != null && _highDunes != null)
+                if (img != null && (_highDunes != null || _flame != null))
                 {
                     bool InBasin(double x, double y) => basinSites.Any(b => b.OnPlinth(x, y));
-                    _highDunes.PlaceSettlements((x, y) => _highDunes.M(_sampler.Fine(x, y)), InBasin);
+                    double Hm(double x, double y) => _sampler.Fine(x, y) * _kw.UnitM / _kw.Exaggeration;
                     img.Convert(Image.Format.Rgba8);
                     var px = img.GetData();
-                    _highDunes.PaintAlbedo(px, img.GetWidth(), img.GetHeight(), _kw.BoundsXy, (x, y) => _highDunes.M(_sampler.Fine(x, y)), (_, _) => false);
+                    if (_highDunes != null)
+                    {
+                        _highDunes.PlaceSettlements((x, y) => _highDunes.M(_sampler.Fine(x, y)), InBasin);
+                        _highDunes.PaintAlbedo(px, img.GetWidth(), img.GetHeight(), _kw.BoundsXy, (x, y) => _highDunes.M(_sampler.Fine(x, y)), (_, _) => false);
+                    }
+                    if (_flame != null)
+                    {
+                        _flame.PlaceSettlements(Hm, (x, y) => basinSites.Any(b => b.Contains(x, y)));
+                        _flame.PaintAlbedo(px, img.GetWidth(), img.GetHeight(), _kw.BoundsXy, Hm, InBasin);
+                    }
                     img = Image.CreateFromData(img.GetWidth(), img.GetHeight(), false, Image.Format.Rgba8, px);
                 }
                 if (img != null) { img.GenerateMipmaps(); _kwTex = ImageTexture.CreateFromImage(img); }
@@ -232,10 +274,10 @@ namespace Atlas
                 var (a0, b0, a1, b1) = estateSites[0].HoleUv;
                 _reliefMat.SetShaderParameter("hole2", new Vector4((float)a0, (float)b0, (float)a1, (float)b1));
             }
-            if (basinSites.Count > 0)
+            for (int bi = 0; bi < Math.Min(2, basinSites.Count); bi++)   // FIX(haven): a second basin sinks through hole3
             {
-                var (u0, v0, u1, v1) = basinSites[0].HoleUv;   // the patch covers these vertices: sink them out of sight
-                _reliefMat.SetShaderParameter("hole", new Vector4((float)u0, (float)v0, (float)u1, (float)v1));
+                var (u0, v0, u1, v1) = basinSites[bi].HoleUv;   // the patch covers these vertices: sink them out of sight
+                _reliefMat.SetShaderParameter(bi == 0 ? "hole" : "hole3", new Vector4((float)u0, (float)v0, (float)u1, (float)v1));
             }
             _reliefMat.SetShaderParameter("albedo_tex", _kwTex);
             _reliefMat.SetShaderParameter("height_tex", _kwHeightTex);
@@ -262,13 +304,22 @@ namespace Atlas
                 AddChild(Dunes);
                 var metro = _root.Cities.FirstOrDefault(c => c.IsMetropolis);
                 double f = metro?.WorldMap?.Miniature?.Exaggeration ?? 4;
-                Dunes.Build(_highDunes, basinSites.First(), _kw, (x, y) => GroundAt(x, y), metro?.Instances, f / _kw.UnitM);
+                Dunes.Build(_highDunes, basinSites.First(b => !b.Floodplain), _kw, (x, y) => GroundAt(x, y), metro?.Instances, f / _kw.UnitM);
+            }
+            if (_flame != null)
+            {
+                Valley = new FlameValley();
+                AddChild(Valley);
+                var haven = _root.Cities.FirstOrDefault(c => c.IsMetropolis && c.Site?.IsFloodplain == true) ?? _root.Cities.FirstOrDefault(c => c.IsMetropolis);
+                double f = haven?.WorldMap?.Miniature?.Exaggeration ?? 6;
+                Valley.Build(_flame, (x, y) => GroundAt(x, y), (x, y) => _sampler.Coarse(x, y), (x, y) => basinSites.Any(b => b.Contains(x, y)),
+                             haven?.Instances, f / _kw.UnitM);
             }
             foreach (var es in estateSites)
             {
                 var est = new Estate();
                 AddChild(est);
-                est.Build(es, _root.Cities.First(c => c.Id == es.Id), _kw, _kwTex);
+                est.Build(es, _root.Cities.First(c => c.Id == es.Id), _kw, _kwTex, _kwHeightTex);
                 Estates.Add(est);
             }
 
@@ -336,6 +387,7 @@ namespace Atlas
                 _names.Add((l, true));
             }
             if (Dunes != null) foreach (var l in Dunes.Labels) _names.Add((l, false));   // the High Dunes' market towns
+            if (Valley != null) foreach (var l in Valley.Labels) _names.Add((l, false));   // FIX(haven): the River Flame's market towns
             GD.Print($"[Atlas] known world loaded: {_hw}x{_hh} heights, {_kw.Settlements.Count} settlements, {_kw.Cameras.Count} views in {Time.GetTicksMsec() - t0} ms");
         }
 
@@ -437,6 +489,12 @@ namespace Atlas
             cam.Near = Math.Clamp(Rig.Dist * 0.002f, 0.02f, 1.0f);
             Tod.SunLight.DirectionalShadowMaxDistance = Math.Clamp(Rig.Dist * 2.4f, 12f, 1400f);
             _lastHour = Tod.Hour;
+            if (Gizmo.Visible)
+            {
+                Gizmo.Position = new Vector3(Rig.Target.X, GroundAt(Rig.Target.X, -Rig.Target.Z), Rig.Target.Z);
+                Gizmo.Resize(Rig.Dist * SunPathShare / Gizmo.Radius);
+                Gizmo.UpdateNow(Tod);
+            }
             float night = (float)Tod.LampLevel;
             Table.Tick(dt, night);
             foreach (var e in Estates) e.SetNight((float)Tod.WindowLevel, night);
@@ -452,6 +510,9 @@ namespace Atlas
             foreach (var p in Pins)
             {
                 p.Tick(dt, k, night, p == _hover);
+                // an estate sits close to its city: its name shows only once the camera is in round it
+                if (p.M.IsEstate)
+                    p.LabelShown = Rig.Dist < EstateNameDist && Rig.Target.DistanceTo(p.Position) < Math.Max(0.5f, Rig.Dist * 0.5f);
                 var head = p.Head;
                 if (!p.Visible || cam.IsPositionBehind(head)) continue;
                 float d = cam.UnprojectPosition(head).DistanceTo(mouse);
@@ -477,9 +538,11 @@ namespace Atlas
             }
             foreach (var b in Basins) b.Tick((float)Tod.WindowLevel, night);
             Dunes?.Tick(delta, Rig.Dist, (float)Tod.WindowLevel, night);
+            Valley?.Tick((float)Tod.WindowLevel, night);
             Declutter(cam);
             if (!_syncing && _time != null && Tod.Speed != 0) { _syncing = true; _time.Value = Tod.Hour; _syncing = false; }
             if (_clock != null) _clock.Text = TimeOfDay.Clock(Tod.Hour);
+            if (_sunBtn != null) _sunBtn.Text = $"Sun {(_sunBtn.ButtonPressed ? "▴" : "▾")}";
             if (_weatherBtn != null) _weatherBtn.Text = $"Weather: {Atlas.Core.Weather.Label(_root.Weather.Kind)} {(_weatherBtn.ButtonPressed ? "▴" : "▾")}";
         }
 
@@ -492,7 +555,7 @@ namespace Atlas
             _taken.Clear();
             var vs = GetViewport().GetVisibleRect();
             foreach (var p in Pins)
-                if (p.Visible && !cam.IsPositionBehind(p.Head)) _taken.Add(LabelRect(cam.UnprojectPosition(p.Head) - new Vector2(0, 20), p.M.Name.Length, 15f));
+                if (p.Visible && p.LabelShown && !cam.IsPositionBehind(p.Head)) _taken.Add(LabelRect(cam.UnprojectPosition(p.Head) - new Vector2(0, 20), p.M.Name.Length, 15f));
             foreach (bool realmPass in new[] { true, false })
                 foreach (var (l, realm) in _names)
                 {
@@ -532,6 +595,8 @@ namespace Atlas
         public override void _ExitTree()
         {
             if (Rig != null) _lastCamera = (Rig.Target, Rig.Yaw, Rig.Pitch, Rig.Dist);
+            if (Tod != null) _lastSun = (Tod.Latitude, Tod.DayOfYear, Tod.NorthOffset);
+            if (Gizmo != null) _lastSunPath = Gizmo.Visible;
             Input.SetDefaultCursorShape(Input.CursorShape.Arrow);
         }
 
@@ -555,7 +620,7 @@ namespace Atlas
             sub.Position = new Vector2(26, 58);
             _ui.AddChild(sub);
 
-            // top right: weather and camera presets
+            // top right: sun, weather and camera presets
             var top = new HBoxContainer { Name = "MapControls" };
             top.AddThemeConstantOverride("separation", 6);
             top.SetAnchorsPreset(Control.LayoutPreset.TopRight);
@@ -569,28 +634,24 @@ namespace Atlas
                 _views.Select(0);
             };
             _weatherBtn = new Button { ToggleMode = true, FocusMode = Control.FocusModeEnum.None, CustomMinimumSize = new Vector2(150, 0) };
+            _sunBtn = new Button { ToggleMode = true, FocusMode = Control.FocusModeEnum.None, CustomMinimumSize = new Vector2(80, 0) };
+            top.AddChild(_sunBtn);
             top.AddChild(_weatherBtn);
             top.AddChild(_views);
             _ui.AddChild(top);
 
-            // weather drop-down under the top bar
-            var wbox = new PanelContainer { Name = "WeatherBox", Visible = false };
-            wbox.AddThemeStyleboxOverride("panel", new StyleBoxFlat { BgColor = new Color(0.08f, 0.07f, 0.06f, 0.86f), CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
-                CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8, ContentMarginLeft = 12, ContentMarginRight = 12, ContentMarginTop = 10, ContentMarginBottom = 10 });
-            wbox.SetAnchorsPreset(Control.LayoutPreset.TopRight);
-            wbox.GrowHorizontal = Control.GrowDirection.Begin;
-            wbox.OffsetRight = -16; wbox.OffsetTop = 58; wbox.CustomMinimumSize = new Vector2(360, 0);
-            var wcol = new VBoxContainer();
-            wbox.AddChild(wcol);
-            var wtitle = new Label { Text = "WEATHER" };
-            wtitle.AddThemeFontSizeOverride("font_size", 13);
-            wtitle.AddThemeColorOverride("font_color", Accent);
-            wcol.AddChild(wtitle);
+            // sun and weather drop-downs under the top bar, one open at a time
+            var (sbox, scol) = DropDown("SunBox", "SUN ARC");
+            SunControls = new SunPanel { Name = "SunPanel" };
+            scol.AddChild(SunControls);
+            SunControls.Build(Tod, MapSun, Gizmo);
+            var (wbox, wcol) = DropDown("WeatherBox", "WEATHER");
             WeatherControls = new WeatherPanel { Name = "WeatherPanel" };
             wcol.AddChild(WeatherControls);
             WeatherControls.Build(_root.Weather);
-            _ui.AddChild(wbox);
-            _weatherBtn.Toggled += on => wbox.Visible = on;
+            _sunBtn.Toggled += on => { sbox.Visible = on; if (on) _weatherBtn.ButtonPressed = false; };
+            _weatherBtn.Toggled += on => { wbox.Visible = on; if (on) _sunBtn.ButtonPressed = false; };
+            if (Args.Has("sun-panel")) { _sunBtn.ButtonPressed = true; }
             if (Args.Has("weather-panel")) { _weatherBtn.ButtonPressed = true; }
 
             // bottom left: time of day
@@ -626,6 +687,24 @@ namespace Atlas
             hint.OffsetLeft = 18; hint.OffsetTop = -30;
             _ui.AddChild(hint);
             BuildCard();
+        }
+
+        (PanelContainer Box, VBoxContainer Col) DropDown(string name, string title)
+        {
+            var box = new PanelContainer { Name = name, Visible = false };
+            box.AddThemeStyleboxOverride("panel", new StyleBoxFlat { BgColor = new Color(0.08f, 0.07f, 0.06f, 0.86f), CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
+                CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8, ContentMarginLeft = 12, ContentMarginRight = 12, ContentMarginTop = 10, ContentMarginBottom = 10 });
+            box.SetAnchorsPreset(Control.LayoutPreset.TopRight);
+            box.GrowHorizontal = Control.GrowDirection.Begin;
+            box.OffsetRight = -16; box.OffsetTop = 58; box.CustomMinimumSize = new Vector2(360, 0);
+            var col = new VBoxContainer();
+            box.AddChild(col);
+            var head = new Label { Text = title };
+            head.AddThemeFontSizeOverride("font_size", 13);
+            head.AddThemeColorOverride("font_color", Accent);
+            col.AddChild(head);
+            _ui.AddChild(box);
+            return (box, col);
         }
 
         void BuildCard()
@@ -681,6 +760,8 @@ namespace Atlas
         Label3D _label;
         float _t;
 
+        public bool LabelShown { get => _label.Visible; set => _label.Visible = value; }
+
         public Vector3 Head => GlobalPosition + Vector3.Up * _body.Scale.Y;
 
         public void Build(CityManifest m)
@@ -705,7 +786,7 @@ namespace Atlas
             // the name is not scaled with the body: a fixed-size label stays the same size on screen
             _label = new Label3D
             {
-                Name = "Name", Text = m.Name, FontSize = 34, OutlineSize = 12, PixelSize = 0.0007f, FixedSize = true,
+                Name = "Name", Text = m.Name, FontSize = m.IsEstate ? 22 : 34, OutlineSize = m.IsEstate ? 9 : 12, PixelSize = 0.0007f, FixedSize = true,
                 Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, NoDepthTest = true, RenderPriority = 10, OutlineRenderPriority = 9,
                 Modulate = new Color(1f, 0.92f, 0.75f), OutlineModulate = new Color(0.1f, 0.06f, 0.03f, 0.95f),
                 Position = new Vector3(0, 1.22f, 0),

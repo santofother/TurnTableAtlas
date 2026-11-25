@@ -1135,6 +1135,15 @@ def build_terrain(T, coll, mats):
     sm.update()
     da = sm.attributes.new('depth', 'FLOAT', 'POINT')
     da.data.foreach_set('value', depth.ravel().astype(np.float32))
+    if RIVER_SILT:   # FIX(haven): a silt-laden river (the red River Flame) and its plume: 'silt' 1 in the river, fading out to sea
+        line = [tuple(p) for p in RIVER_SILT['line']]
+        wy = np.array(RIVER_SILT['width'], float)
+        wy = wy[np.argsort(wy[:, 0])]
+        w = np.interp(SY, wy[:, 0], wy[:, 1])
+        d = dist_to_polyline(SX, SY, line) * (1.0 + 0.35 * (fbm(SX * 0.12, SY * 0.12, 3, 77) - 0.5))
+        silt = 1.0 - smoothstep(w * 0.5, w * 0.5 + 2.0 + 0.5 * w, d)
+        sa = sm.attributes.new('silt', 'FLOAT', 'POINT')
+        sa.data.foreach_set('value', np.clip(silt, 0, 1).ravel().astype(np.float32))
     sm.shade_smooth()
     sm.materials.append(mats['water'])
     so = bpy.data.objects.new("CAP_Sea", sm)
@@ -2909,6 +2918,7 @@ _LAYOUT_KEYS = {
     'hero_cam': ('HERO_CAM', lambda v: (tuple(v[0]), tuple(v[1]))),
 }
 _DEFAULTS = {}
+RIVER_SILT = None   # FIX(haven): cfg['river_silt'] {colour, line, width: [[y, w]]}: the sea turns river-red along it
 
 
 def apply_config(cfg):
@@ -2941,6 +2951,7 @@ def apply_config(cfg):
     if 'palette' in cfg:
         pass
     LANE_KEEPOUT = [ln['points'] for ln in cfg.get('ship_lanes', []) if not ln.get('loop')]
+    g['RIVER_SILT'] = cfg.get('river_silt')
 
 
 def build_all(stages=("terrain", "walls", "city", "countryside", "ships", "scene"), remove_defaults=True):

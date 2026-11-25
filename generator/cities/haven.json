@@ -1,0 +1,580 @@
+{
+  "id": "haven",
+  "name": "Haven",
+  "kind": "metropolis",
+  "builder": "rivercity",
+  "model_scale": 200.0,
+  "sun": {
+    "latitude_deg": 21.6,
+    "default_day_of_year": 100,
+    "north_offset_deg": 0.0
+  },
+  "layout": {
+    "notes": "Haven, capital of Hamen, on the River Flame floodplain just above the delta (briefs/haven/brief.md). Kilometres in the settlement's frame (+x east, +y north). The river enters the plinth at (1.9, -10) and leaves at (-1.1, 10), matching the Known World trunk under the patch at 6x. Bank plan, bridge count and the pyramids' layout are proposals (LORE?).",
+    "vertical_exaggeration": 2.0,
+    "floodplain_m": 9.0,
+    "river": {
+      "pts": [
+        [
+          1.9,
+          -10.4
+        ],
+        [
+          1.75,
+          -8.0
+        ],
+        [
+          1.35,
+          -5.6
+        ],
+        [
+          0.75,
+          -3.4
+        ],
+        [
+          0.35,
+          -1.4
+        ],
+        [
+          0.2,
+          0.6
+        ],
+        [
+          0.05,
+          2.6
+        ],
+        [
+          -0.3,
+          4.8
+        ],
+        [
+          -0.7,
+          7.2
+        ],
+        [
+          -1.1,
+          10.4
+        ]
+      ],
+      "width_m": 560,
+      "bed_m": -3.0,
+      "colour": [
+        0.66,
+        0.29,
+        0.17
+      ]
+    },
+    "inner_city": {
+      "notes": "The east-bank inner city: this outline runs round the landward side from the south quay to the north quay; the river side follows the bank.",
+      "outline": [
+        [
+          1.0,
+          -3.6
+        ],
+        [
+          2.0,
+          -4.15
+        ],
+        [
+          3.3,
+          -4.2
+        ],
+        [
+          4.5,
+          -3.7
+        ],
+        [
+          5.4,
+          -2.7
+        ],
+        [
+          5.9,
+          -1.3
+        ],
+        [
+          6.0,
+          0.3
+        ],
+        [
+          5.7,
+          1.8
+        ],
+        [
+          5.0,
+          3.0
+        ],
+        [
+          3.9,
+          3.85
+        ],
+        [
+          2.6,
+          4.2
+        ],
+        [
+          1.3,
+          4.0
+        ],
+        [
+          0.55,
+          3.4
+        ]
+      ],
+      "quay_m": 90,
+      "wall_h_m": 17,
+      "tower_every_m": 180,
+      "gates": {
+        "river_gate": [
+          0.62,
+          0.2
+        ],
+        "south_gate": [
+          2.6,
+          -4.2
+        ],
+        "east_gate": [
+          6.0,
+          0.25
+        ],
+        "north_gate": [
+          2.7,
+          4.2
+        ]
+      }
+    },
+    "pyramids": [
+      {
+        "id": "great_pyramid",
+        "label": "The Great Pyramid of Erros",
+        "at": [
+          3.65,
+          0.25
+        ],
+        "base_m": 560,
+        "height_m": 190,
+        "tiers": 7,
+        "stair_face": "west"
+      },
+      {
+        "id": "south_pyramid",
+        "label": "The South Pyramid",
+        "at": [
+          2.5,
+          -1.02
+        ],
+        "base_m": 460,
+        "height_m": 158,
+        "tiers": 6,
+        "stair_face": "north"
+      },
+      {
+        "id": "north_pyramid",
+        "label": "The North Pyramid",
+        "at": [
+          2.5,
+          1.52
+        ],
+        "base_m": 460,
+        "height_m": 158,
+        "tiers": 6,
+        "stair_face": "south"
+      }
+    ],
+    "plaza": {
+      "at": [
+        2.45,
+        0.25
+      ],
+      "w_m": 640,
+      "d_m": 470
+    },
+    "palace_precinct": [
+      [
+        1.55,
+        -1.6
+      ],
+      [
+        4.25,
+        -1.6
+      ],
+      [
+        4.25,
+        2.1
+      ],
+      [
+        1.55,
+        2.1
+      ]
+    ],
+    "bridge": {
+      "y_km": -1.35,
+      "width_m": 14
+    },
+    "harbour": {
+      "notes": "Queen Meret's 'harbour renewal': an inland basin cut through the quay, its mouth to the river.",
+      "x0": 0.85,
+      "x1": 1.75,
+      "y0": 1.85,
+      "y1": 2.75
+    },
+    "granaries": [
+      [
+        1.15,
+        -3.05,
+        12
+      ],
+      [
+        1.3,
+        -2.45,
+        10
+      ],
+      [
+        1.05,
+        3.25,
+        8
+      ]
+    ],
+    "archive": {
+      "at": [
+        4.75,
+        -2.3
+      ],
+      "label": "The Dareth Archive"
+    },
+    "shrine": {
+      "at": [
+        0.15,
+        -0.55
+      ],
+      "label": "House Selenne's river shrine"
+    },
+    "west_suburb": [
+      [
+        -0.45,
+        -2.6
+      ],
+      [
+        -1.9,
+        -2.45
+      ],
+      [
+        -2.35,
+        -1.3
+      ],
+      [
+        -2.0,
+        -0.2
+      ],
+      [
+        -0.35,
+        -0.05
+      ]
+    ],
+    "outer_wall": {
+      "notes": "Erros the Founder's outer wall: a vast oval across both banks, canal-fed fields inside for a long siege.",
+      "center": [
+        1.1,
+        0.2
+      ],
+      "rx_km": 7.6,
+      "ry_km": 8.9,
+      "wall_h_m": 16,
+      "tower_every_m": 380,
+      "wobble": 0.035,
+      "thick_m": 14
+    },
+    "valley_edge_km": {
+      "west": -8.6,
+      "east": 9.5,
+      "notes": "Green to desert beyond these offsets (km x); the edge wanders."
+    },
+    "canals": {
+      "spacing_km": 1.35,
+      "trunk_offsets_km": [
+        -5.2,
+        -2.6,
+        2.9,
+        7.4
+      ],
+      "sluices": true
+    },
+    "villages": {
+      "count": 56,
+      "min_gap_km": 1.05
+    },
+    "roads": {
+      "east_road": {
+        "pts": [
+          [
+            6.0,
+            0.25
+          ],
+          [
+            8.0,
+            0.35
+          ],
+          [
+            10.4,
+            0.6
+          ]
+        ],
+        "width_m": 22
+      },
+      "west_road": {
+        "pts": [
+          [
+            -0.35,
+            -1.35
+          ],
+          [
+            -3.5,
+            -1.2
+          ],
+          [
+            -6.8,
+            -0.6
+          ],
+          [
+            -10.4,
+            -0.2
+          ]
+        ],
+        "width_m": 22
+      },
+      "south_road": {
+        "pts": [
+          [
+            2.6,
+            -4.2
+          ],
+          [
+            2.9,
+            -6.5
+          ],
+          [
+            3.2,
+            -8.6
+          ],
+          [
+            3.3,
+            -10.4
+          ]
+        ],
+        "width_m": 18
+      },
+      "north_road": {
+        "pts": [
+          [
+            2.7,
+            4.2
+          ],
+          [
+            2.4,
+            6.5
+          ],
+          [
+            1.6,
+            8.6
+          ],
+          [
+            1.2,
+            10.4
+          ]
+        ],
+        "width_m": 18
+      },
+      "processional_way": {
+        "pts": [
+          [
+            0.62,
+            0.25
+          ],
+          [
+            1.4,
+            0.25
+          ],
+          [
+            2.0,
+            0.25
+          ],
+          [
+            3.3,
+            0.25
+          ]
+        ],
+        "width_m": 46
+      },
+      "quay_road": {
+        "pts": [
+          [
+            0.95,
+            -3.4
+          ],
+          [
+            0.62,
+            -1.4
+          ],
+          [
+            0.55,
+            0.25
+          ],
+          [
+            0.45,
+            2.0
+          ],
+          [
+            0.62,
+            3.3
+          ]
+        ],
+        "width_m": 24
+      },
+      "west_bank_road": {
+        "pts": [
+          [
+            -1.0,
+            -10.4
+          ],
+          [
+            -0.75,
+            -6.0
+          ],
+          [
+            -0.55,
+            -1.4
+          ],
+          [
+            -0.75,
+            3.0
+          ],
+          [
+            -1.6,
+            7.0
+          ],
+          [
+            -2.1,
+            10.4
+          ]
+        ],
+        "width_m": 14
+      },
+      "inner_cross": {
+        "pts": [
+          [
+            2.6,
+            -4.2
+          ],
+          [
+            2.0,
+            -2.4
+          ],
+          [
+            1.45,
+            -1.75
+          ],
+          [
+            1.4,
+            0.25
+          ],
+          [
+            1.45,
+            2.3
+          ],
+          [
+            2.0,
+            3.2
+          ],
+          [
+            2.7,
+            4.2
+          ]
+        ],
+        "width_m": 20
+      },
+      "east_avenue": {
+        "pts": [
+          [
+            3.95,
+            0.25
+          ],
+          [
+            4.6,
+            0.27
+          ],
+          [
+            5.3,
+            0.26
+          ],
+          [
+            6.0,
+            0.25
+          ]
+        ],
+        "width_m": 24
+      },
+      "inner_ring": {
+        "pts": [
+          [
+            1.4,
+            -3.3
+          ],
+          [
+            2.2,
+            -3.7
+          ],
+          [
+            3.4,
+            -3.75
+          ],
+          [
+            4.4,
+            -3.25
+          ],
+          [
+            5.15,
+            -2.4
+          ],
+          [
+            5.5,
+            -1.2
+          ],
+          [
+            5.6,
+            0.25
+          ],
+          [
+            5.3,
+            1.7
+          ],
+          [
+            4.65,
+            2.75
+          ],
+          [
+            3.6,
+            3.45
+          ],
+          [
+            2.4,
+            3.75
+          ],
+          [
+            1.3,
+            3.55
+          ]
+        ],
+        "width_m": 12
+      }
+    }
+  },
+  "world_map": {
+    "map": "caelora_geography",
+    "settlement": "settlement:haven",
+    "lore": "Haven, capital of Hamen, on the River Flame floodplain just above the delta: Erros the Founder's outer wall round canal-fed fields, the inner defences, and three colossal white-marble stepped pyramid-palaces from which House Amaranth rules. \"Capital of Hamen on the River Flame floodplain: Erros the Founder's outer wall, inner defences and the stepped pyramid-palaces.\" (atlas_data.json) Queen Meret Amaranth reigns; House Nereth keeps the canals and sluices. Roughly 400,000-600,000 people (the brief).",
+    "miniature": {
+      "exaggeration": 6.0,
+      "patch_half_units": 5.2
+    }
+  },
+  "events": []
+}

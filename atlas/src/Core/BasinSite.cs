@@ -105,6 +105,21 @@ namespace Atlas.Core
         /// <summary>A tributary entering the ring from the relief (the eastern one), carried round the plinth to the outlet.</summary>
         public (double X, double Y)[] TributaryPath { get; private set; } = Array.Empty<(double X, double Y)>();
         public (double X, double Y) OutletEnd => OutletPath[^1];
+        /// <summary>FIX(haven): a floodplain capital's river coming in across the ring (from the patch's edge to the
+        /// plinth); its OutletPath carries the river on from the plinth to the patch's edge.</summary>
+        public (double X, double Y)[] InletPath { get; private set; } = Array.Empty<(double X, double Y)>();
+        public bool Floodplain => Site.IsFloodplain;
+
+        /// <summary>Join a floodplain river to the relief's own river where it crosses the patch's edge (`upstream`
+        /// where it comes in, `downstream` where it leaves).</summary>
+        public void SetRiverEnds((double X, double Y) upstream, (double X, double Y) downstream)
+        {
+            if (!Floodplain) return;
+            var (ix, iy) = KmToWorld(Site.InletKm[0], Site.InletKm[1]);
+            var (ox, oy) = KmToWorld(Site.OutletKm[0], Site.OutletKm[1]);
+            InletPath = Line(upstream, (ix, iy), 16, 0.04, 5);
+            OutletPath = Line((ox, oy), downstream, 16, 0.04, 9);
+        }
 
         /// <summary>Carry a river that reaches the patch at `entry` round the plinth (outside its rounded footprint) to the
         /// outlet's valley.</summary>
@@ -128,6 +143,17 @@ namespace Atlas.Core
 
         void BuildRingPaths()
         {
+            if (Floodplain && Site.InletKm != null && Site.OutletKm != null)   // FIX(haven): straight on to the patch's edge
+            {
+                var (ix, iy) = KmToWorld(Site.InletKm[0], Site.InletKm[1]);
+                var (qx, qy) = KmToWorld(Site.OutletKm[0], Site.OutletKm[1]);
+                InletPath = Line((ix, Cy - PatchHalf + 0.02), (ix, iy), 16, 0.04, 5);
+                OutletPath = Line((qx, qy), (qx, Cy + PatchHalf - 0.02), 16, 0.04, 9);
+                var w = Site.FreightEntryKm ?? new[] { -HalfKm, 0.0 };
+                var (wx, wy) = KmToWorld(Math.Clamp(w[0], -HalfKm, HalfKm), Math.Clamp(w[1], -HalfKm, HalfKm));
+                RoadPath = Line((wx, wy), (Cx - PatchHalf + 0.05, wy), 16, 0.03, 11);
+                return;
+            }
             var o = Site.OutletKm ?? new[] { 3.75, -10.4 };
             var (ox, oy) = KmToWorld(Math.Clamp(o[0], -HalfKm, HalfKm), Math.Clamp(o[1], -HalfKm, HalfKm));
             // south-east down to the patch's edge: the farm belt's river picks it up there
@@ -188,14 +214,16 @@ namespace Atlas.Core
             double wing = Math.Max(0, Math.Abs(lx) - Half * 0.65);
             double crestY = Half * 0.68 + 0.18 * wing + 0.28 * Math.Sin(wing * 1.5);
             if (lx > 0) crestY = Half * 0.73 + 0.47 * (lx - Half) + 0.095 * Math.Pow(lx - Half, 2);
-            double spur = Math.Exp(-Math.Pow((ly - crestY) / 0.85, 2))
+            double spur = Floodplain ? 0 : Math.Exp(-Math.Pow((ly - crestY) / 0.85, 2))
                           * (lx > 0 ? 1.65 : 0.65 + 0.35 * Math.Cos(wing * 4.8));
             double h = edge + (target - edge) * Math.Pow(w, 0.8) + 0.48 * spur * w * (1 - w) * 4 * (1 - 0.5 * w);
             // the outlet's valley and the road's bench
             double dv = DistToLine(x, y, OutletPath), dr = DistToLine(x, y, RoadPath);
             if (TributaryPath.Length > 1) dv = Math.Min(dv, DistToLine(x, y, TributaryPath));
-            double floorV = Lerp(edge, target, w) - 0.05;
-            if (dv < 0.35) h = Lerp(Math.Min(h, floorV), h, SmoothStep(0.06, 0.35, dv));
+            if (InletPath.Length > 1) dv = Math.Min(dv, DistToLine(x, y, InletPath));
+            double floorV = Lerp(edge, target, w) - (Floodplain ? 0.004 : 0.05);
+            double vw = Floodplain ? 0.14 : 0.35;                    // FIX(haven): a river's bed, not a mountain valley
+            if (dv < vw) h = Lerp(Math.Min(h, floorV), h, SmoothStep(vw * 0.17, vw, dv));
             if (dr < 0.75)
             {
                 var start = RoadPath[0];

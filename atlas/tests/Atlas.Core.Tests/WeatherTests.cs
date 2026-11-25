@@ -134,7 +134,8 @@ namespace Atlas.Core.Tests
                     Assert.InRange(m.WorldMap.PinUv[0], 0, 1);
                     Assert.InRange(m.WorldMap.PinUv[1], 0, 1);
                 }
-                else Assert.NotNull(kw.Settlement(m.WorldMap.Settlement));   // off Caelora: Known World only
+                else if (m.WorldMap.KwXy == null) Assert.NotNull(kw.Settlement(m.WorldMap.Settlement));   // off Caelora: Known World only
+                // FIX(haven): or placed straight on the Known World (kw_xy), as the port at the River Flame's mouth
                 var p = kw.PinFor(m.WorldMap);
                 Assert.True(p.HasValue && p.Value.U is > 0 and < 1 && p.Value.V is > 0 and < 1, m.Id);
             }
