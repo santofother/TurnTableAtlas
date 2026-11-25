@@ -136,6 +136,8 @@ namespace Atlas
         Swarm _birds;
         double _hour = 12, _t;
         public double TimeScale = 1.0;
+        /// <summary>Haven: barges under way on the river (city.json river_traffic).</summary>
+        public BargeFleet Barges { get; private set; }
 
         public void Build(CityView v)
         {
@@ -178,6 +180,14 @@ namespace Atlas
                     name.Contains("boat") || name.Contains("fisher"), voyages.GetValueOrDefault(name)));
             }
             UpdatePlacedShips();
+            if (_m.RiverTraffic is { Lanes.Count: > 0 } rt && _m.Instances != null)
+            {
+                Barges = new BargeFleet();
+                _shipsRoot.AddChild(Barges);
+                float wz = (float)rt.Z;
+                Barges.Build(rt.Build(), _m.Instances, v.City.Mats.Instanced, (_, _) => wz, rt.Beam, rt.Height);
+                Barges.Tick(Traffic.Time);
+            }
             BuildSteam();
             BuildBirds();
             BuildLabels();
@@ -230,6 +240,7 @@ namespace Atlas
                 }
             }
             Traffic.Step(dt);
+            if (_shipsRoot.Visible) Barges?.Tick(Traffic.Time);
             UpdateShips();
             UpdatePlacedShips();
             UpdateBirds();

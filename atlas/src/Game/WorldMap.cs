@@ -34,6 +34,7 @@ namespace Atlas
         static readonly Dictionary<string, BasinSite> _basinSites = new();
         static HighDunesRegion _highDunes;
         static FlameValleyRegion _flame;   // FIX(haven): the River Flame valley
+        double _bargeTime;
         /// <summary>Country estates' hero patches (Landric's villa), by city id; kept between visits.</summary>
         static readonly Dictionary<string, EstateSite> _estateSites = new();
         // the relief mesh's quads (its PlaneMesh subdivisions + 1); hero patches meet its triangles at their edges
@@ -314,6 +315,10 @@ namespace Atlas
                 double f = haven?.WorldMap?.Miniature?.Exaggeration ?? 6;
                 Valley.Build(_flame, (x, y) => GroundAt(x, y), (x, y) => _sampler.Coarse(x, y), (x, y) => basinSites.Any(b => b.Contains(x, y)),
                              haven?.Instances, f / _kw.UnitM);
+                // barges the length of the river: on Haven's own water across its patch, on the valley's red reaches beyond
+                var havenBasin = Basins.FirstOrDefault(b => b.S.Floodplain);
+                Valley.BuildBarges(havenBasin?.S, haven?.Instances, f / _kw.UnitM, (x, y) => havenBasin != null && havenBasin.S.Contains(x, y)
+                    ? havenBasin.WaterAt(x, y) : Math.Max(Math.Max(GroundAt(x, y), (float)_sampler.Coarse(x, y)), 0f) + 0.004f);
             }
             foreach (var es in estateSites)
             {
@@ -539,6 +544,8 @@ namespace Atlas
             foreach (var b in Basins) b.Tick((float)Tod.WindowLevel, night);
             Dunes?.Tick(delta, Rig.Dist, (float)Tod.WindowLevel, night);
             Valley?.Tick((float)Tod.WindowLevel, night);
+            _bargeTime += delta;
+            Valley?.TickBarges(_bargeTime, Rig.Dist);
             Declutter(cam);
             if (!_syncing && _time != null && Tod.Speed != 0) { _syncing = true; _time.Value = Tod.Hour; _syncing = false; }
             if (_clock != null) _clock.Text = TimeOfDay.Clock(Tod.Hour);

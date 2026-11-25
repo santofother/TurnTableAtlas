@@ -153,6 +153,20 @@ class ManifestTests(unittest.TestCase):
             self.assertGreater(len(m['routes'][rid]), 5, rid)
         pop = m['stats']['population_estimate']
         self.assertTrue(400000 <= pop <= 650000, "400-600k people (the brief): %d" % pop)
+        # barges: laden downstream (north, to the sea), empty upstream, each lane's gaps wider than its longest barge
+        rt = m['river_traffic']
+        lanes = {l['id']: l for l in rt['lanes']}
+        self.assertEqual(set(lanes), {'downstream', 'upstream'})
+        self.assertTrue(lanes['downstream']['laden'] and not lanes['upstream']['laden'])
+        self.assertLess(lanes['downstream']['points'][0][1], lanes['downstream']['points'][-1][1])
+        self.assertGreater(lanes['upstream']['points'][0][1], lanes['upstream']['points'][-1][1])
+        for l in lanes.values():
+            self.assertGreater(l['min_gap'], l['length'][1] * 3)
+            self.assertTrue(all(abs(c) < 50 for p in l['points'] for c in p))
+        for kind in ('barge_grain', 'barge_empty'):
+            self.assertIn(kind, m['instances']['protos'])
+        # the royal palace: the Great Pyramid, the largest, its gilded throne dome over 300 m up
+        self.assertGreater(m['anchors']['great_pyramid'][2] * m['model_scale'], 300, "the royal palace's summit")
 
     def test_metropolis_extras(self):
         """A metropolis (Karn Ashur, kind 'metropolis'): its instance table, its true-metre ground for the Known World,

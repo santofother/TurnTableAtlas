@@ -25,6 +25,10 @@ namespace Atlas
         public readonly List<Label3D> Labels = new();
         Materials _mats;
         ShaderMaterial _fields;
+        double _metresPerUnit = 2682;
+        /// <summary>Grain barges down the Flame to the sea, empty ones sailing back up (RiverBarges).</summary>
+        public BargeFleet Barges { get; private set; }
+        const float BargeRange = 30f;
 
         public void Build(FlameValleyRegion region, Func<double, double, float> ground, Func<double, double, double> reliefUnits,
                           Func<double, double, bool> inPatch, InstanceSpec protos, double buildingScale)
@@ -32,6 +36,7 @@ namespace Atlas
             Name = "FlameValley";
             R = region;
             ulong t0 = Time.GetTicksMsec();
+            if (buildingScale > 0) _metresPerUnit = 1.0 / buildingScale;
             BuildRivers((x, y) => Math.Max(ground(x, y), (float)reliefUnits(x, y)), inPatch);   // on the relief mesh's own surface
             BuildFields(reliefUnits, inPatch);
             if (protos != null)
@@ -68,9 +73,10 @@ namespace Atlas
 
         void BuildRivers(Func<double, double, float> ground, Func<double, double, bool> inPatch)
         {
-            var water = new ShaderMaterial { Shader = ResourceLoader.Load<Shader>("res://shaders/karn_ashur_water.gdshader") };
+            var water = new ShaderMaterial { Shader = ResourceLoader.Load<Shader>("res://shaders/flame_river.gdshader") };
             var (r, g, b) = R.Water;
             water.SetShaderParameter("silt", new Color((float)r, (float)g, (float)b, 1f));
+            water.SetShaderParameter("metres_per_unit", (float)_metresPerUnit);
             WeatherMaterials.Add(water);
             var st = new SurfaceTool();
             st.Begin(Mesh.PrimitiveType.Triangles);
@@ -78,20 +84,29 @@ namespace Atlas
             {
                 if (id.StartsWith("join")) continue;                     // the patch draws its own river across its ring
                 var pts = HighDunesRegion.Resample(raw, 0.03);
+                double along = 0;
                 for (int k = 0; k + 1 < pts.Length; k++)
                 {
                     var a = pts[k]; var bb = pts[k + 1];
-                    if (inPatch(a.X, a.Y) || inPatch(bb.X, bb.Y)) continue;
                     double dx = bb.X - a.X, dy = bb.Y - a.Y, len = Math.Max(1e-9, Math.Sqrt(dx * dx + dy * dy));
+                    float s0 = (float)along, s1 = (float)(along + len), hw = (float)(width / 2);
+                    along += len;
+                    if (inPatch(a.X, a.Y) || inPatch(bb.X, bb.Y)) continue;
                     double nx = -dy / len * width / 2, ny = dx / len * width / 2;
                     float ya = Math.Max(ground(a.X, a.Y), 0f) + 0.004f, yb = Math.Max(ground(bb.X, bb.Y), 0f) + 0.004f;
                     var a0 = new Vector3((float)(a.X + nx), ya, -(float)(a.Y + ny)); var a1 = new Vector3((float)(a.X - nx), ya, -(float)(a.Y - ny));
                     var b0 = new Vector3((float)(bb.X + nx), yb, -(float)(bb.Y + ny)); var b1 = new Vector3((float)(bb.X - nx), yb, -(float)(bb.Y - ny));
-                    st.SetNormal(Vector3.Up);
-                    st.AddVertex(a0); st.AddVertex(b0); st.AddVertex(a1);
-                    st.AddVertex(a1); st.AddVertex(b0); st.AddVertex(b1);
+                    st.SetNormal(Vector3.Up);   // UV (across, downstream) and COLOR.r 0 / 1 at the banks: the flow's frame
+                    V(a0, 0, hw, s0); V(b0, 0, hw, s1); V(a1, 1, -hw, s0);
+                    V(a1, 1, -hw, s0); V(b0, 0, hw, s1); V(b1, 1, -hw, s1);
                     RiverSegments++;
                 }
+            }
+            void V(Vector3 p, float side, float across, float s)
+            {
+                st.SetColor(new Color(side, 0, 0));
+                st.SetUV(new Vector2(across, s));
+                st.AddVertex(p);
             }
             AddChild(new MeshInstance3D { Name = "Rivers", Mesh = st.Commit(), MaterialOverride = water, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
                                           VisibilityRangeEnd = 160f, VisibilityRangeEndMargin = 20f });
@@ -187,5 +202,29 @@ namespace Atlas
         }
 
         public void Tick(float windowLevel, float night) => _mats?.SetNight(windowLevel, night);
+
+        // ---------------------------------------------------------------- the barges
+
+        /// <summary>Barges along the whole river, through Haven's patch, at the miniature's scale (`metresToUnits`),
+        /// riding the water surface `water` gives.</summary>
+        public void BuildBarges(BasinSite patch, InstanceSpec protos, double metresToUnits, Func<double, double, float> water)
+        {
+            if (protos == null || !protos.Protos.ContainsKey("barge_grain")) return;
+            _mats ??= new Materials(null);
+            if (!WeatherMaterials.Contains(_mats.Instanced)) WeatherMaterials.Add(_mats.Instanced);
+            Barges = new BargeFleet();
+            AddChild(Barges);
+            Barges.Build(R.Barges(patch, metresToUnits), protos, _mats.Instanced, water);
+            Barges.Tick(0);
+            GD.Print($"[Atlas] River Flame barges: {Barges.Count} on two lanes from the foothills to the sea");
+        }
+
+        /// <summary>Per frame: move the barges while the camera is close enough to see them.</summary>
+        public void TickBarges(double t, float cameraDist)
+        {
+            if (Barges == null) return;
+            Barges.Visible = cameraDist < BargeRange;
+            if (Barges.Visible) Barges.Tick(t);
+        }
     }
 }
