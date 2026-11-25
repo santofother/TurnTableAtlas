@@ -8,6 +8,8 @@ namespace Atlas
     public partial class SunArcGizmo : Node3D
     {
         public float Radius = 46f;
+        /// <summary>Labels keep one size on screen (the Known World, where the gizmo is rescaled with the zoom).</summary>
+        public bool FixedSizeLabels;
         MeshInstance3D _line, _now;
         readonly Label3D[] _labels = new Label3D[3];
         readonly MeshInstance3D[] _marks = new MeshInstance3D[3];
@@ -28,11 +30,22 @@ namespace Atlas
                 AddChild(_marks[i]);
                 _labels[i] = new Label3D { Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 64, PixelSize = 0.02f,
                                            Modulate = new Color(1f, 0.95f, 0.8f), OutlineSize = 12, NoDepthTest = true };
+                _labels[i].FixedSize = FixedSizeLabels;
                 AddChild(_labels[i]);
             }
             _now = new MeshInstance3D { Mesh = dot, MaterialOverride = new StandardMaterial3D { ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
                                         AlbedoColor = new Color(1f, 0.55f, 0.15f) }, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off };
             AddChild(_now);
+        }
+
+        const float FixedPixelSize = 0.0003f;
+
+        /// <summary>Scale the whole path; fixed-size labels would shrink with it, so they are scaled back.</summary>
+        public void Resize(float k)
+        {
+            Scale = Vector3.One * k;
+            if (FixedSizeLabels)
+                foreach (var l in _labels) l.PixelSize = FixedPixelSize / k;
         }
 
         public void Rebuild(TimeOfDay tod)

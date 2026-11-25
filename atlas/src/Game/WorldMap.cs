@@ -14,6 +14,11 @@ namespace Atlas
         // kept between visits (the map is rebuilt each time a city closes)
         static (Vector3 Target, float Yaw, float Pitch, float Distance)? _lastCamera;
         static double _lastHour = 16.5;
+        static readonly SunDefaults MapSun = new() { LatitudeDeg = 38, DefaultDayOfYear = 172, NorthOffsetDeg = 0 };
+        static (double Latitude, double Day, double North)? _lastSun;
+        static bool _lastSunPath;
+        /// <summary>The sun path's radius as a share of the camera distance: it stays the same size on screen.</summary>
+        const float SunPathShare = 0.26f;
         static Texture2D _kwTex;
         static ImageTexture _kwHeightTex;
         /// <summary>The relief's heights with each basin's own ground written in under its patch: the terrain-following fog
@@ -62,7 +67,11 @@ namespace Atlas
         // overlay
         CanvasLayer _ui;
         OptionButton _views;
-        Button _weatherBtn;
+        Button _weatherBtn, _sunBtn;
+        /// <summary>Today's sun path, drawn round the point the camera looks at.</summary>
+        public SunArcGizmo Gizmo { get; private set; }
+        /// <summary>The sun drop-down's controls.</summary>
+        public SunPanel SunControls { get; private set; }
         /// <summary>The weather drop-down's controls.</summary>
         public WeatherPanel WeatherControls { get; private set; }
         HSlider _time;
@@ -81,7 +90,8 @@ namespace Atlas
             _kw ??= KnownWorldMap.Load(ProjectSettings.GlobalizePath(KwJson));
             Tod = new TimeOfDay { Name = "TimeOfDay", FogScale = 0.3f, Room = MapTable.RoomColor };
             AddChild(Tod);
-            Tod.Setup(null, new SunDefaults { LatitudeDeg = 38, DefaultDayOfYear = 172, NorthOffsetDeg = 0 });
+            Tod.Setup(null, MapSun);
+            if (_lastSun is { } sun) (Tod.Latitude, Tod.DayOfYear, Tod.NorthOffset) = sun;
             Tod.Hour = Args.Has("hour") ? Args.F("hour", 16.5f) : _lastHour;
             Tod.Apply();
 
@@ -96,6 +106,8 @@ namespace Atlas
             Rig = new TurntableCamera { Name = "Rig", MinDist = 0.8f, MaxDist = 950f, MinPitch = 5f, FlySpeed = 4f, Bounds = bounds };
             AddChild(Rig);
             Rig.Cam.Far = 8000f;
+            Gizmo = new SunArcGizmo { Name = "SunArc", FixedSizeLabels = true, Visible = _lastSunPath || Args.Has("arc") };
+            AddChild(Gizmo);
 
             Weather = new WeatherView { Name = "Weather" };
             AddChild(Weather);
@@ -437,6 +449,12 @@ namespace Atlas
             cam.Near = Math.Clamp(Rig.Dist * 0.002f, 0.02f, 1.0f);
             Tod.SunLight.DirectionalShadowMaxDistance = Math.Clamp(Rig.Dist * 2.4f, 12f, 1400f);
             _lastHour = Tod.Hour;
+            if (Gizmo.Visible)
+            {
+                Gizmo.Position = new Vector3(Rig.Target.X, GroundAt(Rig.Target.X, -Rig.Target.Z), Rig.Target.Z);
+                Gizmo.Resize(Rig.Dist * SunPathShare / Gizmo.Radius);
+                Gizmo.UpdateNow(Tod);
+            }
             float night = (float)Tod.LampLevel;
             Table.Tick(dt, night);
             foreach (var e in Estates) e.SetNight((float)Tod.WindowLevel, night);
@@ -480,6 +498,7 @@ namespace Atlas
             Declutter(cam);
             if (!_syncing && _time != null && Tod.Speed != 0) { _syncing = true; _time.Value = Tod.Hour; _syncing = false; }
             if (_clock != null) _clock.Text = TimeOfDay.Clock(Tod.Hour);
+            if (_sunBtn != null) _sunBtn.Text = $"Sun {(_sunBtn.ButtonPressed ? "▴" : "▾")}";
             if (_weatherBtn != null) _weatherBtn.Text = $"Weather: {Atlas.Core.Weather.Label(_root.Weather.Kind)} {(_weatherBtn.ButtonPressed ? "▴" : "▾")}";
         }
 
@@ -532,6 +551,8 @@ namespace Atlas
         public override void _ExitTree()
         {
             if (Rig != null) _lastCamera = (Rig.Target, Rig.Yaw, Rig.Pitch, Rig.Dist);
+            if (Tod != null) _lastSun = (Tod.Latitude, Tod.DayOfYear, Tod.NorthOffset);
+            if (Gizmo != null) _lastSunPath = Gizmo.Visible;
             Input.SetDefaultCursorShape(Input.CursorShape.Arrow);
         }
 
@@ -555,7 +576,7 @@ namespace Atlas
             sub.Position = new Vector2(26, 58);
             _ui.AddChild(sub);
 
-            // top right: weather and camera presets
+            // top right: sun, weather and camera presets
             var top = new HBoxContainer { Name = "MapControls" };
             top.AddThemeConstantOverride("separation", 6);
             top.SetAnchorsPreset(Control.LayoutPreset.TopRight);
@@ -569,28 +590,24 @@ namespace Atlas
                 _views.Select(0);
             };
             _weatherBtn = new Button { ToggleMode = true, FocusMode = Control.FocusModeEnum.None, CustomMinimumSize = new Vector2(150, 0) };
+            _sunBtn = new Button { ToggleMode = true, FocusMode = Control.FocusModeEnum.None, CustomMinimumSize = new Vector2(80, 0) };
+            top.AddChild(_sunBtn);
             top.AddChild(_weatherBtn);
             top.AddChild(_views);
             _ui.AddChild(top);
 
-            // weather drop-down under the top bar
-            var wbox = new PanelContainer { Name = "WeatherBox", Visible = false };
-            wbox.AddThemeStyleboxOverride("panel", new StyleBoxFlat { BgColor = new Color(0.08f, 0.07f, 0.06f, 0.86f), CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
-                CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8, ContentMarginLeft = 12, ContentMarginRight = 12, ContentMarginTop = 10, ContentMarginBottom = 10 });
-            wbox.SetAnchorsPreset(Control.LayoutPreset.TopRight);
-            wbox.GrowHorizontal = Control.GrowDirection.Begin;
-            wbox.OffsetRight = -16; wbox.OffsetTop = 58; wbox.CustomMinimumSize = new Vector2(360, 0);
-            var wcol = new VBoxContainer();
-            wbox.AddChild(wcol);
-            var wtitle = new Label { Text = "WEATHER" };
-            wtitle.AddThemeFontSizeOverride("font_size", 13);
-            wtitle.AddThemeColorOverride("font_color", Accent);
-            wcol.AddChild(wtitle);
+            // sun and weather drop-downs under the top bar, one open at a time
+            var (sbox, scol) = DropDown("SunBox", "SUN ARC");
+            SunControls = new SunPanel { Name = "SunPanel" };
+            scol.AddChild(SunControls);
+            SunControls.Build(Tod, MapSun, Gizmo);
+            var (wbox, wcol) = DropDown("WeatherBox", "WEATHER");
             WeatherControls = new WeatherPanel { Name = "WeatherPanel" };
             wcol.AddChild(WeatherControls);
             WeatherControls.Build(_root.Weather);
-            _ui.AddChild(wbox);
-            _weatherBtn.Toggled += on => wbox.Visible = on;
+            _sunBtn.Toggled += on => { sbox.Visible = on; if (on) _weatherBtn.ButtonPressed = false; };
+            _weatherBtn.Toggled += on => { wbox.Visible = on; if (on) _sunBtn.ButtonPressed = false; };
+            if (Args.Has("sun-panel")) { _sunBtn.ButtonPressed = true; }
             if (Args.Has("weather-panel")) { _weatherBtn.ButtonPressed = true; }
 
             // bottom left: time of day
@@ -626,6 +643,24 @@ namespace Atlas
             hint.OffsetLeft = 18; hint.OffsetTop = -30;
             _ui.AddChild(hint);
             BuildCard();
+        }
+
+        (PanelContainer Box, VBoxContainer Col) DropDown(string name, string title)
+        {
+            var box = new PanelContainer { Name = name, Visible = false };
+            box.AddThemeStyleboxOverride("panel", new StyleBoxFlat { BgColor = new Color(0.08f, 0.07f, 0.06f, 0.86f), CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
+                CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8, ContentMarginLeft = 12, ContentMarginRight = 12, ContentMarginTop = 10, ContentMarginBottom = 10 });
+            box.SetAnchorsPreset(Control.LayoutPreset.TopRight);
+            box.GrowHorizontal = Control.GrowDirection.Begin;
+            box.OffsetRight = -16; box.OffsetTop = 58; box.CustomMinimumSize = new Vector2(360, 0);
+            var col = new VBoxContainer();
+            box.AddChild(col);
+            var head = new Label { Text = title };
+            head.AddThemeFontSizeOverride("font_size", 13);
+            head.AddThemeColorOverride("font_color", Accent);
+            col.AddChild(head);
+            _ui.AddChild(box);
+            return (box, col);
         }
 
         void BuildCard()

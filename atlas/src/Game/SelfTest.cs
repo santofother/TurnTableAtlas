@@ -151,6 +151,11 @@ namespace Atlas
                           $"the map shares the city's weather ({root.Weather.Kind}, cloud {root.Weather.Current.Coverage:0.00})");
                     Check(map.Table != null && map.Table.CandleCount >= 6 && map.Tod.Room != null,   // FIX(W1)
                           $"map table: frame, props, {map.Table?.CandleCount} candles, dark room");
+                    var sunC = map.SunControls;
+                    int noon0 = (int)SunArc.Position(map.Tod.Latitude, map.Tod.DayOfYear, 12).Elevation;
+                    if (sunC != null) { sunC.Latitude.Value = 10; sunC.ShowPath.ButtonPressed = true; }
+                    Check(sunC != null && map.Tod.Latitude == 10 && map.Gizmo.Visible,
+                          $"sun controls on the Known World: latitude {map.Tod.Latitude:0}°, noon {noon0}° → {SunArc.Position(10, map.Tod.DayOfYear, 12).Elevation:0}°, sun path shown");
                     map.WeatherControls.KindButton(WeatherKind.Fair).EmitSignal(BaseButton.SignalName.Pressed);
                     Check(map.GetNodeOrNull("Geography") == null && map.GetNodeOrNull("MapTable/GeographyFrame") == null,
                           "the world map uses the Known World relief");

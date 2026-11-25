@@ -1,4 +1,4 @@
-// The side panel: time and playback speed, weather (WeatherPanel), sun-arc controls (latitude, season, north), places, events,
+// The side panel: time and playback speed, weather (WeatherPanel), sun-arc controls (SunPanel), places, events,
 // layers, screenshot and back-to-map. Built in code (no editor scenes to maintain).
 using System;
 using System.Collections.Generic;
@@ -13,9 +13,8 @@ namespace Atlas
         public event Action BackToMap;
         public event Action Screenshot;
         CityView _v;
-        HSlider _time, _lat, _doy, _north;
-        Label _clock, _latL, _doyL, _northL, _sunL, _eventL;
-        bool _syncing;
+        HSlider _time;
+        Label _clock, _eventL;
         readonly List<Button> _speedButtons = new();
         static readonly Color Accent = new(0.95f, 0.72f, 0.38f);
 
@@ -65,20 +64,9 @@ namespace Atlas
             weather.Build(v.Weather.W);
 
             Section(col, "Sun arc");
-            _sunL = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
-            col.AddChild(_sunL);
-            _latL = new Label(); col.AddChild(_latL);
-            _lat = Slider(col, -66, 66, 0.5, v.Tod.Latitude, x => { v.Tod.Latitude = x; SunChanged(); });
-            _doyL = new Label(); col.AddChild(_doyL);
-            _doy = Slider(col, 1, 365, 1, v.Tod.DayOfYear, x => { v.Tod.DayOfYear = x; SunChanged(); });
-            _northL = new Label(); col.AddChild(_northL);
-            _north = Slider(col, -180, 180, 1, v.Tod.NorthOffset, x => { v.Tod.NorthOffset = x; SunChanged(); });
-            var arcRow = new HBoxContainer();
-            col.AddChild(arcRow);
-            var show = new CheckBox { Text = "Show sun path", ButtonPressed = v.Gizmo.Visible };
-            show.Toggled += on => v.Gizmo.Visible = on;
-            arcRow.AddChild(show);
-            arcRow.AddChild(Btn("Reset", () => { v.Tod.ResetSun(v.M.Sun); SyncFromModel(); v.Gizmo.Rebuild(v.Tod); }));
+            var sun = new SunPanel { Name = "Sun" };
+            col.AddChild(sun);
+            sun.Build(v.Tod, v.M.Sun, v.Gizmo);
 
             Section(col, "Places");
             var grid = new GridContainer { Columns = 2 };
@@ -133,42 +121,16 @@ namespace Atlas
             RefreshSpeed();
         }
 
-        void SunChanged()
-        {
-            if (_syncing) return;
-            _v.Tod.Apply();
-            _v.Gizmo.Rebuild(_v.Tod);
-        }
-
         void SyncFromModel()
         {
-            _syncing = true;
             var t = _v.Tod;
             _time.SetValueNoSignal(t.Hour);
-            _lat.SetValueNoSignal(t.Latitude);
-            _doy.SetValueNoSignal(t.DayOfYear);
-            _north.SetValueNoSignal(t.NorthOffset);
             _clock.Text = TimeOfDay.Clock(t.Hour) + (t.Speed > 0 ? "  ▶" : "");
-            _latL.Text = $"Latitude {Math.Abs(t.Latitude):0.#}° {(t.Latitude >= 0 ? "N" : "S")}";
-            _doyL.Text = "Day " + DateLabel(t.DayOfYear);
-            _northL.Text = $"North offset {t.NorthOffset:0}°";
-            var (rise, set) = SunArc.SunriseSunset(t.Latitude, t.DayOfYear);
-            var noon = SunArc.Position(t.Latitude, t.DayOfYear, 12).Elevation;
-            _sunL.Text = rise.HasValue
-                ? $"Sun {t.Elevation:0}° up · rises {TimeOfDay.Clock(rise.Value)} · noon {noon:0}° · sets {TimeOfDay.Clock(set.Value)}"
-                : "Polar night: the sun does not rise";
-            _syncing = false;
         }
 
         void RefreshSpeed()
         {
             foreach (var b in _speedButtons) b.SetPressedNoSignal(Math.Abs((double)b.GetMeta("hps") - _v.Tod.Speed) < 1e-9);
-        }
-
-        static string DateLabel(double doy)
-        {
-            var d = new DateTime(2025, 1, 1).AddDays(Math.Clamp((int)doy, 1, 365) - 1);
-            return d.ToString("d MMM", System.Globalization.CultureInfo.InvariantCulture) + $" ({(int)doy})";
         }
 
         static StyleBoxFlat Box(Color c, int r) => new() { BgColor = c, CornerRadiusTopLeft = r, CornerRadiusTopRight = r,
