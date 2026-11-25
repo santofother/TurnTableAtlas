@@ -1,12 +1,7 @@
-// The High Dunes round Karn Ashur on the Known World (Atlas.Core.HighDunesRegion): the rivers on their carved beds,
-// the villages and market towns as a miniature (the basin's own house prototypes), and the grain route from the
-// River Flame delta: by sea to Qasr Samir, then overland up the caravan corridor to Karn Ashur's freight road, marked only at sea
-// by a dashed line that keeps its width on screen as the camera pulls back, with camel trains walking it close up.
+// Regional rivers, settlements and camel trains along the Qasr Samir–Karn Ashur caravan corridor.
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text.Json;
 using Atlas.Core;
 using Godot;
 
@@ -18,18 +13,15 @@ namespace Atlas
         public HighDunesRegion R { get; private set; }
         public int VillageCount => R.Villages.Count;
         public int TownCount => R.Towns.Count;
-        public int RouteSegments { get; private set; }
-        public (double X, double Y)[] SeaLeg { get; private set; }
         public readonly List<ShaderMaterial> WeatherMaterials = new();
         public readonly List<Label3D> Labels = new();
-        ShaderMaterial _route;
         Materials _mats;
         MultiMeshInstance3D _camels;
         (double X, double Y)[] _land;
         double[] _landS;
         Func<double, double, float> _ground;
 
-        public void Build(HighDunesRegion region, BasinSite basin, KnownWorldMap kw, Func<double, double, float> ground, InstanceSpec protos, double buildingScale)
+        public void Build(HighDunesRegion region, BasinSite basin, Func<double, double, float> ground, InstanceSpec protos, double buildingScale)
         {
             Name = "HighDunes";
             R = region; _ground = ground;
@@ -61,10 +53,10 @@ namespace Atlas
                 }, tiles: 8, half: 400, shadows: true, rangeAll: VillageRange);
                 WeatherMaterials.Add(_mats.Instanced);
             }
-            BuildRoute(kw, basin);
+            BuildCaravans(basin);
             BuildLabels();
             GD.Print($"[Atlas] High Dunes: {R.Rivers.Count} rivers graded ({string.Join(", ", R.Rivers.Select(r => $"{r.Id} {r.DropM:0} m drop, cut {r.MaxUphillM:0} m at ({r.UphillAt.X:0.0}, {r.UphillAt.Y:0.0})"))}), " +
-                     $"{VillageCount} villages, {TownCount} market towns, ~{R.Population / 1000}k people, route {RouteSegments} segments in {Time.GetTicksMsec() - t0} ms");
+                     $"{VillageCount} villages, {TownCount} market towns, ~{R.Population / 1000}k people in {Time.GetTicksMsec() - t0} ms");
         }
 
         // ---------------------------------------------------------------- rivers
@@ -99,27 +91,8 @@ namespace Atlas
 
         // ---------------------------------------------------------------- the grain route
 
-        void BuildRoute(KnownWorldMap kw, BasinSite basin)
+        void BuildCaravans(BasinSite basin)
         {
-            _route = new ShaderMaterial { Shader = ResourceLoader.Load<Shader>("res://shaders/trade_route.gdshader"), RenderPriority = 6 };
-            // the sea leg: the delta's shipping route to Qasr Samir (the ships already sail it)
-            var file = Path.Combine(kw.Directory, "shipping_routes.json");
-            if (File.Exists(file))
-            {
-                using var doc = JsonDocument.Parse(File.ReadAllText(file));
-                foreach (var e in doc.RootElement.EnumerateArray())
-                    if (e.GetProperty("from").GetString() == "river_flame_delta" && e.GetProperty("to").GetString() == "qasr")
-                        SeaLeg = e.GetProperty("points").EnumerateArray().Select(p => (p[0].GetDouble(), p[1].GetDouble())).ToArray();
-            }
-            if (SeaLeg is { Length: > 1 })
-            {
-                var st = new SurfaceTool();
-                st.Begin(Mesh.PrimitiveType.Triangles);
-                Strip(st, HighDunesRegion.Resample(SeaLeg, 0.4), (x, y) => 0.03f, 0, 1f);
-                var mesh = st.Commit();
-                mesh.CustomAabb = new Aabb(new Vector3(-200, -2, -300), new Vector3(800, 20, 600));
-                AddChild(new MeshInstance3D { Name = "GrainRoute", Mesh = mesh, MaterialOverride = _route, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
-            }
             // the overland leg: Qasr Samir's harbour up the northern valleys to the basin's freight road
             var road = R.Corridor.Concat(basin.RoadPath.Reverse().Skip(1));
             if (basin.Site.Roads.TryGetValue("north_pass", out var pass))
@@ -136,33 +109,6 @@ namespace Atlas
             _camels = new MultiMeshInstance3D { Name = "Caravans", Multimesh = mm, MaterialOverride = _mats.Instanced, VisibilityRangeEnd = CaravanRange,
                                                 CastShadow = GeometryInstance3D.ShadowCastingSetting.Off };
             AddChild(_camels);
-        }
-
-        /// <summary>A ribbon along `pts`: UV.x is the side (-1, 1), UV.y the distance along the route, UV2.x 1 at sea; the
-        /// shader widens it with the camera's distance (the tangent carries the line's direction).</summary>
-        double Strip(SurfaceTool st, (double X, double Y)[] pts, Func<double, double, float> height, double s0, float sea)
-        {
-            double s = s0;
-            for (int k = 0; k + 1 < pts.Length; k++)
-            {
-                var a = pts[k]; var b = pts[k + 1];
-                double dx = b.X - a.X, dy = b.Y - a.Y, len = Math.Max(1e-9, Math.Sqrt(dx * dx + dy * dy));
-                var dir = new Vector3((float)(dx / len), 0, -(float)(dy / len));
-                var pa = new Vector3((float)a.X, height(a.X, a.Y), -(float)a.Y);
-                var pb = new Vector3((float)b.X, height(b.X, b.Y), -(float)b.Y);
-                void V(Vector3 p, float side, double along)
-                {
-                    st.SetNormal(dir);
-                    st.SetUV(new Vector2(side, (float)along));
-                    st.SetUV2(new Vector2(sea, 0));
-                    st.AddVertex(p);
-                }
-                V(pa, -1, s); V(pb, -1, s + len); V(pa, 1, s);
-                V(pa, 1, s); V(pb, -1, s + len); V(pb, 1, s + len);
-                s += len;
-                RouteSegments++;
-            }
-            return s;
         }
 
         static class Protos
@@ -201,11 +147,10 @@ namespace Atlas
 
         double _t;
 
-        public void Tick(double delta, float camDist, float windowLevel, float night)
+        public void Tick(double delta, float windowLevel, float night)
         {
             _t += delta;
             _mats?.SetNight(windowLevel, night);
-            _route.SetShaderParameter("cam_dist", camDist);
             if (_camels == null || _land == null || !_camels.Visible) return;
             var mm = _camels.Multimesh;
             int trains = 16, per = 9;

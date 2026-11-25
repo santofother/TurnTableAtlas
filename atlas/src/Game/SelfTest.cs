@@ -193,9 +193,9 @@ namespace Atlas
                               $"River Flame: {fv?.R.Reaches.Count} red reaches joined to Haven's patch, {fv?.FieldQuads} field quads, {fv?.VillageCount} villages, {fv?.TownCount} market towns (~{fv?.R.Population / 1000}k people)");
                     var hd = map.Dunes;
                     bool graded = hd != null && hd.R.Rivers.All(r => r.BedM.Zip(r.BedM.Skip(1), (a, b) => b <= a + 1e-6).All(x => x));
-                    Check(hd != null && graded && hd.R.Rivers.Count >= 4 && hd.VillageCount > 150 && hd.TownCount >= 5 && hd.RouteSegments > 50 && hd.SeaLeg != null
+                    Check(hd != null && graded && hd.R.Rivers.Count >= 4 && hd.VillageCount > 150 && hd.TownCount >= 5 && hd.HasNode("Caravans") && !hd.HasNode("GrainRoute")
                           && map.Kw.Cameras.Any(c => c.Id == WorldMap.HighDunesViewId),
-                          $"High Dunes: {hd?.R.Rivers.Count} rivers graded downhill, {hd?.VillageCount} villages, {hd?.TownCount} market towns (~{hd?.R.Population / 1000}k people), grain route {hd?.RouteSegments} segments");
+                          $"High Dunes: {hd?.R.Rivers.Count} rivers graded downhill, {hd?.VillageCount} villages, {hd?.TownCount} market towns (~{hd?.R.Population / 1000}k people), overland caravans");
                     foreach (var m in root.Cities.Where(c => c.IsEstate))   // FIX(villa): an estate stands on the map as its miniature
                     {
                         var est = map.Estates.FirstOrDefault(e => e.M.Id == m.Id);

@@ -304,7 +304,7 @@ namespace Atlas
                 AddChild(Dunes);
                 var metro = _root.Cities.FirstOrDefault(c => c.IsMetropolis);
                 double f = metro?.WorldMap?.Miniature?.Exaggeration ?? 4;
-                Dunes.Build(_highDunes, basinSites.First(b => !b.Floodplain), _kw, (x, y) => GroundAt(x, y), metro?.Instances, f / _kw.UnitM);
+                Dunes.Build(_highDunes, basinSites.First(b => !b.Floodplain), (x, y) => GroundAt(x, y), metro?.Instances, f / _kw.UnitM);
             }
             if (_flame != null)
             {
@@ -537,7 +537,7 @@ namespace Atlas
                 mat.AlbedoColor = new Color(1f, 0.62f, 0.28f, Math.Min(1f, glow * strength * near * 1.4f));
             }
             foreach (var b in Basins) b.Tick((float)Tod.WindowLevel, night);
-            Dunes?.Tick(delta, Rig.Dist, (float)Tod.WindowLevel, night);
+            Dunes?.Tick(delta, (float)Tod.WindowLevel, night);
             Valley?.Tick((float)Tod.WindowLevel, night);
             Declutter(cam);
             if (!_syncing && _time != null && Tod.Speed != 0) { _syncing = true; _time.Value = Tod.Hour; _syncing = false; }
