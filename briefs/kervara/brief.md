@@ -4,6 +4,8 @@
 
 Kervara meets the shore of **Lake Dravenne**, the large lake in the supplied relief image. The capital is among the smallest of the major kingdoms’ capitals, with fewer than **200,000** inhabitants. About **100,000** more live in the countryside and smaller cities. Use the Dolomites for the mountain forms and an ancient architectural vocabulary. The royal palace and fortress are carved into bedrock, with open-air courts, yards and terraces. The [first shoreline studies](lake-dravenne-concepts/generation-prompts.md) explore the western or northwestern shore. The exact footprint and replacement map pin remain open.
 
+The [scale studies](lake-dravenne-scale-studies/generation-prompts.md) bring the capital closer to the 200,000-person upper bound, with dense adjoining neighborhoods along a small fraction of Lake Dravenne’s shore. Show the lake’s far shore in distant haze or beyond the frame, while retaining the earlier mountain silhouettes and ancient building forms. The layered, rock-cut façade from the first cutaway is the visual basis for a temple. The rock-cut palace and fortress are separate buildings with their own open courts.
+
 ## Book One and the existing relief
 
 Kervara is an inland fortress-city at the eastern end of the Ventara canyon, in the mountain basin that gives the kingdom its name. Its clearest silhouette is the rising canyon road, a working gate set into the ascent, and the mountain behind it. The Book One chapters give the fortress a public face at the gate, a working life in its wards and yards, a domestic life in its cold upper passages, and a royal burial place down inside the mountain. Use the Known World relief to place that sequence. [Corwin I, 5–11 and 85–99] [Corwin III, 3–9] [Hale I, 47–71] [Atlas Entry]
