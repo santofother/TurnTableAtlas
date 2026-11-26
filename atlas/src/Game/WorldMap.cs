@@ -62,6 +62,8 @@ namespace Atlas
         public const string FlameViewId = "CAM_RiverFlame";
         /// <summary>Estates standing on the map as miniatures of their packages.</summary>
         public readonly List<Estate> Estates = new();
+        /// <summary>Town packages standing on the map as miniatures of their models (Corivessa Port, Corivessa).</summary>
+        public readonly List<Town> Towns = new();   // FIX(S31)
         readonly HashSet<MeshInstance3D> _basinGlows = new();
         public WorldShipping Shipping { get; private set; }
         ShaderMaterial _reliefMat;
@@ -111,7 +113,7 @@ namespace Atlas
             {
                 var marches = new ValdoranMarches();   // FIX(S30): the two settlement pins share a regional approach.
                 AddChild(marches);
-                marches.Build(_kw, _sampler);
+                marches.Build(_kw, _sampler, (x, y) => Towns.Any(t => Math.Abs(x - t.S.Cx) < 0.85 * t.S.Half && Math.Abs(y - t.S.Cy) < 0.85 * t.S.Half));   // FIX(S31)
                 if (!_kw.Cameras.Any(c => c.Id == ValdoranMarches.ViewId)) _kw.Cameras.Add(ValdoranMarches.View());
             }
             BuildRegionalFog(bounds);
@@ -130,7 +132,7 @@ namespace Atlas
                                  Cell = 230, Shape = 20, Detail = 5.5f, NearFade = 1.5f, Edge = 45, FlashR = 30 },
                 new[] { _reliefMat }.Concat(Basins.SelectMany(b => b.WeatherMaterials)).Concat(Dunes?.WeatherMaterials ?? new List<ShaderMaterial>())
                     .Concat(Valley?.WeatherMaterials ?? new List<ShaderMaterial>())
-                    .Concat(Estates.SelectMany(e => e.WeatherMaterials)), false, () => Rig.Target,
+                    .Concat(Estates.SelectMany(e => e.WeatherMaterials)).Concat(Towns.SelectMany(t => t.WeatherMaterials)), false, () => Rig.Target,
                 () => Math.Clamp(Math.Abs(Tod.Speed) * 60, 1.0, 20.0));
 
             foreach (var m in root.Cities)
@@ -138,6 +140,7 @@ namespace Atlas
                 var pin = new MapPin3D { Name = "Pin_" + m.Id };
                 AddChild(pin);
                 pin.Build(m);
+                pin.SettlementType = _kw.Settlement(m.WorldMap?.Settlement)?.Type;
                 var uv = _kw.PinFor(m.WorldMap);
                 if (uv.HasValue) pin.Position = KwPoint(uv.Value.U, uv.Value.V);
                 pin.Placed = uv.HasValue;
@@ -155,6 +158,8 @@ namespace Atlas
                 _kw.Cameras.Add(new KnownWorldMap.View { Id = HighDunesViewId, Name = "The High Dunes", Target = new[] { 94.0, 31.0, 0.5 }, Yaw = -98, Pitch = 40, Dist = 62 });
             foreach (var e in Estates)
                 if (!_kw.Cameras.Any(c => c.Id == e.ViewId)) _kw.Cameras.Add(e.View());
+            foreach (var t in Towns)
+                if (!_kw.Cameras.Any(c => c.Id == t.ViewId)) _kw.Cameras.Add(t.View());
             BuildOverlay();
             FillViews();
             Rig.Home = _kw.HomeView();
@@ -334,6 +339,14 @@ namespace Atlas
                 est.Build(es, _root.Cities.First(c => c.Id == es.Id), _kw, _kwTex, _kwHeightTex);
                 Estates.Add(est);
             }
+            if (Args.Get("towns") != "off")       // FIX(S31): --towns=off leaves a town's pin on the bare relief
+                foreach (var m in _root.Cities.Where(Town.Wants))
+                {
+                    var town = new Town();
+                    AddChild(town);
+                    town.Build(m, _kw, _sampler, _kwTex, _kwHeightTex);
+                    if (town.S != null) Towns.Add(town); else town.QueueFree();
+                }
 
             // collision at one sample per unit: keeps the camera above the mountains, double-click focus
             int cols = (int)Math.Round(_kw.Width) + 1, rows = (int)Math.Round(_kw.Depth) + 1;
@@ -439,6 +452,7 @@ namespace Atlas
         {
             foreach (var b in Basins) if (b.HeightAt(x, y) is { } bh) return bh;
             foreach (var e in Estates) if (e.HeightAt(x, y) is { } eh) return eh;
+            foreach (var t in Towns) if (t.HeightAt(x, y) is { } th) return th;
             return Math.Max(0f, HeightUv((x - _kw.BoundsXy[0]) / _kw.Width, (_kw.BoundsXy[3] - y) / _kw.Depth));
         }
 
@@ -474,6 +488,8 @@ namespace Atlas
                 if (b.HeightAt(x, y) is { } bh) h = bh;
             foreach (var e in Estates)
                 if (e.HeightAt(x, y) is { } eh) h = eh;
+            foreach (var t in Towns)
+                if (t.HeightAt(x, y) is { } th) h = th;
             return new Vector3((float)x, Math.Max(0f, h), -(float)y);
         }
 
@@ -511,9 +527,11 @@ namespace Atlas
             float night = (float)Tod.LampLevel;
             Table.Tick(dt, night);
             foreach (var e in Estates) e.SetNight((float)Tod.WindowLevel, night);
+            foreach (var t in Towns) t.SetNight((float)Tod.WindowLevel, night);
             // close to an estate the camera may come down to its miniature
             Rig.MinDist = Estates.Any(e => new Vector2(Rig.Target.X - (float)e.S.Cx, -Rig.Target.Z - (float)e.S.Cy).Length() < 1.2f) ? 0.12f
-                        : Basins.Any(b => b.S.OnPlinth(Rig.Target.X, -Rig.Target.Z)) ? 0.25f : 0.8f;   // FIX(karn_ashur): down to the houses
+                        : Basins.Any(b => b.S.OnPlinth(Rig.Target.X, -Rig.Target.Z)) ? 0.25f   // FIX(karn_ashur): down to the houses
+                        : Towns.Any(t => t.S.Contains(Rig.Target.X, -Rig.Target.Z)) ? 0.2f : 0.8f;
             _fogMat.SetShaderParameter("daylight", (float)Tod.Daylight);
             _fogMat.SetShaderParameter("weather_fog", (float)_root.Weather.Current.Fog);
             float k = Math.Clamp(Rig.Dist * 0.024f, 0.03f, 16f);
@@ -522,8 +540,9 @@ namespace Atlas
             float best = 30f;
             foreach (var p in Pins)
             {
-                // small sites (an estate, a port like Flamemouth) raise their beacon only once about one realm is in view
-                float reveal = PinTiers.Reveal(p.M, Rig.Dist);
+                // small sites (an estate, a port like Flamemouth or Corivessa Port) raise their beacon only once about one
+                // realm is in view
+                float reveal = PinTiers.Reveal(p.M, Rig.Dist, p.SettlementType);
                 p.Shown = p.Placed && reveal > 0.01f;
                 p.Tick(dt, k * reveal, night, p == _hover);
                 // an estate sits close to its city: its name shows only once the camera is in round it
@@ -698,7 +717,7 @@ namespace Atlas
             row.AddChild(names);
             _ui.AddChild(panel);
 
-            var hint = new Label { Text = "Drag: orbit · Right-drag: pan · Scroll / Q E: zoom · W S: up/down · A D: orbit · Double-click: focus · C: centre view · F: free-fly" };
+            var hint = new Label { Text = "Drag: orbit · Right-drag / arrows: pan · Scroll / Q E: zoom · W S: up/down · A D: orbit · Double-click: focus · C: centre view · F: free-fly" };
             hint.AddThemeFontSizeOverride("font_size", 13);
             hint.AddThemeColorOverride("font_color", new Color(1, 1, 1, 0.75f));
             hint.AddThemeConstantOverride("outline_size", 5);
@@ -783,6 +802,8 @@ namespace Atlas
         public bool LabelShown { get => _label.Visible; set => _label.Visible = value; }
         /// <summary>The pin has a place on this map.</summary>
         public bool Placed { get; set; }
+        /// <summary>The linked lore-map settlement's type ("capital", "city"...), or null.</summary>
+        public string SettlementType { get; set; }
         /// <summary>Shown at the current zoom (WorldMap hides minor pins from far out).</summary>
         public bool Shown { get => Visible; set { if (Visible != value) Visible = value; } }
 

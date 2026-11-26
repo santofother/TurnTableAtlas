@@ -15,6 +15,7 @@ namespace Atlas
         static Vector3 _expectCam;
         static (MeshInstance3D Node, Vector3 Position) _localBoat;
         static Vector3[] _mapBoats;
+        static Vector3 _panFrom, _panRight;
         static int _fails;
         static string _event, _venueType, _landmark;
         static readonly string[] Preferred = { "chariot_race", "gladiator_games", "theatre_play", "villa_return" };
@@ -220,6 +221,21 @@ namespace Atlas
                     }
                     foreach (var pin0 in map.Pins.Where(p => p.M.IsEstate))
                         Check(!pin0.LabelShown, $"{pin0.M.Name}: name hidden until the camera comes in");
+                    foreach (var m in root.Cities.Where(Town.Wants))   // FIX(S31): a town stands on the map as its miniature
+                    {
+                        var town = map.Towns.FirstOrDefault(x => x.M.Id == m.Id);
+                        var pinT = map.Pins.FirstOrDefault(p => p.M.Id == m.Id);
+                        float onGround = town != null && pinT != null ? Math.Abs(pinT.Position.Y - (town.HeightAt(town.S.Cx, town.S.Cy) ?? -9f)) : 9f;
+                        Check(town != null && town.MiniMeshes > 20 && onGround < 0.002f && map.Kw.Cameras.Any(c => c.Id == town.ViewId),
+                              $"{m.Name} on the Known World: {town?.MiniMeshes} miniature meshes, {town?.S.Half * 2:0.000} units across, pin on its ground");
+                    }
+                    if (map.Pins.FirstOrDefault(p => p.M.Id == "corivessa_port") is { } portPin)
+                        Check(portPin.SettlementType == PinTiers.TownType && PinTiers.Reveal(portPin.M, 374f, portPin.SettlementType) == 0f,
+                              "Corivessa Port is a minor pin: gone from the Known World overview");
+                    // FIX(S31): the arrow keys pan like a right-drag (released in the next step)
+                    _panFrom = map.Rig.Target;
+                    _panRight = map.Rig.Cam.GlobalBasis.X with { Y = 0 };
+                    Input.ParseInputEvent(new InputEventKey { Keycode = Key.Right, PhysicalKeycode = Key.Right, Pressed = true });
                     _mapBoats = map.Shipping.GetChildren().OfType<Node3D>().Select(b => b.Position).ToArray();
                     _step++; break;
                 }
@@ -232,6 +248,9 @@ namespace Atlas
                     Check(WorldMap.ReliefMax is > 6f and < 9f,
                           $"Known World relief from KnownWorld.blend: peak {WorldMap.ReliefMax:0.0} units at {map.Kw.Exaggeration:0}x, {map.Kw.Cameras.Count} blend views");
                     Check(inside, $"{_city} pin on the relief at ({pin.Position.X:0.0}, {pin.Position.Y:0.00}, {pin.Position.Z:0.0})");
+                    Input.ParseInputEvent(new InputEventKey { Keycode = Key.Right, PhysicalKeycode = Key.Right, Pressed = false });
+                    float panned = (map.Rig.Target - _panFrom).Dot(_panRight.Normalized());
+                    Check(panned > 1f, $"the right arrow pans the map to the right ({panned:0.0} units)");
                     Check(map.Shipping.GetChildren().OfType<Node3D>().Select((boat, i) =>
                         boat.Position.DistanceTo(_mapBoats[i])).Count(d => d > 0.2f) >= 5,
                         "ships advance along the world map routes");

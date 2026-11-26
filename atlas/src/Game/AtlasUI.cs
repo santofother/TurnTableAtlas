@@ -111,7 +111,7 @@ namespace Atlas
                 col.AddChild(cb);
             }
 
-            var hint = new Label { Text = "Drag: orbit · Right-drag: pan · Scroll / Q E: zoom · W S: up/down · A D: orbit · Double-click: focus · C: centre view · R: auto-rotate · F: free-fly" };
+            var hint = new Label { Text = "Drag: orbit · Right-drag / arrows: pan · Scroll / Q E: zoom · W S: up/down · A D: orbit · Double-click: focus · C: centre view · R: auto-rotate · F: free-fly" };
             hint.AddThemeFontSizeOverride("font_size", 13);
             hint.AddThemeColorOverride("font_color", new Color(1, 1, 1, 0.75f));
             hint.SetAnchorsPreset(Control.LayoutPreset.BottomLeft);

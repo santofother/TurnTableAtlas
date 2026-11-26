@@ -1,4 +1,4 @@
-// Turntable camera: orbit (left drag), pan (right/middle drag), eased zoom (wheel / trackpad scroll / pinch / Q E),
+// Turntable camera: orbit (left drag), pan (right/middle drag or the arrow keys), eased zoom (wheel / trackpad scroll / pinch / Q E),
 // W S raise and lower the camera, A D orbit, auto-rotate (R), free-fly (F: W S up/down, A D strafe,
 // Q E forward/back, right drag to look), C returns to the home view, smooth landmark jumps. Never clips into the proxies.
 // macOS sends trackpad and Magic Mouse scrolling as InputEventPanGesture, not wheel buttons, so that zooms too.
@@ -121,15 +121,7 @@ namespace Atlas
                     _tYaw -= mm.Relative.X * 0.3f;
                     _tPitch = Math.Clamp(_tPitch + mm.Relative.Y * 0.22f, MinPitch, MaxPitch);
                 }
-                else if (_panning)
-                {
-                    float k = _tDist * 0.0016f;
-                    var right = Cam.GlobalBasis.X; right.Y = 0; right = right.Normalized();
-                    var fwd = -Cam.GlobalBasis.Z; fwd.Y = 0; fwd = fwd.Normalized();
-                    _tTarget += (-right * mm.Relative.X + fwd * mm.Relative.Y) * k;
-                    _tTarget.X = Math.Clamp(_tTarget.X, Bounds.Position.X, Bounds.End.X);
-                    _tTarget.Z = Math.Clamp(_tTarget.Z, Bounds.Position.Y, Bounds.End.Y);
-                }
+                else if (_panning) Pan(-mm.Relative.X, mm.Relative.Y);
             }
             else if (e is InputEventKey k && k.Pressed && !k.Echo)
             {
@@ -148,6 +140,23 @@ namespace Atlas
         }
 
         void Zoom(float f) => _tDist = Math.Clamp(_tDist * f, MinDist, MaxDist);
+
+        /// <summary>Slide the orbit's target over the ground, in screen pixels of a drag: right and forward (away from
+        /// the camera) are positive.</summary>
+        void Pan(float right, float forward)
+        {
+            float k = _tDist * 0.0016f;
+            var r = Cam.GlobalBasis.X; r.Y = 0; r = r.Normalized();
+            var f = -Cam.GlobalBasis.Z; f.Y = 0;
+            // looking straight down, the view's up is the way ahead
+            f = f.LengthSquared() > 1e-6f ? f.Normalized() : new Vector3(r.Z, 0, -r.X);
+            _tTarget += (r * right + f * forward) * k;
+            _tTarget.X = Math.Clamp(_tTarget.X, Bounds.Position.X, Bounds.End.X);
+            _tTarget.Z = Math.Clamp(_tTarget.Z, Bounds.Position.Y, Bounds.End.Y);
+        }
+
+        /// <summary>Arrow keys pan at this many drag pixels a second (Shift: 2.5x).</summary>
+        const float ArrowPanPx = 520f;
 
         public override void _Process(double delta)
         {
@@ -177,7 +186,11 @@ namespace Atlas
             if (AutoRotate) _tYaw += 5f * dt;
             float fast = Input.IsKeyPressed(Key.Shift) ? 2.5f : 1f;
             float qe = Axis(Key.Q, Key.E), ws = Axis(Key.W, Key.S), ad = Axis(Key.D, Key.A);
-            if (qe != 0 || ws != 0 || ad != 0) _flyT = 1.0;
+            // a focused slider or list keeps its arrow keys
+            bool arrows = GetViewport()?.GuiGetFocusOwner() is not (Godot.Range or ItemList or Tree);
+            float lr = arrows ? Axis(Key.Right, Key.Left) : 0f, ud = arrows ? Axis(Key.Up, Key.Down) : 0f;
+            if (qe != 0 || ws != 0 || ad != 0 || lr != 0 || ud != 0) _flyT = 1.0;
+            if (lr != 0 || ud != 0) Pan(lr * ArrowPanPx * fast * dt, ud * ArrowPanPx * fast * dt);
             if (qe != 0) Zoom(Mathf.Exp(-qe * 1.4f * fast * dt));                       // Q in, E out
             if (ws != 0) _tPitch = Math.Clamp(_tPitch + ws * 45f * fast * dt, MinPitch, MaxPitch); // W up, S down
             if (ad != 0) _tYaw += ad * 60f * fast * dt;

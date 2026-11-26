@@ -5,6 +5,7 @@
   "world_map": {
     "map": "caelora_geography",
     "settlement": "settlement:corivessa_port",
+    "miniature": {"exaggeration": 5.0},
     "pin_uv": [0.4881, 0.6906],
     "lore": "Valdora's sea port for Corivessa and the Great Gate, on the bay south-west of the city; the country between it and the Calderran border is bandit-ridden marsh and broken hills, with no army road to Calderra. Name not yet given."
   },

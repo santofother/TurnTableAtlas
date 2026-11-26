@@ -23,7 +23,7 @@ Rendered shots land in `blender/renders/<shot>/<shot>.mp4`.
 
 ## In the Atlas
 - **Camera:** drag to orbit, right-drag to pan, wheel to zoom, double-click to focus, R auto-rotate,
-  F free-fly (WASD, Q/E), Places buttons fly to landmarks, Esc back to the map, F12 screenshot.
+  arrow keys pan, F free-fly (WASD, Q/E), Places buttons fly to landmarks, Esc back to the map, F12 screenshot.
 - **Time:** slider plus Pause / 1 min/s / 10 min/s / 1 h/s. Events also start by themselves at their hour while
   time plays (games 14:00, race 16:00, play 18:00, fleet 09:00).
 - **Sun arc:** latitude, day of year and north offset; "Show sun path" draws today's arc with sunrise/noon/sunset.

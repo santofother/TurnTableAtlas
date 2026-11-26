@@ -15,8 +15,10 @@ namespace Atlas
             Dist = 34, Yaw = -98, Pitch = 48
         };
 
-        public void Build(KnownWorldMap map, ReliefSampler ground)
+        /// <param name="covered">FIX(S31): true where a town miniature stands; the roads and farms stop at its edge.</param>
+        public void Build(KnownWorldMap map, ReliefSampler ground, Func<double, double, bool> covered = null)
         {
+            covered ??= (_, _) => false;
             Name = "ValdoranMarches";
             Vector2 Place(string id)
             {
@@ -35,7 +37,7 @@ namespace Atlas
                 new Vector2[] { junction, new(134.7f,163.7f), new(135.2f,165.8f), new(137.3f,167.5f),
                     new(139.4f,168.9f), gate, new(141.9f,172.23f), new(143.8f,172.3f), new(146.4f,172.0f) }
             };
-            BuildRoadsideSites(roads[0], roads[1], ground);
+            BuildRoadsideSites(roads[0], roads[1], ground, covered);
             var surface = new SurfaceTool();
             surface.Begin(Mesh.PrimitiveType.Triangles);
             Vector3 OnGround(Vector2 p) => new(p.X, (float)ground.Coarse(p.X, p.Y) + .004f, -p.Y);
@@ -51,6 +53,7 @@ namespace Atlas
                     {
                         var p = a.Lerp(b, (float)k / steps);
                         var q = a.Lerp(b, (float)(k + 1) / steps);
+                        if (covered(p.X, p.Y) || covered(q.X, q.Y)) continue;
                         var left = OnGround(p + verge);
                         var right = OnGround(p - verge);
                         var nextLeft = OnGround(q + verge);
@@ -71,7 +74,7 @@ namespace Atlas
 
         // Tents on the dry knolls west of the port give way to tiled farmsteads and fields inland.
         // Batch all the roofs, canvas and fields into one mesh at map-table scale.
-        void BuildRoadsideSites(Vector2[] marshRoad, Vector2[] canyonRoad, ReliefSampler ground)
+        void BuildRoadsideSites(Vector2[] marshRoad, Vector2[] canyonRoad, ReliefSampler ground, Func<double, double, bool> covered)
         {
             var rng = new Random(301);
             var mesh = new SurfaceTool();
@@ -114,7 +117,7 @@ namespace Atlas
                 var axis = (marshRoad[i+1] - marshRoad[i]).Normalized();
                 var at = marshRoad[i] + axis.Orthogonal() * .23f;
                 for (int k = 0; k < 4; k++)
-                    Hut(at + axis * (.07f * k) + axis.Orthogonal() * (.09f * (k%2)), axis, .026f, true);
+                    if (!covered(at.X, at.Y)) Hut(at + axis * (.07f * k) + axis.Orthogonal() * (.09f * (k%2)), axis, .026f, true);
             }
             for (int i = 1; i < canyonRoad.Length; i++)
             {
@@ -128,6 +131,7 @@ namespace Atlas
                     if (ground.Fine(p.X,p.Y) < .035 || ground.Fine(p.X,p.Y) > .65) continue;
                     if (Math.Abs(ground.Coarse(p.X+.12,p.Y) - ground.Coarse(p.X-.12,p.Y)) > .065) continue;
                     if (Geometry2D.GetClosestPointToSegment(p,a,b).DistanceTo(p) < .15f) continue;
+                    if (covered(p.X, p.Y)) continue;
                     var end = axis * (.07f + rng.NextSingle()*.10f);
                     var edge = side * (.05f + rng.NextSingle()*.06f);
                     var colour = new Color(.47f + rng.NextSingle()*.12f, .44f + rng.NextSingle()*.1f, .24f);

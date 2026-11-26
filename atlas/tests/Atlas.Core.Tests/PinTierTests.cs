@@ -19,6 +19,18 @@ namespace Atlas.Core.Tests
         }
 
         [Fact]
+        public void ALesserTownOfTheLoreMapIsMinorAndItsCapitalMajor()
+        {
+            var port = City("city", "settlement:corivessa_port");
+            Assert.False(PinTiers.IsMajor(port, "city"));                  // Corivessa Port
+            Assert.True(PinTiers.IsMajor(City("city", "settlement:corivessa_great_gate"), "capital"));
+            Assert.True(PinTiers.IsMajor(City("metropolis", "settlement:haven"), "city"));
+            Assert.True(PinTiers.IsMajor(City("city", "settlement:karn_ashur"), "holy"));
+            Assert.Equal(0f, PinTiers.Reveal(port, 374f, "city"));         // gone from the Known World overview
+            Assert.Equal(1f, PinTiers.Reveal(port, 34f, "city"));          // shown in the Valdoran marches view
+        }
+
+        [Fact]
         public void MinorPinsAppearOnlyWhenZoomedInToARealm()
         {
             var port = City("city", null);
