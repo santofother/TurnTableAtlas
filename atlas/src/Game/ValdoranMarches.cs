@@ -8,6 +8,10 @@ namespace Atlas
 {
     public partial class ValdoranMarches : Node3D
     {
+        KnownWorldMap _map;
+        Texture2D _albedo;
+        /// <summary>Farmland plots drawn (FIX(S31): shaded from the map's own colour by marches_fields.gdshader).</summary>
+        public int FieldPlots { get; private set; }
         public const string ViewId = "CAM_ValdoranMarches";
         public static KnownWorldMap.View View() => new()
         {
@@ -16,8 +20,10 @@ namespace Atlas
         };
 
         /// <param name="covered">FIX(S31): true where a town miniature stands; the roads and farms stop at its edge.</param>
-        public void Build(KnownWorldMap map, ReliefSampler ground, Func<double, double, bool> covered = null)
+        /// <param name="mapAlbedo">FIX(S31): the map's colour, which the farmland takes its tones from.</param>
+        public void Build(KnownWorldMap map, ReliefSampler ground, Func<double, double, bool> covered = null, Texture2D mapAlbedo = null)
         {
+            _map = map; _albedo = mapAlbedo;
             covered ??= (_, _) => false;
             Name = "ValdoranMarches";
             Vector2 Place(string id)
@@ -47,7 +53,7 @@ namespace Atlas
                 {
                     var a = path[i - 1];
                     var b = path[i];
-                    var verge = (b - a).Normalized().Orthogonal() * .025f;
+                    var verge = (b - a).Normalized().Orthogonal() * .009f;   // FIX(S31): ~300 m, beside the towns' own streets
                     int steps = Mathf.CeilToInt(a.DistanceTo(b) / .08f);
                     for (int k = 0; k < steps; k++)
                     {
@@ -79,6 +85,8 @@ namespace Atlas
             var rng = new Random(301);
             var mesh = new SurfaceTool();
             mesh.Begin(Mesh.PrimitiveType.Triangles);
+            var fields = new SurfaceTool();
+            fields.Begin(Mesh.PrimitiveType.Triangles);
             Vector3 Ground(Vector2 p, float lift) => new(p.X, (float)ground.Coarse(p.X, p.Y) + lift, -p.Y);
 
             void Triangle(Vector3 a, Vector3 b, Vector3 c, Color colour)
@@ -117,7 +125,7 @@ namespace Atlas
                 var axis = (marshRoad[i+1] - marshRoad[i]).Normalized();
                 var at = marshRoad[i] + axis.Orthogonal() * .23f;
                 for (int k = 0; k < 4; k++)
-                    if (!covered(at.X, at.Y)) Hut(at + axis * (.07f * k) + axis.Orthogonal() * (.09f * (k%2)), axis, .026f, true);
+                    if (!covered(at.X, at.Y)) Hut(at + axis * (.03f * k) + axis.Orthogonal() * (.035f * (k%2)), axis, .01f, true);   // FIX(S31): at the towns' scale
             }
             for (int i = 1; i < canyonRoad.Length; i++)
             {
@@ -134,12 +142,42 @@ namespace Atlas
                     if (covered(p.X, p.Y)) continue;
                     var end = axis * (.07f + rng.NextSingle()*.10f);
                     var edge = side * (.05f + rng.NextSingle()*.06f);
-                    var colour = new Color(.47f + rng.NextSingle()*.12f, .44f + rng.NextSingle()*.1f, .24f);
-                    var v = Ground(p-end-edge,.006f); var w = Ground(p+end-edge,.006f);
-                    var x = Ground(p+end+edge,.006f); var y = Ground(p-end+edge,.006f);
-                    Triangle(v,w,x,colour); Triangle(v,x,y,colour);
-                    if (k%4 == 0) Hut(p+end+edge, axis, .034f, false);
+                    // FIX(S31): the plot follows the relief on a small grid; its seeds pick the crops and the strips
+                    var seed = new Color(rng.NextSingle(), rng.NextSingle(), rng.NextSingle(), 1f);
+                    const int GU = 8, GV = 6;
+                    for (int gu = 0; gu < GU; gu++)
+                        for (int gv = 0; gv < GV; gv++)
+                        {
+                            Vector3 At(int iu, int iv, out Vector2 uv)
+                            {
+                                uv = new Vector2((float)iu / GU, (float)iv / GV);
+                                return Ground(p + end * (2 * uv.X - 1) + edge * (2 * uv.Y - 1), .004f);
+                            }
+                            var v0 = At(gu, gv, out var t0); var v1 = At(gu + 1, gv, out var t1);
+                            var v2 = At(gu + 1, gv + 1, out var t2); var v3 = At(gu, gv + 1, out var t3);
+                            foreach (var (pt, uv) in new[] { (v0, t0), (v1, t1), (v2, t2), (v0, t0), (v2, t2), (v3, t3) })
+                            {
+                                fields.SetColor(seed); fields.SetUV(uv); fields.AddVertex(pt);
+                            }
+                        }
+                    FieldPlots++;
+                    if (k%4 == 0)   // FIX(S31): a farmstead of a few houses at the town miniatures' scale
+                        for (int f = 0; f < 3; f++)
+                            Hut(p + end + edge + axis * (.028f * f) + side * (.02f * (f % 2)), axis, .011f, false);
                 }
+            }
+            if (FieldPlots > 0)
+            {
+                fields.GenerateNormals();
+                var mat = new ShaderMaterial { Shader = ResourceLoader.Load<Shader>("res://shaders/marches_fields.gdshader") };
+                mat.SetShaderParameter("albedo_tex", _albedo);
+                mat.SetShaderParameter("world_min", new Vector2((float)_map.BoundsXy[0], -(float)_map.BoundsXy[3]));
+                mat.SetShaderParameter("world_size", new Vector2((float)_map.Width, (float)_map.Depth));
+                AddChild(new MeshInstance3D
+                {
+                    Name = "Farmland", Mesh = fields.Commit(), MaterialOverride = mat, VisibilityRangeEnd = 55,
+                    CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                });
             }
             mesh.GenerateNormals();
             AddChild(new MeshInstance3D

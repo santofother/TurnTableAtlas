@@ -15,12 +15,12 @@ namespace Atlas
         /// <summary>Orbit distance beyond which the miniature is not drawn (the Valdoran marches view is at 34).</summary>
         const float MiniRange = 48f;
         const int GridN = 161;
-        /// <summary>The model's open water (its bay) is drawn out to this share of its half extent, the harbour inside
-        /// the moles; a shallow channel (a river through the town) out to <see cref="RiverReach"/>. Beyond, the map's
-        /// own coast and rivers take over.</summary>
-        const double WaterReach = 0.5, RiverReach = 0.74, RiverDepth = -0.5;
+        /// <summary>A coastal town's water (its harbour) is drawn inside this rim (TownSite.Rim); an inland town's river
+        /// out to <see cref="RiverReach"/>. Beyond, the map's own coast and rivers take over (town_water.gdshader
+        /// dithers it out along the rim).</summary>
+        const double WaterReach = 0.45, RiverReach = 0.82, RiverDepth = -0.5;   // inland, a channel this shallow is a river
         /// <summary>Meshes are laid out once and kept between visits to the map (keyed by city id).</summary>
-        static readonly Dictionary<string, (TownSite Site, List<(ArrayMesh Mesh, string Name)> Parts, ArrayMesh Ground, ArrayMesh Water, Texture2D Albedo)> Cache = new();
+        static readonly Dictionary<string, (TownSite Site, List<(ArrayMesh Mesh, string Name)> Parts, ArrayMesh Ground, ArrayMesh Water, Texture2D Albedo, Color? SeaColour)> Cache = new();
 
         public TownSite S { get; private set; }
         public CityManifest M { get; private set; }
@@ -49,7 +49,7 @@ namespace Atlas
                 var uv = kw.PinFor(m.WorldMap);
                 if (!uv.HasValue) return;
                 var (x, y) = kw.UvToXy(uv.Value.U, uv.Value.V);
-                c = Load(m, x, y, kw.UnitM, relief);
+                c = Load(m, x, y, kw.UnitM, relief, mapAlbedo);
                 if (c.Site == null) return;
                 Cache[m.Id] = c;
             }
@@ -69,7 +69,16 @@ namespace Atlas
             Add("Ground", c.Ground, ground, false);
             if (c.Water != null)
             {
-                var water = new ShaderMaterial { Shader = ResourceLoader.Load<Shader>("res://shaders/karn_ashur_water.gdshader") };
+                // the harbour takes the map's own sea colour beside it, so it reads as the same water
+                var water = new ShaderMaterial { Shader = ResourceLoader.Load<Shader>("res://shaders/town_water.gdshader") };
+                water.SetShaderParameter("albedo_tex", mapAlbedo);
+                water.SetShaderParameter("height_tex", heights);
+                water.SetShaderParameter("world_min", new Vector2((float)kw.BoundsXy[0], -(float)kw.BoundsXy[3]));
+                water.SetShaderParameter("world_size", new Vector2((float)kw.Width, (float)kw.Depth));
+                if (c.SeaColour is { } sea) water.SetShaderParameter("water_colour", new Vector3(sea.R, sea.G, sea.B));
+                water.SetShaderParameter("centre", new Vector2((float)S.Cx, -(float)S.Cy));
+                water.SetShaderParameter("half_size", (float)S.Half);
+                water.SetShaderParameter("reach", new Vector2((float)WaterReach, (float)RiverReach));
                 WeatherMaterials.Add(water);
                 Add("Water", c.Water, water, false);
             }
@@ -79,7 +88,8 @@ namespace Atlas
                 for (int s = 0; s < mesh.GetSurfaceCount(); s++) mi.SetSurfaceOverrideMaterial(s, _mats.ForGltf(mesh.SurfaceGetName(s)));
                 MiniMeshes++;
             }
-            GD.Print($"[Atlas] town {m.Id}: miniature x{m.WorldMap.Miniature.Exaggeration:0} ({S.Half * 2:0.000} units across), {MiniMeshes} meshes in {Time.GetTicksMsec() - t0} ms");
+            GD.Print($"[Atlas] town {m.Id}: miniature x{m.WorldMap.Miniature.Exaggeration:0} ({S.Half * 2:0.000} units across), {MiniMeshes} meshes, " +
+                     $"water {(c.Water == null ? "none" : c.SeaColour is { } sc ? $"in the map's sea colour {sc.LinearToSrgb().ToHtml(false)}" : "inland")} in {Time.GetTicksMsec() - t0} ms");
         }
 
         MeshInstance3D Add(string name, Mesh mesh, Material mat, bool shadow)
@@ -108,7 +118,7 @@ namespace Atlas
             public Vector3[] V, N; public Color[] C; public Vector2[] Uv; public int[] I; public string Mat;
         }
 
-        static (TownSite, List<(ArrayMesh, string)>, ArrayMesh, ArrayMesh, Texture2D) Load(CityManifest m, double cx, double cy, double unitM, ReliefSampler relief)
+        static (TownSite, List<(ArrayMesh, string)>, ArrayMesh, ArrayMesh, Texture2D, Color?) Load(CityManifest m, double cx, double cy, double unitM, ReliefSampler relief, Texture2D mapAlbedo)
         {
             var root = CityLoader.LoadGlb(m.FilePath("model"));
             var meshes = new List<(string Name, List<Surface> Surfaces)>();
@@ -139,20 +149,22 @@ namespace Atlas
             }
             root.Free();
             var terrain = meshes.FirstOrDefault(x => x.Name == "CAP_Terrain").Surfaces;
-            if (terrain == null) { GD.PushWarning($"[Atlas] town {m.Id}: no CAP_Terrain in its model"); return (null, null, null, null, null); }
+            if (terrain == null) { GD.PushWarning($"[Atlas] town {m.Id}: no CAP_Terrain in its model"); return (null, null, null, null, null, null); }
             double half = m.Extent[2];
             var grid = TownSite.GridFromPoints(terrain.SelectMany(s => s.V).Select(p => ((double)p.X, (double)p.Y, (double)p.Z)), half, GridN);
             var site = new TownSite(m.Id, relief.Coarse, cx, cy, unitM, m.ModelScale, half, grid, m.WorldMap.Miniature.Exaggeration);
 
+            bool MapIsLand(double x, double y) => relief.Fine(x, y) > 0;
             Vector3 Map(Vector3 p) { var (x, y, h) = site.Place(p.X, p.Y, p.Z); return new Vector3((float)x, (float)h, -(float)y); }
 
+            var seaColour = SeaColour(site, relief, mapAlbedo);
             var parts = new List<(ArrayMesh, string)>();
             ArrayMesh ground = null, water = null;
             foreach (var (name, surfaces) in meshes)
             {
                 if (name == "CAP_Sea")
                 {
-                    water = WaterMesh(site, surfaces, Map, (x, y) => relief.Fine(x, y) > 0);
+                    water = WaterMesh(site, surfaces, Map, MapIsLand, seaColour == null);
                     continue;
                 }
                 var mesh = new ArrayMesh();
@@ -160,27 +172,27 @@ namespace Atlas
                 {
                     var verts = s.V.Select(Map).ToArray();
                     var norms = name == "CAP_Terrain" ? Normals(verts, s.I) : s.N;   // the model's axes are the map's
-                    var idx = name == "CAP_Terrain" ? s.I : Thinned(site, name, s);
+                    var idx = name == "CAP_Terrain" ? s.I : Thinned(site, name, s, MapIsLand);
                     if (idx.Length > 0) AddSurface(mesh, verts, norms, s.C, s.Uv, idx, s.Mat);   // a grove past the edge is gone
                 }
                 if (name == "CAP_Terrain") ground = mesh; else if (mesh.GetSurfaceCount() > 0) parts.Add((mesh, name));
             }
             var albedo = LoadTex(m.FilePath("terrain_albedo"));
-            return (site, parts, ground, water, albedo);
+            return (site, parts, ground, water, albedo, seaColour);
         }
 
-        /// <summary>A surface's triangles that stand on the map: ships always, roads out to near the edge, the rest of
-        /// the countryside thinning out towards it (TownSite.KeepAtEdge).</summary>
-        static int[] Thinned(TownSite site, string name, Surface s)
+        /// <summary>A surface's triangles that stand on the map: ships always, roads out to the rim, the rest of the
+        /// countryside thinning out along it (TownSite.KeepAtEdge) and keeping off the map's sea outside the town.</summary>
+        static int[] Thinned(TownSite site, string name, Surface s, Func<double, double, bool> mapIsLand)
         {
+            bool country = name.Contains("Countryside") || name.Contains("Villas") || name.Contains("Reeds");
             if (name.StartsWith("CAP_Ship_")) return s.I;
             var keep = new List<int>(s.I.Length);
             for (int k = 0; k + 2 < s.I.Length; k += 3)
             {
                 var c = (s.V[s.I[k]] + s.V[s.I[k + 1]] + s.V[s.I[k + 2]]) / 3;
-                bool ok = name.Contains("Roads")
-                    ? Math.Max(Math.Abs(c.X), Math.Abs(c.Y)) < 0.9 * site.ModelHalf
-                    : site.KeepAtEdge(c.X, c.Y);
+                bool ok = name.Contains("Roads") ? site.Rim(c.X, c.Y) < TownSite.ThinTo : site.KeepAtEdge(c.X, c.Y);
+                if (ok && country && site.Rim(c.X, c.Y) > 0.42 && !mapIsLand(site.Cx + c.X * site.S, site.Cy + c.Y * site.S)) ok = false;
                 if (ok) { keep.Add(s.I[k]); keep.Add(s.I[k + 1]); keep.Add(s.I[k + 2]); }
             }
             return keep.ToArray();
@@ -188,25 +200,46 @@ namespace Atlas
 
         /// <summary>The model's water where the map is land (a river, a harbour basin cut into the coast): over the map's
         /// own sea (as its pixels show it) it would only cover the sea already drawn there.</summary>
-        static ArrayMesh WaterMesh(TownSite site, List<Surface> surfaces, Func<Vector3, Vector3> map, Func<double, double, bool> mapIsLand)
+        static ArrayMesh WaterMesh(TownSite site, List<Surface> surfaces, Func<Vector3, Vector3> map, Func<double, double, bool> mapIsLand, bool inland)
         {
             var verts = new List<Vector3>();
+            var cols = new List<Color>();   // r: 1 in a shallow channel (a river), 0 in open water
             foreach (var s in surfaces)
                 for (int k = 0; k + 2 < s.I.Length; k += 3)
                 {
                     var tri = new[] { s.V[s.I[k]], s.V[s.I[k + 1]], s.V[s.I[k + 2]] };
                     if (tri.All(p => site.ModelGround(p.X, p.Y) > 0.05)) continue;   // under the model's land
-                    if (tri.All(p => Math.Max(Math.Abs(p.X), Math.Abs(p.Y)) > (site.ModelGround(p.X, p.Y) > RiverDepth ? RiverReach : WaterReach) * site.ModelHalf))
-                        continue;                                                       // past the harbour or the river's reach
+                    bool river = inland && tri.Any(p => site.ModelGround(p.X, p.Y) > RiverDepth);   // a coastal town's water is its harbour
+                    if (tri.All(p => site.Rim(p.X, p.Y) > (river ? RiverReach : WaterReach) + 0.05)) continue;   // past its reach
                     var w = tri.Select(map).ToArray();
                     if (!w.Any(p => mapIsLand(p.X, -p.Z))) continue;                  // over the map's sea
                     verts.AddRange(w);
+                    foreach (var p in tri) cols.Add(new Color(river ? 1f : 0f, 0, 0));
                 }
             if (verts.Count == 0) return null;
             var mesh = new ArrayMesh();
             var arr = Enumerable.Range(0, verts.Count).ToArray();
-            AddSurface(mesh, verts.ToArray(), verts.Select(_ => Vector3.Up).ToArray(), null, null, arr, "CAP_Water");
+            AddSurface(mesh, verts.ToArray(), verts.Select(_ => Vector3.Up).ToArray(), cols.ToArray(), null, arr, "CAP_Water");
             return mesh;
+        }
+
+        /// <summary>The map's sea colour (linear) round a town: the mean of its sea pixels inside the town's square,
+        /// or null inland.</summary>
+        static Color? SeaColour(TownSite site, ReliefSampler relief, Texture2D mapAlbedo)
+        {
+            var img = mapAlbedo?.GetImage();
+            if (img == null) return null;
+            double r = 0, g = 0, b = 0; int n = 0;
+            for (int j = -16; j <= 16; j++)
+                for (int i = -16; i <= 16; i++)
+                {
+                    double x = site.Cx + i / 16.0 * site.Half, y = site.Cy + j / 16.0 * site.Half;   // the sea at the harbour's mouth
+                    if (relief.Fine(x, y) > -0.0005) continue;
+                    double u = (x - relief.X0) / relief.Width, v = (relief.YTop - y) / relief.Depth;
+                    var c = img.GetPixel((int)(u * (img.GetWidth() - 1)), (int)(v * (img.GetHeight() - 1))).SrgbToLinear();
+                    r += c.R; g += c.G; b += c.B; n++;
+                }
+            return n < 4 ? null : new Color((float)(r / n), (float)(g / n), (float)(b / n));
         }
 
         static void AddSurface(ArrayMesh mesh, Vector3[] v, Vector3[] n, Color[] c, Vector2[] uv, int[] idx, string mat)

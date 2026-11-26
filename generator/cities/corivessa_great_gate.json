@@ -5,7 +5,7 @@
   "world_map": {
     "map": "caelora_geography",
     "settlement": "settlement:corivessa_great_gate",
-    "miniature": {"exaggeration": 5.0},
+    "miniature": {"exaggeration": 12.0},
     "pin_uv": [0.5583, 0.6432],
     "lore": "Corivessa, Valdora's capital, built against the Great Gate that closes the Ventara canyon's western mouth; master of the Canyon Road."
   },

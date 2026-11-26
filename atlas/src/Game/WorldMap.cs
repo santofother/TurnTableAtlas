@@ -113,7 +113,7 @@ namespace Atlas
             {
                 var marches = new ValdoranMarches();   // FIX(S30): the two settlement pins share a regional approach.
                 AddChild(marches);
-                marches.Build(_kw, _sampler, (x, y) => Towns.Any(t => Math.Abs(x - t.S.Cx) < 0.85 * t.S.Half && Math.Abs(y - t.S.Cy) < 0.85 * t.S.Half));   // FIX(S31)
+                marches.Build(_kw, _sampler, (x, y) => Towns.Any(t => t.S.Inside(x, y)), _kwTex);   // FIX(S31)
                 if (!_kw.Cameras.Any(c => c.Id == ValdoranMarches.ViewId)) _kw.Cameras.Add(ValdoranMarches.View());
             }
             BuildRegionalFog(bounds);

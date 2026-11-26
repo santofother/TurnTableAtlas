@@ -84,17 +84,17 @@ namespace Atlas.Core.Tests
                 for (double x = -Half; x < Half; x += 0.37)
                     for (double y = -Half; y < Half; y += 0.37)
                     {
-                        double r = Math.Max(Math.Abs(x), Math.Abs(y)) / Half;
+                        double r = s.Rim(x, y);
                         if (r >= r0 && r < r1 && s.KeepAtEdge(x, y)) n++;
                     }
                 return n;
             }
-            int Total(double r0, double r1) { int n = 0; for (double x = -Half; x < Half; x += 0.37) for (double y = -Half; y < Half; y += 0.37) { double r = Math.Max(Math.Abs(x), Math.Abs(y)) / Half; if (r >= r0 && r < r1) n++; } return n; }
+            int Total(double r0, double r1) { int n = 0; for (double x = -Half; x < Half; x += 0.37) for (double y = -Half; y < Half; y += 0.37) { double r = s.Rim(x, y); if (r >= r0 && r < r1) n++; } return n; }
             Assert.Equal(Total(0, TownSite.ThinFrom), Kept(0, TownSite.ThinFrom));     // the town itself is whole
             double mid = (TownSite.ThinFrom + TownSite.ThinTo) / 2;
             double share = Kept(mid - 0.02, mid + 0.02) / (double)Total(mid - 0.02, mid + 0.02);
             Assert.InRange(share, 0.3, 0.7);
-            Assert.Equal(0, Kept(TownSite.ThinTo, 1.01));
+            Assert.Equal(0, Kept(TownSite.ThinTo, 2));
         }
     }
 }
