@@ -359,4 +359,5 @@ def main():
     log("saved", bpy.data.filepath)
 
 
-main()
+if __name__ == "__main__":   # FIX(W6): w6_borders.py imports the helpers
+    main()
