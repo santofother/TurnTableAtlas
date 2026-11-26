@@ -291,9 +291,10 @@ def build_street_graph(m, T, G, cfg):
         g.polyline([(C[0] + 3.0 * math.cos(a), C[1] + 3.0 * math.sin(a)), (C[0] + 52 * math.cos(a), C[1] + 52 * math.sin(a))],
                    0.6, 0.25, chain)
         chain += 1
-    for d in (0.55, 1.05):                                         # harbour promenade
-        g.polyline(offset_line(m, m.HARBOR, d), 0.7, 0.8, chain)
-        chain += 1
+    if m.HARBOR:  # FIX(S30): only a port has a quay promenade.
+        for d in (0.55, 1.05):
+            g.polyline(offset_line(m, m.HARBOR, d), 0.7, 0.8, chain)
+            chain += 1
     P = m.resample(m.WALL_PATH, 0.5)                               # pomerium path inside the walls
     N = m.polyline_normals(P)
     mid = len(P) // 2
@@ -433,6 +434,8 @@ def build_moorings(m, cfg):
 
 def build_berths(m, man_ships, n=12, clearance=1.7):
     """Free water spots a little off the harbour quays (for arriving fleets), nearest the harbour centre first."""
+    if not m.HARBOR:
+        return []
     P = m.resample(m.HARBOR, 0.5)
     N = m.polyline_normals(P)
     occupied = [np.array(s['pos'][:2]) for s in man_ships]

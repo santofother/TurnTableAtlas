@@ -67,7 +67,9 @@ class ManifestTests(unittest.TestCase):
     def test_venues(self):
         for p, m in self.manifests():
             types = {v['type'] for v in m['venues']}
-            self.assertTrue(types or m.get('kind') in ('estate', 'metropolis'), p)   # estates and Karn Ashur hold no shows
+            for event, venue in [('chariot_race', 'circus'), ('gladiator_games', 'arena'), ('theatre_play', 'theatre')]:
+                if event in m['events']:
+                    self.assertIn(venue, types, p)
             for v in m['venues']:
                 self.assertTrue(v['seat_tiers'], v['id'])
                 for t in v['seat_tiers']:
@@ -96,7 +98,7 @@ class ManifestTests(unittest.TestCase):
                 self.assertTrue(z['points'], "%s: empty zone %s" % (p, z['id']))
             kinds = {l['kind'] for l in m['night_lights']}
             self.assertTrue(kinds <= {'window', 'lamp', 'torch', 'lighthouse'})
-            if m.get('kind', 'city') == 'city':
+            if m.get('kind', 'city') == 'city' and m['ship_lanes']:
                 self.assertIn('lighthouse', kinds)
             for l in m['night_lights']:
                 if l['kind'] == 'window':
@@ -111,6 +113,24 @@ class ManifestTests(unittest.TestCase):
                 self.assertGreater(len(pts), 5, rid)
                 for a, b in zip(pts[:-1], pts[1:]):
                     self.assertLess(math.dist(a[:2], b[:2]), 2.5, rid)
+
+    def test_valdora_settlements_and_routes(self):
+        cities = {m['id']: m for _, m in self.manifests()}
+        capital = cities['corivessa_great_gate']
+        port = cities['corivessa_port']
+        with open(os.path.join(ROOT, 'atlas/assets/map/known_world/known_world.json')) as f:
+            locations = {s['id']: s for s in json.load(f)['settlements']}
+        gate_uv, port_uv = [locations[m['world_map']['settlement']]['uv'] for m in (capital, port)]
+        self.assertLess(port_uv[0], gate_uv[0])
+        self.assertGreater(port_uv[1], gate_uv[1])
+        self.assertTrue(all(not capital[k] for k in ('moorings', 'boats', 'anchored_ships', 'berths', 'ship_lanes')))
+        self.assertFalse(any(l['kind'] == 'lighthouse' for l in capital['night_lights']))
+        self.assertTrue({'great_gate', 'palace', 'toll'} <= {lm['id'] for lm in capital['landmarks']})
+        self.assertTrue({'harbour', 'marshes', 'headland'} <= {lm['id'] for lm in port['landmarks']})
+        self.assertEqual(port['routes']['marsh_road'][0][0], -50)
+        self.assertEqual(capital['routes']['canyon_road'][-1][0], 50)
+        self.assertGreaterEqual(len(port['berths']), 5)
+        self.assertIn('harbour_in', {l['id'] for l in port['ship_lanes']})
 
     def test_estate_extras(self):
         """Estates (kind 'estate') carry named anchors, cutaway object prefixes and a ground grid for the map."""

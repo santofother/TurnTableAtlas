@@ -65,6 +65,14 @@ The larger studies develop Corivessa as a capital with several districts below t
 
 [ImageGen prompts and original image references](scale-studies/generation-prompts.md)
 
+## Agent’s reading for the Atlas build
+
+The three supplied images match the expanded studies above. The first follows a cart road across wet ground with tents on a dry knoll. The second looks across the open end of a hooked bay toward several quay fronts. The third looks east from the plains at the palace above the lower town, with the Great Gate and river to its right.
+
+The regional view follows the Calderran frontier track to the bay, then the inland road through Corivessa and a short reach into eastern Valdora. The port close-up puts the marsh crossing at its western edge, with reeds, six piers and a shipping lane inside the headland. The inland package gives the Gate a stone arch over the river and Canyon Road, with a market below the palace. Both use muted clay roofs, pale masonry and early-September light. The marketplace supports a festival procession, and ships can arrive at the port.
+
+The footprints, field boundaries, camp sites and roads are provisional. The Known World settlement anchors and the two painted-map symbols locate the builds. The city packages model exterior spaces at the Atlas miniature scale.
+
 ## First image set
 
 | Image | Composition and continuity check |

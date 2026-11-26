@@ -21,6 +21,7 @@ The original eleven cards ran on 2026-11-23 in one unattended session.
 | S15 | Landric's villa first wireframe from Chapter 1 | `docs/design/landrics_villa*` | none | DONE (design only) |
 | S16 | Landric's villa: estate generator, package, cutaway, Known World patch | `generator/villa.py`, `cities/landric_villa/`, `atlas/src/{Core/EstateSite,Game/Estate}.cs`, `estate_ground.gdshader` | S15, W5 | DONE |
 | S17 | Landric's villa: the four Chapter 1 scenes as Atlas events | `atlas/events/villa_*.json`, `Core/Stage.cs`, `EventRunner.cs` (scene steps), `figures.py` (horse, rider) | S16 | DONE |
+| S30 | Valdoran marches, Corivessa Port and inland Corivessa | Valdora region and city configs, generated packages and localized generator/Atlas support | S10, S24, S26, S27 | DONE |
 
 ## Known World round 2 (planned 2026-11-23, detail in `docs/world_map/PLAN.md`)
 

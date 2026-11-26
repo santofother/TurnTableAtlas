@@ -1,0 +1,457 @@
+{
+  "id": "corivessa_port",
+  "name": "Corivessa Port",
+  "model_scale": 15,
+  "world_map": {
+    "map": "caelora_geography",
+    "settlement": "settlement:corivessa_port",
+    "pin_uv": [0.4881, 0.6906],
+    "lore": "Valdora's sea port for Corivessa and the Great Gate, on the bay south-west of the city; the country between it and the Calderran border is bandit-ridden marsh and broken hills, with no army road to Calderra. Name not yet given."
+  },
+  "sun": {
+    "latitude_deg": 35.6,
+    "default_day_of_year": 245,
+    "north_offset_deg": 0
+  },
+  "layout": {
+    "hippo": null,
+    "plateau": null,
+    "river": [],
+    "bridge": null,
+    "aqueduct": [],
+    "boulders": [6, 43, -33, -20],
+    "road_stubs": [],
+    "steam_extra": [],
+    "wall_cols": [
+      [0.82, 0.76, 0.65],
+      [0.77, 0.69, 0.55],
+      [0.86, 0.78, 0.62],
+      [0.74, 0.7, 0.63]
+    ],
+    "roof_cols": [
+      [0.6, 0.41, 0.27],
+      [0.66, 0.46, 0.3],
+      [0.52, 0.35, 0.24],
+      [0.74, 0.53, 0.34]
+    ],
+    "roof_hip": 0.37,
+    "roof_flat": 0.98,
+    "coast_line": [
+      [-56, -13],
+      [-45, -14],
+      [-35, -15],
+      [-29, -18],
+      [-25, -22],
+      [-21, -20],
+      [-19, -13],
+      [-16, -7],
+      [-12, -3],
+      [-5, 0],
+      [3, 1],
+      [12, 0],
+      [19, -3],
+      [25, -8],
+      [28, -14],
+      [28, -19],
+      [25, -23],
+      [17, -25],
+      [11, -27],
+      [6, -31],
+      [13, -32],
+      [24, -30],
+      [34, -26],
+      [39, -21],
+      [44, -16],
+      [51, -15],
+      [56, -14]
+    ],
+    "harbor": [
+      [-21, -20],
+      [-19, -13],
+      [-16, -7],
+      [-12, -3],
+      [-5, 0],
+      [3, 1],
+      [12, 0],
+      [19, -3],
+      [25, -8],
+      [28, -14]
+    ],
+    "harbor_center": [4, -13],
+    "ring_center": [3, -11],
+    "wall_path": [
+      [-22, -18],
+      [-26, -12],
+      [-27, -4],
+      [-24, 6],
+      [-18, 14],
+      [-6, 20],
+      [8, 22],
+      [19, 20],
+      [29, 13],
+      [33, 4],
+      [32, -6],
+      [29, -12]
+    ],
+    "gates": [
+      [-27, -4],
+      [8, 22],
+      [29, 13]
+    ],
+    "w_mole": [
+      [-22, -20],
+      [-20, -22],
+      [-17, -23]
+    ],
+    "e_mole": [
+      [26, -22],
+      [24, -22],
+      [22, -21]
+    ],
+    "piers": [
+      [
+        [-18, -11],
+        [-14, -13]
+      ],
+      [
+        [-14, -5],
+        [-11, -8]
+      ],
+      [
+        [-7, -1],
+        [-5, -5]
+      ],
+      [
+        [3, 1],
+        [3, -3]
+      ],
+      [
+        [13, -0.5],
+        [12, -4]
+      ],
+      [
+        [22, -5.5],
+        [20, -9]
+      ]
+    ],
+    "terrain": {
+      "base_slope": 0.028,
+      "north_ridge": [31, 52],
+      "west_hills": false,
+      "hills": [
+        [38, -17, 18, 4.8],
+        [18, -28, 10, 3.5],
+        [19, 19, 19, 2.9],
+        [-44, 18, 10, 3.6]
+      ],
+      "terraces": [
+        [3, 10, 10, 8]
+      ],
+      "marsh": [-39, -1, 15, 16]
+    },
+    "roads": [
+      [
+        [-50, -9],
+        [-47, -7],
+        [-44, -8],
+        [-41, -6],
+        [-38, -5],
+        [-34, -6],
+        [-30, -4],
+        [-27, -4]
+      ],
+      [
+        [8, 22],
+        [10, 28],
+        [8, 36],
+        [12, 43],
+        [15, 50]
+      ],
+      [
+        [29, 13],
+        [36, 19],
+        [44, 21],
+        [50, 27]
+      ]
+    ],
+    "avenues": [
+      [
+        [
+          [-27, -4],
+          [-20, -3],
+          [-15, 1],
+          [-5, 5],
+          [3, 5]
+        ],
+        1.2
+      ],
+      [
+        [
+          [8, 22],
+          [6, 16],
+          [3, 11],
+          [3, 5]
+        ],
+        1.2
+      ],
+      [
+        [
+          [3, 5],
+          [15, 5],
+          [22, 8],
+          [29, 13]
+        ],
+        1
+      ]
+    ],
+    "paved_avenues": [0, 1, 2],
+    "harbour_front": {
+      "stoa_north_of": -4,
+      "market_min_y": -6,
+      "market_gaps": [
+        3
+      ],
+      "market_gap_y": -2
+    },
+    "landmarks": [
+      {
+        "type": "forum",
+        "x": 3,
+        "y": 10
+      },
+      {
+        "type": "castellum",
+        "name": "QuayOffice",
+        "x": -15,
+        "y": -1
+      },
+      {
+        "type": "camp",
+        "name": "MarshCamp",
+        "x": -42,
+        "y": 1
+      }
+    ],
+    "ships": [
+      [
+        "moored",
+        -16,
+        -14,
+        68,
+        0.8
+      ],
+      [
+        "moored2",
+        -9,
+        -8,
+        36,
+        0.85
+      ],
+      [
+        "moored",
+        6,
+        -2,
+        180,
+        0.8
+      ],
+      [
+        "merchant",
+        16,
+        -13,
+        208,
+        1
+      ],
+      [
+        "merchant2",
+        12,
+        -19,
+        82,
+        0.9
+      ],
+      [
+        "fisher",
+        -31,
+        -32,
+        10,
+        0.9
+      ],
+      [
+        "merchant",
+        22,
+        -38,
+        154,
+        0.85
+      ],
+      [
+        "moored2",
+        24,
+        -10,
+        315,
+        0.9
+      ]
+    ],
+    "hero_cam": [
+      [-39, -76, 44],
+      [2, -3, 1]
+    ],
+    "cameras": [
+      [
+        "CAP_Cam_Harbour",
+        [-21, -38, 12],
+        [5, -1, 1],
+        32
+      ],
+      [
+        "CAP_Cam_Marches",
+        [-49, -16, 6],
+        [-30, -2, 1],
+        28
+      ]
+    ]
+  },
+  "events": [
+    "fleet_arrival",
+    "festival_night"
+  ],
+  "spawn_zones": [
+    {
+      "id": "forum",
+      "shape": "rect",
+      "center": [3, 10],
+      "size": [6, 5],
+      "density": 1,
+      "points": 100
+    },
+    {
+      "id": "harbour_quay",
+      "shape": "rect",
+      "center": [-7, 1],
+      "size": [12, 3],
+      "density": 1,
+      "points": 100
+    },
+    {
+      "id": "market",
+      "shape": "rect",
+      "center": [12, 2],
+      "size": [6, 3],
+      "density": 1,
+      "points": 100
+    }
+  ],
+  "routes": {
+    "procession": [
+      [8, 22],
+      [6, 16],
+      [3, 10]
+    ],
+    "marsh_road": [
+      [-50, -9],
+      [-47, -7],
+      [-44, -8],
+      [-41, -6],
+      [-38, -5],
+      [-34, -6],
+      [-30, -4],
+      [-27, -4]
+    ]
+  },
+  "ship_lanes": [
+    {
+      "id": "harbour_in",
+      "points": [
+        [-9, -49],
+        [-8, -36],
+        [-7, -26],
+        [-5, -17],
+        [-2, -10],
+        [1, -7]
+      ],
+      "kinds": [
+        "merchant",
+        "merchant2"
+      ],
+      "speed": 1,
+      "every_s": 34,
+      "dwell_s": 18,
+      "then": "harbour_out"
+    },
+    {
+      "id": "harbour_out",
+      "points": [
+        [1, -7],
+        [3, -13],
+        [1, -19],
+        [-3, -27],
+        [-3, -37],
+        [3, -49]
+      ],
+      "kinds": [
+        "merchant"
+      ],
+      "speed": 1.1,
+      "every_s": 0
+    },
+    {
+      "id": "fishing",
+      "points": [
+        [29, -36],
+        [38, -34],
+        [43, -37],
+        [36, -41]
+      ],
+      "loop": true,
+      "kinds": [
+        "fisher"
+      ],
+      "speed": 0.4,
+      "every_s": 0
+    }
+  ],
+  "landmarks": [
+    {
+      "id": "overview",
+      "label": "Corivessa Port",
+      "target": [0, -4, 1],
+      "dist": 97,
+      "yaw": -118,
+      "pitch": 40
+    },
+    {
+      "id": "harbour",
+      "label": "The sheltered quays",
+      "target": [2, -5, 1],
+      "dist": 40,
+      "yaw": -98,
+      "pitch": 26
+    },
+    {
+      "id": "marshes",
+      "label": "The marsh road",
+      "target": [-37, -3, 0],
+      "dist": 25,
+      "yaw": -132,
+      "pitch": 24
+    },
+    {
+      "id": "headland",
+      "label": "The outer headland",
+      "target": [19, -24, 1],
+      "dist": 38,
+      "yaw": -43,
+      "pitch": 32
+    }
+  ],
+  "portals": [
+    {
+      "center": [3, 6.15],
+      "size": [0.65, 0.85]
+    }
+  ],
+  "extra_walkways": {
+    "forum_axis": [
+      [3, 5],
+      [3, 13]
+    ]
+  }
+}

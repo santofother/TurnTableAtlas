@@ -107,6 +107,13 @@ namespace Atlas
             Table.Build(bounds);
             _reliefMat = new ShaderMaterial { Shader = ResourceLoader.Load<Shader>("res://shaders/relief.gdshader") };
             BuildRelief();
+            if (_kw.Settlement("corivessa_port") != null && _kw.Settlement("corivessa_great_gate") != null)
+            {
+                var marches = new ValdoranMarches();   // FIX(S30): the two settlement pins share a regional approach.
+                AddChild(marches);
+                marches.Build(_kw, _sampler);
+                if (!_kw.Cameras.Any(c => c.Id == ValdoranMarches.ViewId)) _kw.Cameras.Add(ValdoranMarches.View());
+            }
             BuildRegionalFog(bounds);
 
             Rig = new TurntableCamera { Name = "Rig", MinDist = 0.8f, MaxDist = 950f, MinPitch = 5f, FlySpeed = 4f, Bounds = bounds };

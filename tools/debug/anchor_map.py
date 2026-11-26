@@ -35,7 +35,7 @@ for z in man['spawn_zones']:
 for ln in man['ship_lanes']:
     P = ln['points'] + (ln['points'][:1] if ln['loop'] else [])
     for a, b in zip(P[:-1], P[1:]): line(a, b, (0.0, 1.0, 1.0), 1)
-for s in m.ANCHORS['_ships']: dot(s[2], s[3], (1, 1, 1), 3)
+for s in m.ANCHORS.get('_ships', []): dot(s[2], s[3], (1, 1, 1), 3)
 for rid, P in man['routes'].items():
     for a, b in zip(P[:-1], P[1:]): line(a, b, (1.0, 0.9, 0.1), 1)
 for v in man['venues']:
