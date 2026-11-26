@@ -1,0 +1,305 @@
+{
+  "id": "corivessa_great_gate",
+  "name": "Corivessa",
+  "model_scale": 15,
+  "world_map": {
+    "map": "caelora_geography",
+    "settlement": "settlement:corivessa_great_gate",
+    "pin_uv": [0.5583, 0.6432],
+    "lore": "Corivessa, Valdora's capital, built against the Great Gate that closes the Ventara canyon's western mouth; master of the Canyon Road."
+  },
+  "sun": {
+    "latitude_deg": 37.3,
+    "default_day_of_year": 245,
+    "north_offset_deg": 0
+  },
+  "layout": {
+    "hippo": null,
+    "plateau": [-4, 20, 10, 8],
+    "river": [
+      [52, 5],
+      [42, 3],
+      [34, 0],
+      [23, -1],
+      [16, -2],
+      [10, -6],
+      [4, -12],
+      [-5, -17],
+      [-11, -25],
+      [-13, -37],
+      [-18, -51]
+    ],
+    "bridge": null,
+    "aqueduct": [],
+    "boulders": null,
+    "road_stubs": [],
+    "steam_extra": [],
+    "wall_cols": [
+      [0.82, 0.76, 0.65],
+      [0.77, 0.69, 0.55],
+      [0.86, 0.78, 0.62],
+      [0.74, 0.7, 0.63]
+    ],
+    "roof_cols": [
+      [0.6, 0.41, 0.27],
+      [0.66, 0.46, 0.3],
+      [0.52, 0.35, 0.24],
+      [0.74, 0.53, 0.34]
+    ],
+    "roof_hip": 0.37,
+    "roof_flat": 0.98,
+    "coast_line": [
+      [-56, -55],
+      [56, -55]
+    ],
+    "harbor": [],
+    "w_mole": [],
+    "e_mole": [],
+    "piers": [],
+    "ships": [],
+    "wall_path": [
+      [-30, 9],
+      [-33, 15],
+      [-30, 23],
+      [-22, 29],
+      [-9, 33],
+      [4, 30],
+      [13, 25],
+      [20, 18],
+      [23, 10],
+      [24, 5],
+      [19, 4],
+      [12, 2],
+      [4, -2],
+      [-4, -7],
+      [-13, -9],
+      [-24, -4],
+      [-31, 2],
+      [-30, 9]
+    ],
+    "gates": [
+      [-31, 2],
+      [-9, 33],
+      [19, 4]
+    ],
+    "ring_center": [-5, 13],
+    "terrain": {
+      "base_slope": 0.065,
+      "north_ridge": null,
+      "west_hills": false,
+      "hills": [
+        [-4, 20, 21, 6],
+        [16, 12, 10, 2.6]
+      ],
+      "canyon": [12, 35, 12],
+      "terraces": [
+        [-9, 3, 10, 8]
+      ]
+    },
+    "roads": [
+      [
+        [-50, -15],
+        [-43, -12],
+        [-39, -6],
+        [-35, -2],
+        [-31, 2]
+      ],
+      [
+        [-9, 33],
+        [-10, 38],
+        [-16, 45],
+        [-19, 50]
+      ],
+      [
+        [19, 4],
+        [23, 2.5],
+        [28, 2.7],
+        [34, 3.4],
+        [41, 6],
+        [50, 8]
+      ],
+      [
+        [-39, -6],
+        [-34, -15],
+        [-29, -24],
+        [-24, -37],
+        [-26, -50]
+      ]
+    ],
+    "avenues": [
+      [
+        [
+          [-31, 2],
+          [-21, 4],
+          [-14, 4],
+          [-8, 3],
+          [1, 3],
+          [11, 5],
+          [19, 4]
+        ],
+        1.4
+      ],
+      [
+        [
+          [-9, 33],
+          [-15, 27],
+          [-16, 20],
+          [-19, 13],
+          [-21, 4]
+        ],
+        1.3
+      ],
+      [
+        [
+          [-12, 19],
+          [-14, 15],
+          [-10, 9],
+          [-8, 3]
+        ],
+        1.1
+      ],
+      [
+        [
+          [-19, 1],
+          [-15, -1],
+          [-9, -2.2],
+          [-9, 0]
+        ],
+        1.0
+      ]
+    ],
+    "paved_avenues": [0, 1, 2],
+    "landmarks": [
+      {
+        "type": "palace",
+        "x": -4,
+        "y": 20,
+        "angle": 6
+      },
+      {
+        "type": "forum",
+        "x": -9,
+        "y": 3
+      },
+      {
+        "type": "great_gate",
+        "name": "GreatGate",
+        "x": 23,
+        "y": -1,
+        "span": 10
+      },
+      {
+        "type": "castellum",
+        "name": "EastToll",
+        "x": 16,
+        "y": 6
+      }
+    ],
+    "hero_cam": [
+      [-63, -58, 34],
+      [-1, 10, 3]
+    ],
+    "cameras": [
+      [
+        "CAP_Cam_GreatGate",
+        [6, -9, 5],
+        [23, -1, 5],
+        28
+      ],
+      [
+        "CAP_Cam_Palace",
+        [-28, -6, 13],
+        [-4, 20, 7],
+        38
+      ]
+    ]
+  },
+  "events": [
+    "festival_night"
+  ],
+  "spawn_zones": [
+    {
+      "id": "forum",
+      "shape": "rect",
+      "center": [-9, 3],
+      "size": [9, 6],
+      "density": 1,
+      "points": 100
+    },
+    {
+      "id": "customs",
+      "shape": "rect",
+      "center": [16, 5],
+      "size": [5, 3],
+      "density": 1,
+      "points": 100
+    }
+  ],
+  "routes": {
+    "procession": [
+      [-9, 33],
+      [-15, 27],
+      [-16, 20],
+      [-19, 13],
+      [-21, 4],
+      [-9, 3]
+    ],
+    "canyon_road": [
+      [-31, 2],
+      [-21, 4],
+      [-8, 3],
+      [11, 5],
+      [19, 4],
+      [23, 2.5],
+      [34, 3.4],
+      [50, 8]
+    ]
+  },
+  "ship_lanes": [],
+  "landmarks": [
+    {
+      "id": "overview",
+      "label": "Corivessa at the canyon mouth",
+      "target": [-1, 10, 3],
+      "dist": 96,
+      "yaw": -134,
+      "pitch": 32
+    },
+    {
+      "id": "great_gate",
+      "label": "The Great Gate",
+      "target": [23, -1, 4.6],
+      "dist": 26,
+      "yaw": -153,
+      "pitch": 18
+    },
+    {
+      "id": "palace",
+      "label": "The Corivane palace",
+      "target": [-4, 20, 7],
+      "dist": 27,
+      "yaw": -114,
+      "pitch": 26
+    },
+    {
+      "id": "toll",
+      "label": "East toll and Canyon Road",
+      "target": [15, 5, 3],
+      "dist": 20,
+      "yaw": -130,
+      "pitch": 25
+    }
+  ],
+  "portals": [
+    {
+      "center": [-9, -0.85],
+      "size": [0.65, 0.85]
+    }
+  ],
+  "extra_walkways": {
+    "forum_axis": [
+      [-9, -2.2],
+      [-9, 6]
+    ]
+  }
+}

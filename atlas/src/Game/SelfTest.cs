@@ -146,7 +146,8 @@ namespace Atlas
                     {
                         Check(showOn, $"show running: {v.Events.Status}");
                         Check(v.Life.Crowd.W.Count(w => w.Active) > 100, $"{v.Life.Crowd.W.Count(w => w.Active)} people walking");
-                        Check(v.Life.Traffic.Ships.Count(s => s.Visible) > 2, $"{v.Life.Traffic.Ships.Count(s => s.Visible)} ships under way");
+                        if (v.M.ShipLanes.Count > 0)   // FIX(S30): inland cities have no sea traffic.
+                            Check(v.Life.Traffic.Ships.Count(s => s.Visible) > 2, $"{v.Life.Traffic.Ships.Count(s => s.Visible)} ships under way");
                     }
                     if (_localBoat.Node != null)
                         Check(_localBoat.Node.Position.DistanceTo(_localBoat.Position) > 0.5f,

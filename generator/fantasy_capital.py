@@ -689,6 +689,17 @@ class Terrain:
         cliff = (1 - smoothstep(0.0, 1.6, sd)) * smoothstep(1.5, 0.9, er) * (sd > 0)
         z = z + (fbm(X * 0.9, Y * 0.9, 3, 5) - 0.5) * 1.2 * cliff
         dr = dist_to_polyline(X, Y, RIVER) if RIVER else np.full_like(X, 1e3)
+        if 'canyon' in TERRAIN:
+            # Fractured limestone shoulders follow the channel upstream, with a low bench for the road.
+            start, full, height = TERRAIN['canyon']
+            upstream = smoothstep(start, full, X)
+            folds = fbm(X * .20, Y * .23, 4, 69)
+            bank = smoothstep(3.6, 14, dr + 3.8 * (folds - .5))
+            bench = .45 * bank + .55 * (np.floor(bank * 5) + smoothstep(.4, .8, (bank * 5) % 1)) / 5
+            z += upstream * height * bench * (.48 + .85 * folds)
+        for cx, cy, w, d in TERRAIN.get('terraces', []):
+            pad = smoothstep(1, 0, np.maximum(np.abs(X - cx) - w/2, np.abs(Y - cy) - d/2))
+            z = z * (1 - pad) + float(bilinear(z, cx, cy)) * pad
         width = 0.9 + 0.3 * np.clip(z, 0, None)
         s = smoothstep(0.55, width + 0.55, dr)
         zl = -0.35 + (z + 0.35) * s
@@ -701,6 +712,17 @@ class Terrain:
             ddy = np.maximum(np.abs(hy) - (HW / 2 + 0.9), 0.0)
             pad = (1.0 - smoothstep(0.0, 1.5, np.hypot(ddx, ddy))) * smoothstep(0.05, 0.7, sd)
             Z = Z * (1 - pad) + HIPPO_Z * pad
+        marsh = TERRAIN.get('marsh')
+        if marsh:
+            cx, cy, rx, ry = marsh
+            edge = smoothstep(1.0, 0.68, np.hypot((X - cx) / rx, (Y - cy) / ry)) * land * (~inside_wall)
+            pools = fbm(X * .17, Y * .28, 4, 92)
+            bed = (pools - .51) * 2.8
+            for path in ROADS:  # the raised track stays above the shallow pools
+                bed = np.maximum(bed, .24 - .28 * dist_to_polyline(X, Y, path))
+            for camp in (l for l in LANDMARKS if l['type'] == 'camp'):
+                bed = np.maximum(bed, .6 - .09 * np.hypot(X - camp['x'], Y - camp['y']))
+            Z = Z * (1 - edge) + bed * edge
         self.Z = Z
         self.sd = sd
         self.dr = dr
@@ -708,6 +730,8 @@ class Terrain:
         self.er = er
         out = ~inside_wall
         self.farm = smoothstep(1.5, 3.5, sd) * country * (1 - smoothstep(2.6, 4.2, Z)) * smoothstep(1.4, 2.6, dr)
+        if marsh:
+            self.farm *= 1 - edge
         self.forest = smoothstep(3.0, 4.8, Z) * out * smoothstep(1.0, 2.0, dr)
         self.city = (inside_wall & (sd > 0)).astype(float) * smoothstep(0.85, 0.97, er)
         self.sand = (sd > 0) * (1 - smoothstep(0.6, 1.8, sd)) * out * (1 - smoothstep(1.0, 2.0, Z))
@@ -1267,9 +1291,14 @@ def build_walls(T, coll, mats, fire_mb, lights):
             mb.arch(g + n * sgn * 0.5, u, n * sgn, zg, 0.55, 0.85)
     mb.to_object("CAP_CityWalls", coll, [mats['painted']])
 
+    if not HARBOR:  # FIX(S30): inland fortifications end at the river, without a quay.
+        return
+
     # moles, riprap, lighthouses
     mb2 = MB()
     for path in (W_MOLE, E_MOLE):
+        if not path:
+            continue
         Q = resample(path, 0.8)
         NQ = polyline_normals(Q)
         for i in range(len(Q) - 1):
@@ -2207,6 +2236,41 @@ def build_landmark(spec, L, lm, T, occ, avenue_occ, trees, rng, steam):
         temple(mb, T, g('x'), g('y'), g('face', -90.0), g('w', 2.0), g('l', 2.8), g('h', 0.75), g('cols', 4), occ)
     elif t == 'tholos':
         tholos(mb, T, g('x'), g('y'), g('r', 0.8), g('h', 0.85), occ)
+    elif t == 'great_gate':
+        # FIX(S30): a free-standing masonry arch at the canyon throat, with the towpath under its north side.
+        x, y, r = spec['x'], spec['y'], spec['span'] / 2
+        spring = max(T.hs(x, y - r), T.hs(x, y + r)) + 1.5
+        depth, deck = 1.5, spring + r + .8
+        for side in (-1, 1):
+            ty = y + side * (r + .85)
+            tower(mb, T, x, ty, 0, 2.15, deck + 1.7, rng, 0)
+            mb.box(x, ty, deck + 1.2, 2.3, 2.3, .22, 0, STONE)
+        for i in range(20):
+            a, b = math.pi * i / 20, math.pi * (i + 1) / 20
+            ya, yb = y + r * math.cos(a), y + r * math.cos(b)
+            za, zb = spring + r * math.sin(a), spring + r * math.sin(b)
+            ring = [(x-depth/2, ya, za), (x-depth/2, yb, zb),
+                    (x-depth/2, yb, deck), (x-depth/2, ya, deck)]
+            mb.extrude(ring, (depth, 0, 0), jit(rng, STONE, .045), bottom=True)
+        # A projecting ring of wedge-shaped stones makes the arch legible from the western approach.
+        for i in range(17):
+            a, b = math.pi * i / 17, math.pi * (i + 1) / 17
+            ring = [(x-depth/2-.08, y+rad*math.cos(t), spring+rad*math.sin(t))
+                    for t, rad in ((a,r),(b,r),(b,r+.36),(a,r+.36))]
+            mb.extrude(ring, (depth+.16, 0, 0), jit(rng, TRAV, .07), bottom=True)
+        for side in (-1, 1):
+            xx = x + side * (depth / 2 - .08)
+            crenellate(mb, [xx, y-r], [xx, y+r], deck, [side, 0], 0, size=.23, step=.44)
+        occ.rect(x, y, depth + .3, 2 * r + 4.0, 0)
+    elif t == 'camp':
+        x, y = spec['x'], spec['y']
+        for dx, dy, angle in [(-1.1, .4, .3), (.8, .7, -.45), (.4, -.9, .75)]:
+            cx, cy = x + dx, y + dy
+            z = T.hs(cx, cy)
+            for side in (-1, 1):
+                panel = [(a, side*b, z+h) for a,b,h in [(-.62,.44,.03),(.62,.44,.03),(.53,0,.66),(-.53,0,.66)]]
+                mb.poly_facing([(*L2W(cx, cy, angle, a, b), h) for a,b,h in panel], (0,0,1), (.67,.57,.39))
+            mb.beam((*L2W(cx, cy, angle, -.53, 0), z), (*L2W(cx, cy, angle, -.53, 0), z+.67), .035, WOOD)
     elif t == 'castellum':
         x, y = g('x'), g('y')
         cz = fp_ground(T, x, y, 1.3, 1.0, 0)
@@ -2251,8 +2315,7 @@ def build_city(T, coll, mats, rng_seed=2024):
     if PLATEAU and not any(l['type'] == 'palace' for l in LANDMARKS):
         occ.ellipse(PLATEAU[0], PLATEAU[1], PLATEAU[2] * 0.92, PLATEAU[3] * 0.92)     # keep houses off a bare acropolis
     # harbour front buildings
-    hf = L("Harbour_Front")
-    n_hf = harbor_front(T, occ, avenue_occ, rng, hf, trees)
+    n_hf = harbor_front(T, occ, avenue_occ, rng, L("Harbour_Front"), trees) if HARBOR else 0
     # avenue paving
     pav = L("Avenue_Paving")
     for pts, wdt in [AVENUES[i] for i in PAVED_AVENUES]:
@@ -2578,6 +2641,18 @@ def build_countryside(T, coll, mats, seed=77):
         kind = 'round' if r < 0.68 else ('cypress' if r < 0.84 else 'pine')
         trees.append((kind, x, y, z, rng.uniform(0.75, 1.35)))
         nf += 1
+    if TERRAIN.get('marsh'):
+        cx, cy, rx, ry = TERRAIN['marsh']
+        reeds = MB()
+        for x, y in rng.uniform((cx-rx, cy-ry), (cx+rx, cy+ry), (3800, 2)):
+            if ((x-cx)/rx)**2 + ((y-cy)/ry)**2 > .88 or not occ.free(x, y):
+                continue
+            z = T.hs(x, y)
+            if -.12 < z < .11:
+                for _ in range(5):
+                    xx, yy = x + rng.uniform(-.08,.08), y + rng.uniform(-.08,.08)
+                    reeds.cone(xx, yy, z-.02, .024, rng.uniform(.12,.28), jit(rng, (.48,.48,.24)), 3)
+        reeds.to_object("CAP_Marsh_Reeds", coll, [mats['painted']])
     # river-bank trees
     Rv = resample(RIVER, 0.9) if RIVER else np.zeros((0, 2))
     Nv = polyline_normals(Rv) if RIVER else np.zeros((0, 2))
@@ -2773,7 +2848,7 @@ def build_ships(T, coll, mats, seed=5):
     # rowboats scattered inside the harbour and along the coast
     tries = 0
     boats = 0
-    while boats < 26 and tries < 3000:
+    while HARBOR and boats < 26 and tries < 3000:
         tries += 1
         x, y = rng.uniform(-12, 16), rng.uniform(-22, 0.5)
         if T.hs(x, y) > -0.3 or dist_to_polyline(np.array([x]), np.array([y]), HARBOR)[0] < 0.6:
@@ -2991,7 +3066,7 @@ def build_all(stages=("terrain", "walls", "city", "countryside", "ships", "scene
         stats['city'] = build_city(T, coll, mats)
     if "countryside" in stages:
         stats['country'] = build_countryside(T, coll['country'], mats)
-    if "ships" in stages:
+    if "ships" in stages and (HARBOR or SHIPS):
         stats['ships'] = build_ships(T, coll['ships'], mats)
     if "scene" in stages:
         build_scene(coll['scene'], lights)

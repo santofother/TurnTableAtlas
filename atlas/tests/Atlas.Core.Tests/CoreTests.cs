@@ -89,7 +89,7 @@ namespace Atlas.Core.Tests
                     Assert.True(m.Venues.Count == 0 && m.Terrain.Z.Length == m.Terrain.N * m.Terrain.N && m.Anchors.Count >= 10);
                 else if (m.IsMetropolis)   // FIX(karn_ashur): no venues; instances, its true ground and the basin's layout
                     Assert.True(m.Venues.Count == 0 && m.Instances.Count > 50000 && m.TerrainHeight != null && m.Site.Districts.Count >= 2);
-                else
+                else if (m.Events.Any(e => e is "chariot_race" or "gladiator_games" or "theatre_play"))
                     Assert.True(m.Venues.Sum(v => v.Capacity) > 500);
                 if (m.WorldMap.PinUv != null) Assert.InRange(m.WorldMap.PinUv[0], 0, 1);
                 else if (m.WorldMap.KwXy != null) Assert.Equal(2, m.WorldMap.KwXy.Length);   // FIX(haven): placed on the Known World only

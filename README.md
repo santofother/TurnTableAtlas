@@ -34,11 +34,15 @@ Rendered shots land in `blender/renders/<shot>/<shot>.mp4`.
 ## Cities
 | id | what | latitude |
 |---|---|---|
+| `corivessa_great_gate` | Valdora’s inland capital, with the Corivane palace above the lower market and the Great Gate spanning the Thennara at the mouth of Ventara canyon | 37.3°N |
+| `corivessa_port` | the separate bay port southwest of the capital, with six piers behind the hooked headland and a raised marsh road approaching from the Calderran border | 35.6°N |
 | `fantasy_capital` | crescent harbour capital: palace headland, colosseum, hippodrome, theatre, baths, aqueduct | 38°N |
 | `karn_ashur` | the Temple of the First Flame's inland metropolis (a *metropolis*, `generator/metropolis.py`): ~500k people on ~30 km² of adobe courtyard terraces in a red-cliff basin between two snow peaks; grain yards, caravanserais and the shaded market at the freight road, Al-Mirah's spring, the Library, the pilgrims' climb to the First Flame, bridges, canals, fields and walled villages downstream; on the Known World as its own 6× miniature amid the High Dunes' rivers, villages and the grain route from the River Flame | 15.8°N, mid-Mar |
 | `haven` | Hamen's capital on the red River Flame (a *metropolis*, `generator/rivercity.py`): ~600k people in a walled east-bank city of courtyard houses round **three white-marble stepped pyramids**, quays and round granaries, Queen Meret's harbour basin, a stone bridge, Erros's vast outer wall round canal-fed fields and villages; on the Known World as a 6x miniature at the head of the delta, the whole Flame painted red with farmland, villages and market towns on both banks | 21.6°N, Apr |
 | `flamemouth` | Hamen's Mediterranean port at the River Flame's mouth (placeholder name): an estuary harbour with lighthouse breakwaters, a walled white town, the red river's plume into the sea | 25°N, Apr |
 | `landric_villa` | Prince Landric's walled country villa (an *estate*, `generator/villa.py`): peristyle villa with furnished rooms and a cutaway, stables, kitchen garden, two-pool bathhouse, vineyards, lake; stands on the Known World north of Calderra | 38°N, late Oct |
+
+Choose **Valdora · western marches** in the map’s **Views** menu to see the frontier track, Corivessa Bay and the road east through the capital. Click either settlement pin for its close-up.
 
 Names and map pins are `LORE?` placeholders (see `docs/DECISIONS.md`).
 

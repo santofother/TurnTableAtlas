@@ -47,6 +47,19 @@ void fragment() {
         c *= mix(0.94, 1.05, vn(wpos.xz * 3.0) * 0.6 + vn(wpos.xz * 11.0) * 0.4);
         ROUGHNESS = mix(0.9, 0.5, cloud_wet);
         SPECULAR = 0.25;
+        // FIX(S30): tidal pools and reed beds in the broken lowlands west of Corivessa Bay.
+        vec2 marsh_xy = vec2(wpos.x, -wpos.z) - vec2(129.4, 162.3);
+        float shore = 1.0 - smoothstep(0.58, 1.0, length(marsh_xy / vec2(7.2, 2.9)));
+        if (shore > 0.0) {
+            float lowland = shore * (1.0 - smoothstep(0.14, 0.40, h));
+            vec2 p = marsh_xy * vec2(2.7, 6.4);
+            float channels = vn(p + 2.3 * vn(p * 0.38)) + 0.18 * vn(p * 3.7);
+            float wet = lowland * smoothstep(0.56, 0.65, channels);
+            c = mix(c, vec3(0.17, 0.18, 0.073), lowland * 0.46);
+            c = mix(c, vec3(0.080, 0.155, 0.146), wet * 0.85);
+            ROUGHNESS = mix(ROUGHNESS, 0.32, wet);
+            SPECULAR = mix(SPECULAR, 0.55, wet);
+        }
         c *= mix(1.0, 0.7, cloud_wet);
     } else {
         // sea surface: slow ripples for the glint
